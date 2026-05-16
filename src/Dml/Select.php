@@ -12,7 +12,7 @@ use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Common\Join;
 use Rak200\SqlBuilder\Common\Order;
 use Rak200\SqlBuilder\Common\TableReference;
-use Rak200\SqlBuilder\Utils\Collection;
+use Rak200\Collections\Collection;
 use Rak200\SqlBuilder\Utils\StringUtils;
 use InvalidArgumentException;
 

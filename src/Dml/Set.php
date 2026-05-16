@@ -8,7 +8,7 @@ use Rak200\SqlBuilder\Common\Enum\NullsPlacement;
 use Rak200\SqlBuilder\Common\Enum\SortDirection;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Common\Order;
-use Rak200\SqlBuilder\Utils\Collection;
+use Rak200\Collections\Collection;
 use Rak200\SqlBuilder\Utils\StringUtils;
 use InvalidArgumentException;
 

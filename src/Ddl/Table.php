@@ -6,7 +6,7 @@ namespace Rak200\SqlBuilder\Ddl;
 
 use Rak200\SqlBuilder\Common\Expression;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
-use Rak200\SqlBuilder\Utils\Collection;
+use Rak200\Collections\Collection;
 use Rak200\SqlBuilder\Utils\StringUtils;
 use InvalidArgumentException;
 

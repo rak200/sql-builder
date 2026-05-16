@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **rak200/sql-builder** is a standalone PHP 8.4+ library for building SQL strings via a fluent, type-safe API. It covers DML (SELECT, set operations) and DDL (tables, views, sequences, constraints, indexes). No ORM — it produces SQL strings only.
 
-Depends on `rak200/caster ^0.0.1` for the `ToString` contract used by `ExpressionInterface`.
+Depends on:
+- `rak200/caster ^1.0.0` for the `ToString` contract used by `ExpressionInterface`
+- `rak200/collections ^0.0.1` for the typed `Collection` container used internally
 
 ## Structure
 
@@ -24,7 +26,7 @@ sql-builder/
     │   ├── Enum/DataType.php         # SQL column type enum
     │   ├── Column.php, Table.php, View.php, Sequence.php, Index.php
     │   └── Constraint.php, PrimaryKey.php, UniqueKey.php, ForeignKey.php, Check.php
-    └── Utils/            # Internal: StringUtils, Collection (not part of public API)
+    └── Utils/            # Internal: StringUtils (not part of public API)
 ```
 
 All classes live under `Rak200\SqlBuilder\` (PSR-4 from `src/`).
@@ -45,7 +47,7 @@ All classes live under `Rak200\SqlBuilder\` (PSR-4 from `src/`).
 
 **`Set`** — wraps multiple `Select` with set operators: `Set::union()`, `Set::unionAll()`, `Set::except()`, `Set::intersect()`.
 
-**`Collection`** (`Utils/`) — typed generic container used internally by `Select`, `Set`, `Table`. Not intended for external use.
+**`Collection`** (from `rak200/collections`) — typed generic container used internally by `Select`, `Set`, `Table`.
 
 ## Identifier & Value Quoting
 
@@ -59,7 +61,7 @@ All classes live under `Rak200\SqlBuilder\` (PSR-4 from `src/`).
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.0.1** — unstable until unit tests are added.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.0.2** — unstable until unit tests are added.
 
 Release process:
 1. Update `"version"` in `composer.json`
