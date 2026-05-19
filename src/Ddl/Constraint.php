@@ -13,7 +13,7 @@ use Rak200\SqlBuilder\Common\ExpressionInterface;
  * Subclasses implement {@see __toString()} to produce the constraint-specific SQL fragment.
  *
  * @package Rak200\SqlBuilder\Ddl
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 abstract class Constraint implements ExpressionInterface {
 

@@ -8,7 +8,7 @@ namespace Rak200\SqlBuilder\Common;
  * SQL function call expression (e.g. COUNT(*), UPPER(name)).
  *
  * @package Rak200\SqlBuilder\Common
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 final class FunctionExpression extends Expression {
     /** @var ExpressionInterface[] $arguments Normalized argument expressions */

@@ -14,7 +14,7 @@ use Rak200\SqlBuilder\Utils\StringUtils;
  * Use {@see ForeignKeyAction} to specify ON DELETE and ON UPDATE behaviors.
  *
  * @package Rak200\SqlBuilder\Ddl
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 class ForeignKey extends Constraint {
 

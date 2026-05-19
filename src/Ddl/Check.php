@@ -13,7 +13,7 @@ use Rak200\SqlBuilder\Common\ExpressionInterface;
  * Supports both raw strings and expression objects as conditions.
  *
  * @package Rak200\SqlBuilder\Ddl
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 class Check extends Constraint {
 

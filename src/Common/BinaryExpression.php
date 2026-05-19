@@ -10,7 +10,7 @@ use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
  * SQL binary expression combining two operands with an operator (e.g. `a = b`, `x AND y`).
  *
  * @package Rak200\SqlBuilder\Common
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 final class BinaryExpression extends Expression {
     /**

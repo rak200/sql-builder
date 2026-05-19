@@ -34,7 +34,7 @@ use InvalidArgumentException;
  * ```
  *
  * @package Rak200\SqlBuilder\Ddl
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 class Sequence implements ExpressionInterface {
 

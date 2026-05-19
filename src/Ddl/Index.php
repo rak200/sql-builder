@@ -13,7 +13,7 @@ use Rak200\SqlBuilder\Common\ExpressionInterface;
  * Used in CREATE TABLE statements with a fluent interface.
  *
  * @package Rak200\SqlBuilder\Ddl
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 class Index implements ExpressionInterface {
     /**

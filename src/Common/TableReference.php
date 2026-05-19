@@ -11,7 +11,7 @@ use InvalidArgumentException;
  * SQL table or subquery reference with optional alias for use in FROM and JOIN clauses.
  *
  * @package Rak200\SqlBuilder\Common
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 final class TableReference implements ExpressionInterface {
     /**

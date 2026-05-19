@@ -13,7 +13,7 @@ use InvalidArgumentException;
  * SQL JOIN clause builder supporting INNER, LEFT, RIGHT, FULL, CROSS and NATURAL variants.
  *
  * @package Rak200\SqlBuilder\Common
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 final class Join implements ExpressionInterface {
 

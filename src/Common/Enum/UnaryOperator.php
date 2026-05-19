@@ -8,7 +8,7 @@ namespace Rak200\SqlBuilder\Common\Enum;
  * Enum UnaryOperator
  * Defines SQL prefix unary operators for use in query expressions.
  * @package Rak200\SqlBuilder\Common\Enum
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 enum UnaryOperator: string {
 

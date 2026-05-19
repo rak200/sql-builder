@@ -8,7 +8,7 @@ namespace Rak200\SqlBuilder\Ddl\Enum;
  * Enum DataType
  * Defines common SQL column data types for MySQL/MariaDB.
  * @package Rak200\SqlBuilder\Ddl\Enum
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 enum DataType: string {
 

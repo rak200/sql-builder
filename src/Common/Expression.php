@@ -17,7 +17,7 @@ use InvalidArgumentException;
  * This is the base class for all SQL expression builders.
  *
  * @package Rak200\SqlBuilder\Common
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 abstract class Expression implements ExpressionInterface {
     private ?string $alias = null;

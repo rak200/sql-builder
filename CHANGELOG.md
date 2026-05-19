@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-05-18
+
+### Added
+- `Insert` builder: `INSERT INTO ... VALUES (...)` (single/multi-row), `INSERT INTO ... SELECT ...`, `ON DUPLICATE KEY UPDATE` (MySQL/MariaDB upsert) via `onDuplicateKeyUpdate()`, and `RETURNING` (PostgreSQL/MariaDB/SQLite) via `returning()`. Scalar values are auto-quoted; `ExpressionInterface` values (e.g. `Expression::raw('NOW()')`, `VALUES(col)`) pass through unchanged.
+- `Update` builder: `UPDATE <table> [AS alias] SET ... [WHERE ...]` with chainable `where()` / `andWhere()` / `orWhere()` and per-column `set()` (scalars quoted, expressions pass through). Plus dialect extensions: multi-table `FROM` (PostgreSQL), `ORDER BY` and `LIMIT` (MySQL), and `RETURNING`.
+- `Delete` builder is now functional: `DELETE FROM <table> [AS alias] [WHERE ...]` with chainable `where()` / `andWhere()` / `orWhere()`. Plus dialect extensions: multi-table `USING` (PostgreSQL), `ORDER BY` and `LIMIT` (MySQL), and `RETURNING`.
+- 53 new unit tests under `tests/Unit/Dml/` covering Insert/Update/Delete happy paths, validation errors, multi-row INSERT, INSERT ... SELECT, ON DUPLICATE KEY UPDATE, RETURNING, multi-table FROM/USING, ORDER BY / LIMIT, AND/OR WHERE composition, and full-pipeline clause order.
+
+### Changed
+- Normalised `@author` tag in every source file under `src/` to `rak200 <rak.ricardo@windowslive.com>`.
+
 ## [0.0.3] - 2026-05-18
 
 ### Added
@@ -34,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.0.3...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.1.0...HEAD
+[0.1.0]: https://github.com/rak200/sql-builder/compare/0.0.3...0.1.0
 [0.0.3]: https://github.com/rak200/sql-builder/compare/0.0.2...0.0.3
 [0.0.2]: https://github.com/rak200/sql-builder/compare/0.0.1...0.0.2
 [0.0.1]: https://github.com/rak200/sql-builder/releases/tag/0.0.1

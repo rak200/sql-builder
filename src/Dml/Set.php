@@ -16,7 +16,7 @@ use InvalidArgumentException;
  * SQL set operation builder for UNION, UNION ALL, EXCEPT and INTERSECT queries.
  *
  * @package Rak200\SqlBuilder\Dml
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 final class Set implements ExpressionInterface {
     /** @var string UNION set operator */

@@ -10,7 +10,7 @@ namespace Rak200\SqlBuilder\Common\Enum;
  * Used as the type-safe first argument to {@see \Rak200\SqlBuilder\Common\Join}.
  *
  * @package Rak200\SqlBuilder\Common\Enum
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 enum JoinType: string {
     /** Standard inner join — only rows with a match in both tables. */

@@ -11,7 +11,7 @@ namespace Rak200\SqlBuilder\Common\Enum;
  * {@see \Rak200\SqlBuilder\Ddl\ForeignKey::onUpdate()} to prevent invalid SQL from being generated.
  *
  * @package Rak200\SqlBuilder\Common\Enum
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 enum ForeignKeyAction: string {
     /** Delete or update the child row together with the parent row. */

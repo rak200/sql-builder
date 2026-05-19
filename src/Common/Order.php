@@ -11,7 +11,7 @@ use Rak200\SqlBuilder\Common\Enum\SortDirection;
  * SQL ORDER BY entry with optional direction and NULL placement.
  *
  * @package Rak200\SqlBuilder\Common
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 final class Order {
 

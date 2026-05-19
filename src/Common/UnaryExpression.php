@@ -13,7 +13,7 @@ use Rak200\SqlBuilder\Common\Enum\UnaryOperator;
  * Examples: NOT, EXISTS, IS NULL, etc.
  *
  * @package Rak200\SqlBuilder\Common
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 class UnaryExpression extends Expression {
 

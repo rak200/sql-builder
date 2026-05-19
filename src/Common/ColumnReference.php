@@ -13,7 +13,7 @@ namespace Rak200\SqlBuilder\Common;
  * use {@see ColumnExpression} instead.
  *
  * @package Rak200\SqlBuilder\Common
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 final class ColumnReference implements ExpressionInterface {
 

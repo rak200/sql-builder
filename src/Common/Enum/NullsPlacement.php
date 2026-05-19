@@ -11,7 +11,7 @@ namespace Rak200\SqlBuilder\Common\Enum;
  * when used as the optional third argument to {@see \Rak200\SqlBuilder\Common\Order}.
  *
  * @package Rak200\SqlBuilder\Common\Enum
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 enum NullsPlacement: string {
     /** Place NULL values before non-NULL values. */

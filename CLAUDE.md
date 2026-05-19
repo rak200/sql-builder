@@ -24,7 +24,7 @@ sql-builder/
 │   │   ├── Expression.php            # abstract base with factory methods
 │   │   ├── Join.php, Order.php       # JOIN and ORDER BY value objects
 │   │   └── *Expression.php           # concrete expression types
-│   ├── Dml/              # SELECT, Set (UNION/EXCEPT/INTERSECT); Insert/Update/Delete are stubs
+│   ├── Dml/              # Select, Set (UNION/EXCEPT/INTERSECT), Insert, Update, Delete
 │   ├── Ddl/
 │   │   ├── Enum/DataType.php         # SQL column type enum
 │   │   ├── Column.php, Table.php, View.php, Sequence.php, Index.php
@@ -78,7 +78,7 @@ Test classes mirror the source namespace (e.g. `Rak200\SqlBuilder\Common\Express
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.0.3** — unstable while the API stabilises.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.1.0** — unstable while the API stabilises.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

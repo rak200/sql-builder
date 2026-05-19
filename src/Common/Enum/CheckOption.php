@@ -11,7 +11,7 @@ namespace Rak200\SqlBuilder\Common\Enum;
  * Used as the optional argument to {@see \Rak200\SqlBuilder\Ddl\View::withCheckOption()}.
  *
  * @package Rak200\SqlBuilder\Common\Enum
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 enum CheckOption: string {
     /**

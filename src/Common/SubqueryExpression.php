@@ -10,7 +10,7 @@ use Rak200\SqlBuilder\Dml\Select;
  * SQL subquery expression that wraps a SELECT statement in parentheses.
  *
  * @package Rak200\SqlBuilder\Common
- * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
 final class SubqueryExpression extends Expression {
 

@@ -71,6 +71,85 @@ $union = Set::create($selectA)
     ->limit(50);
 ```
 
+### INSERT
+
+```php
+use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Dml\Insert;
+
+// Multi-row literal values
+$insert = Insert::create()
+    ->into('users')
+    ->columns('name', 'email', 'created_at')
+    ->values('Alice', 'alice@example.com', Expression::raw('NOW()'))
+    ->values('Bob',   'bob@example.com',   Expression::raw('NOW()'));
+
+// INSERT ... SELECT
+$archive = Insert::create()
+    ->into('users_archive')
+    ->columns('id', 'name')
+    ->select($selectQuery);
+
+// MySQL upsert with RETURNING (MariaDB, PostgreSQL, SQLite)
+$upsert = Insert::create()
+    ->into('users')
+    ->columns('id', 'email')
+    ->values(1, 'a@example.com')
+    ->onDuplicateKeyUpdate('email', Expression::raw('VALUES(email)'))
+    ->returning('id');
+```
+
+Scalar values are quoted automatically; `ExpressionInterface` arguments (e.g. `Expression::raw('NOW()')`, sequences) pass through unchanged.
+
+### UPDATE
+
+```php
+use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
+use Rak200\SqlBuilder\Common\Enum\SortDirection;
+use Rak200\SqlBuilder\Dml\Update;
+
+$update = Update::create()
+    ->table('users', 'u')
+    ->set('name', 'New Name')
+    ->set('updated_at', Expression::raw('NOW()'))
+    ->where(Expression::binary('id', BinaryOperator::Equal, 1));
+
+// Multi-table (PostgreSQL FROM), ORDER BY / LIMIT (MySQL), RETURNING
+$bulk = Update::create()
+    ->table('users', 'u')
+    ->set('name', Expression::ref('a.new_name'))
+    ->from('audit', 'a')
+    ->where(Expression::binary('u.id', BinaryOperator::Equal, Expression::ref('a.user_id')))
+    ->orderBy('u.id', SortDirection::DESC)
+    ->limit(100)
+    ->returning('u.id');
+```
+
+WHERE conditions can be incrementally composed with `andWhere()` and `orWhere()`.
+
+### DELETE
+
+```php
+use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
+use Rak200\SqlBuilder\Common\Enum\SortDirection;
+use Rak200\SqlBuilder\Dml\Delete;
+
+$delete = Delete::create()
+    ->from('users')
+    ->where(Expression::binary('active', BinaryOperator::Equal, 0));
+
+// Multi-table (PostgreSQL USING), ORDER BY / LIMIT (MySQL), RETURNING
+$bulk = Delete::create()
+    ->from('users', 'u')
+    ->using('audit', 'a')
+    ->where(Expression::binary('u.id', BinaryOperator::Equal, Expression::ref('a.user_id')))
+    ->orderBy('u.id', SortDirection::DESC)
+    ->limit(100)
+    ->returning('u.id');
+```
+
 ## DDL — Schema
 
 ### Table
@@ -164,21 +243,16 @@ Use `Expression::column()` for SELECT projections (supports an alias), `Expressi
 
 ## Status & Roadmap
 
-Current version: **0.0.3** — early development, **unstable**. The API may break between `0.0.x` releases and the library is not yet recommended for production use.
+Current version: **0.1.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
 
 ### What works today
 
-- **DML:** `Select` (DISTINCT, JOINs incl. NATURAL/USING, WHERE/AND/OR, GROUP BY, HAVING, ORDER BY with NULL placement, LIMIT/OFFSET, subqueries), `Set` (UNION, UNION ALL, EXCEPT, INTERSECT) with ORDER BY/LIMIT/OFFSET on the combined result.
+- **DML:** `Select` (DISTINCT, JOINs incl. NATURAL/USING, WHERE/AND/OR, GROUP BY, HAVING, ORDER BY with NULL placement, LIMIT/OFFSET, subqueries), `Set` (UNION, UNION ALL, EXCEPT, INTERSECT) with ORDER BY/LIMIT/OFFSET on the combined result, `Insert` (single/multi-row VALUES, INSERT ... SELECT, ON DUPLICATE KEY UPDATE, RETURNING), `Update` (SET, multi-table FROM, WHERE, ORDER BY/LIMIT, RETURNING), `Delete` (multi-table USING, WHERE, ORDER BY/LIMIT, RETURNING).
 - **DDL:** `Table` (CREATE and ALTER: ADD/DROP/MODIFY/RENAME column, ADD/DROP CONSTRAINT, ADD INDEX, RENAME TO), `Column`, `View` (with OR REPLACE / TEMPORARY / IF NOT EXISTS / WITH CHECK OPTION), `Sequence` (CREATE and ALTER incl. RESTART / NEXTVAL), `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting.
 - **Tests:** PHPUnit 13 unit suite under `tests/Unit/`; run with `composer test`.
 
 ### Not yet implemented
-
-DML write statements
-- [ ] `Insert` — currently an empty stub at `src/Dml/Insert.php`
-- [ ] `Update` — currently an empty stub at `src/Dml/Update.php`
-- [ ] `Delete` — currently an empty stub at `src/Dml/Delete.php`
 
 DDL drop / truncate
 - [ ] `DROP TABLE` (incl. `IF EXISTS`, `CASCADE`)
