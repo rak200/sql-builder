@@ -1,7 +1,7 @@
 {
   "name": "rak200/sql-builder",
   "description": "Fluent SQL query and schema builder for PHP 8.4+",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "library",
   "license": "MIT",
   "authors": [
@@ -13,7 +13,7 @@
   "require": {
     "php": "^8.4",
     "rak200/caster": "^1.0.0",
-    "rak200/collections": "^0.0.1"
+    "rak200/collections": "0.*"
   },
   "repositories": [
     {
@@ -29,5 +29,16 @@
     "psr-4": {
       "Rak200\\SqlBuilder\\": "src/"
     }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Rak200\\SqlBuilder\\Tests\\": "tests/"
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^13.1"
+  },
+  "scripts": {
+    "test": "phpunit"
   }
 }

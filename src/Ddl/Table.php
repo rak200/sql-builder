@@ -6,7 +6,7 @@ namespace Rak200\SqlBuilder\Ddl;
 
 use Rak200\SqlBuilder\Common\Expression;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
-use Rak200\Collections\Collection;
+use Rak200\Collections\Vector;
 use Rak200\SqlBuilder\Utils\StringUtils;
 use InvalidArgumentException;
 
@@ -27,19 +27,19 @@ class Table implements ExpressionInterface {
      * Constructor for the Table class.
      *
      * @param string $name Table name.
-     * @param Collection<Column>|null $columns Collection of columns.
-     * @param Collection<Index>|null $indexes Collection of indexes.
-     * @param Collection<Constraint>|null $constraints Collection of constraints.
+     * @param Vector<Column>|null $columns Vector of columns.
+     * @param Vector<Index>|null $indexes Vector of indexes.
+     * @param Vector<Constraint>|null $constraints Vector of constraints.
      */
     public function __construct(
         private string $name,
-        private ?Collection $columns = null,
-        private ?Collection $indexes = null,
-        private ?Collection $constraints = null
+        private ?Vector $columns = null,
+        private ?Vector $indexes = null,
+        private ?Vector $constraints = null
     ) {
-        $this->columns ??= new Collection(Column::class);
-        $this->indexes ??= new Collection(Index::class);
-        $this->constraints ??= new Collection(Constraint::class);
+        $this->columns ??= new Vector(Column::class);
+        $this->indexes ??= new Vector(Index::class);
+        $this->constraints ??= new Vector(Constraint::class);
     }
 
     /**

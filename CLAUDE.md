@@ -10,26 +10,32 @@ Depends on:
 - `rak200/caster ^1.0.0` for the `ToString` contract used by `ExpressionInterface`
 - `rak200/collections ^0.0.1` for the typed `Collection` container used internally
 
+Dev dependencies:
+- `phpunit/phpunit ^13.1` for the test suite
+
 ## Structure
 
 ```
 sql-builder/
-└── src/
-    ├── Common/           # Shared expression building blocks
-    │   ├── Enum/         # BinaryOperator, UnaryOperator, JoinType, SortDirection, NullsPlacement, ForeignKeyAction, CheckOption
-    │   ├── ExpressionInterface.php   # extends Rak200\Caster\Contracts\ToString
-    │   ├── Expression.php            # abstract base with factory methods
-    │   ├── Join.php, Order.php       # JOIN and ORDER BY value objects
-    │   └── *Expression.php           # concrete expression types
-    ├── Dml/              # SELECT, Set (UNION/EXCEPT/INTERSECT); Insert/Update/Delete are stubs
-    ├── Ddl/
-    │   ├── Enum/DataType.php         # SQL column type enum
-    │   ├── Column.php, Table.php, View.php, Sequence.php, Index.php
-    │   └── Constraint.php, PrimaryKey.php, UniqueKey.php, ForeignKey.php, Check.php
-    └── Utils/            # Internal: StringUtils (not part of public API)
+├── src/
+│   ├── Common/           # Shared expression building blocks
+│   │   ├── Enum/         # BinaryOperator, UnaryOperator, JoinType, SortDirection, NullsPlacement, ForeignKeyAction, CheckOption
+│   │   ├── ExpressionInterface.php   # extends Rak200\Caster\Contracts\ToString
+│   │   ├── Expression.php            # abstract base with factory methods
+│   │   ├── Join.php, Order.php       # JOIN and ORDER BY value objects
+│   │   └── *Expression.php           # concrete expression types
+│   ├── Dml/              # SELECT, Set (UNION/EXCEPT/INTERSECT); Insert/Update/Delete are stubs
+│   ├── Ddl/
+│   │   ├── Enum/DataType.php         # SQL column type enum
+│   │   ├── Column.php, Table.php, View.php, Sequence.php, Index.php
+│   │   └── Constraint.php, PrimaryKey.php, UniqueKey.php, ForeignKey.php, Check.php
+│   └── Utils/            # Internal: StringUtils (not part of public API)
+└── tests/
+    ├── Unit/             # Fast, isolated tests against single classes
+    └── Integration/      # End-to-end SQL generation tests across multiple builders
 ```
 
-All classes live under `Rak200\SqlBuilder\` (PSR-4 from `src/`).
+Production classes live under `Rak200\SqlBuilder\` (PSR-4 from `src/`); test classes live under `Rak200\SqlBuilder\Tests\` (PSR-4 from `tests/`, dev-only).
 
 ## Key Abstractions
 
@@ -59,13 +65,27 @@ All classes live under `Rak200\SqlBuilder\` (PSR-4 from `src/`).
 
 **Known limitation:** uses string concatenation with quoting helpers — no prepared statement parameters yet. SQL injection risk if user input reaches value positions.
 
+## Testing
+
+PHPUnit 13 is configured via `phpunit.xml` with two suites: `Unit` and `Integration`. The strict flags `failOnWarning` and `failOnRisky` are enabled — risky/incomplete tests fail the run.
+
+Run:
+- `composer test` — runs all suites
+- `vendor/bin/phpunit --testsuite Unit` — only the unit suite
+- `vendor/bin/phpunit tests/Unit/SomeTest.php` — single file
+
+Test classes mirror the source namespace (e.g. `Rak200\SqlBuilder\Common\Expression` → `Rak200\SqlBuilder\Tests\Unit\Common\ExpressionTest`). Since the library only produces SQL strings, tests assert on the exact string output of expressions/builders — no database connection is required.
+
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.0.2** — unstable until unit tests are added.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.0.3** — unstable while the API stabilises.
 
-Release process:
+When releasing a new version:
 1. Update `"version"` in `composer.json`
-2. Commit and push
-3. `git tag 0.x.y && git push origin 0.x.y`
+2. Update `CHANGELOG.md`: add a new `## [x.y.z] - YYYY-MM-DD` section with `### Added / Changed / Fixed / Removed` entries and a comparison link at the bottom
+3. Update the version reference in `README.md`
+4. Commit and push
+5. Create and push a git tag matching the version: `git tag x.y.z && git push origin x.y.z`
 
-Consumers using `"type": "vcs"` resolve versions from git tags.
+Consumers using `"type": "vcs"` in their `composer.json` resolve versions from git tags.
+

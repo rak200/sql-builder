@@ -8,7 +8,7 @@ use Rak200\SqlBuilder\Common\Enum\NullsPlacement;
 use Rak200\SqlBuilder\Common\Enum\SortDirection;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Common\Order;
-use Rak200\Collections\Collection;
+use Rak200\Collections\Vector;
 use Rak200\SqlBuilder\Utils\StringUtils;
 use InvalidArgumentException;
 
@@ -30,15 +30,15 @@ final class Set implements ExpressionInterface {
 
     /** @var array<array{type: string|null, query: Select}> $operations Registered set operations */
     private array $operations = [];
-    /** @var Collection<Order> $orderBy ORDER BY entries applied to the full result */
-    private Collection $orderBy;
+    /** @var Vector<Order> $orderBy ORDER BY entries applied to the full result */
+    private Vector $orderBy;
     /** @var int|null $limit Row limit for the combined result */
     private ?int $limit = null;
     /** @var int|null $offset Row offset for the combined result */
     private ?int $offset = null;
 
     private function __construct() {
-        $this->orderBy = new Collection(Order::class);
+        $this->orderBy = new Vector(Order::class);
     }
 
     /**

@@ -12,7 +12,7 @@ use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Common\Join;
 use Rak200\SqlBuilder\Common\Order;
 use Rak200\SqlBuilder\Common\TableReference;
-use Rak200\Collections\Collection;
+use Rak200\Collections\Vector;
 use Rak200\SqlBuilder\Utils\StringUtils;
 use InvalidArgumentException;
 
@@ -35,30 +35,30 @@ use InvalidArgumentException;
 final class Select implements ExpressionInterface {
     /** @var bool $distinct Whether to apply the DISTINCT modifier */
     private bool $distinct = false;
-    /** @var Collection<ExpressionInterface> $columns Selected columns or expressions */
-    private Collection $columns;
+    /** @var Vector<ExpressionInterface> $columns Selected columns or expressions */
+    private Vector $columns;
     /** @var TableReference|null $from The FROM table or subquery */
     private ?TableReference $from = null;
-    /** @var Collection<Join> $joins Registered JOIN clauses */
-    private Collection $joins;
+    /** @var Vector<Join> $joins Registered JOIN clauses */
+    private Vector $joins;
     /** @var ExpressionInterface|null $where The WHERE condition */
     private ?ExpressionInterface $where = null;
-    /** @var Collection<ExpressionInterface> $groupBy GROUP BY expressions */
-    private Collection $groupBy;
+    /** @var Vector<ExpressionInterface> $groupBy GROUP BY expressions */
+    private Vector $groupBy;
     /** @var ExpressionInterface|null $having The HAVING condition */
     private ?ExpressionInterface $having = null;
-    /** @var Collection<Order> $orderBy ORDER BY entries */
-    private Collection $orderBy;
+    /** @var Vector<Order> $orderBy ORDER BY entries */
+    private Vector $orderBy;
     /** @var int|null $limit Row limit */
     private ?int $limit = null;
     /** @var int|null $offset Row offset */
     private ?int $offset = null;
 
     public function __construct() {
-        $this->columns = new Collection(ExpressionInterface::class);
-        $this->joins   = new Collection(Join::class);
-        $this->groupBy = new Collection(ExpressionInterface::class);
-        $this->orderBy = new Collection(Order::class);
+        $this->columns = new Vector(ExpressionInterface::class);
+        $this->joins   = new Vector(Join::class);
+        $this->groupBy = new Vector(ExpressionInterface::class);
+        $this->orderBy = new Vector(Order::class);
     }
 
     /**

@@ -82,7 +82,11 @@ final class Join implements ExpressionInterface {
             return "$sql ON {$this->on}";
         }
 
-        return StringUtils::join($this->using ?? [], ', ', "$sql USING (", ')');
+        if ($this->using === null) {
+            return $sql;
+        }
+
+        return StringUtils::join($this->using, ', ', "$sql USING (", ')');
     }
 
     /**
