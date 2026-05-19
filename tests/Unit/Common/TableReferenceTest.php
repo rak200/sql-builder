@@ -11,21 +11,21 @@ use Rak200\SqlBuilder\Dml\Select;
 
 final class TableReferenceTest extends TestCase {
 
-    public function test_table_name_without_alias(): void {
+    public function testTableNameWithoutAlias(): void {
         $this->assertSame('`users`', (string) new TableReference('users'));
     }
 
-    public function test_table_name_with_alias(): void {
+    public function testTableNameWithAlias(): void {
         $this->assertSame('`users` AS `u`', (string) new TableReference('users', 'u'));
     }
 
-    public function test_subquery_requires_alias(): void {
+    public function testSubqueryRequiresAlias(): void {
         $this->expectException(InvalidArgumentException::class);
 
         new TableReference(Select::create()->select('1'));
     }
 
-    public function test_subquery_with_alias_renders_with_parentheses(): void {
+    public function testSubqueryWithAliasRendersWithParentheses(): void {
         $select = Select::create()->select('id')->from('users');
         $ref    = new TableReference($select, 'u');
 

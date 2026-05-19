@@ -16,42 +16,42 @@ final class SetTest extends TestCase {
         return Select::create()->select('id')->from($table);
     }
 
-    public function test_create_wraps_single_query_in_parentheses(): void {
+    public function testCreateWrapsSingleQueryInParentheses(): void {
         $a   = $this->selectFrom('a');
         $set = Set::create($a);
 
         $this->assertSame("($a)", (string) $set);
     }
 
-    public function test_union(): void {
+    public function testUnion(): void {
         $a = $this->selectFrom('a');
         $b = $this->selectFrom('b');
 
         $this->assertSame("($a) UNION ($b)", (string) Set::create($a)->union($b));
     }
 
-    public function test_union_all(): void {
+    public function testUnionAll(): void {
         $a = $this->selectFrom('a');
         $b = $this->selectFrom('b');
 
         $this->assertSame("($a) UNION ALL ($b)", (string) Set::create($a)->union($b, all: true));
     }
 
-    public function test_except(): void {
+    public function testExcept(): void {
         $a = $this->selectFrom('a');
         $b = $this->selectFrom('b');
 
         $this->assertSame("($a) EXCEPT ($b)", (string) Set::create($a)->except($b));
     }
 
-    public function test_intersect(): void {
+    public function testIntersect(): void {
         $a = $this->selectFrom('a');
         $b = $this->selectFrom('b');
 
         $this->assertSame("($a) INTERSECT ($b)", (string) Set::create($a)->intersect($b));
     }
 
-    public function test_chained_operators(): void {
+    public function testChainedOperators(): void {
         $a = $this->selectFrom('a');
         $b = $this->selectFrom('b');
         $c = $this->selectFrom('c');
@@ -62,7 +62,7 @@ final class SetTest extends TestCase {
         $this->assertSame("($a) UNION ($b) EXCEPT ($c) INTERSECT ($d)", $sql);
     }
 
-    public function test_order_by_limit_offset_apply_to_combined_result(): void {
+    public function testOrderByLimitOffsetApplyToCombinedResult(): void {
         $a = $this->selectFrom('a');
         $b = $this->selectFrom('b');
 
@@ -75,12 +75,12 @@ final class SetTest extends TestCase {
         $this->assertSame("($a) UNION ($b) ORDER BY `id` DESC LIMIT 10 OFFSET 5", $sql);
     }
 
-    public function test_limit_rejects_negative(): void {
+    public function testLimitRejectsNegative(): void {
         $this->expectException(InvalidArgumentException::class);
         Set::create($this->selectFrom('a'))->limit(-1);
     }
 
-    public function test_offset_rejects_negative(): void {
+    public function testOffsetRejectsNegative(): void {
         $this->expectException(InvalidArgumentException::class);
         Set::create($this->selectFrom('a'))->offset(-1);
     }

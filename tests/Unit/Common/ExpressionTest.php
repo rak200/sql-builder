@@ -32,7 +32,7 @@ final class ExpressionTest extends TestCase {
     }
 
     #[DataProvider('identifierProvider')]
-    public function test_quote_identifier(string $input, string $expected): void {
+    public function testQuoteIdentifier(string $input, string $expected): void {
         $this->assertSame($expected, Expression::quoteIdentifier($input));
     }
 
@@ -51,59 +51,59 @@ final class ExpressionTest extends TestCase {
     }
 
     #[DataProvider('valueProvider')]
-    public function test_quote_value(mixed $input, string $expected): void {
+    public function testQuoteValue(mixed $input, string $expected): void {
         $this->assertSame($expected, Expression::quoteValue($input));
     }
 
-    public function test_raw_returns_raw_expression(): void {
+    public function testRawReturnsRawExpression(): void {
         $raw = Expression::raw('NOW()');
 
         $this->assertInstanceOf(RawExpression::class, $raw);
         $this->assertSame('NOW()', (string) $raw);
     }
 
-    public function test_column_returns_column_expression_with_alias(): void {
+    public function testColumnReturnsColumnExpressionWithAlias(): void {
         $col = Expression::column('users.id', 'uid');
 
         $this->assertInstanceOf(ColumnExpression::class, $col);
         $this->assertSame('`users`.`id` AS `uid`', (string) $col);
     }
 
-    public function test_ref_returns_column_reference_without_alias(): void {
+    public function testRefReturnsColumnReferenceWithoutAlias(): void {
         $ref = Expression::ref('u.name');
 
         $this->assertInstanceOf(ColumnReference::class, $ref);
         $this->assertSame('`u`.`name`', (string) $ref);
     }
 
-    public function test_identifier_returns_simple_identifier(): void {
+    public function testIdentifierReturnsSimpleIdentifier(): void {
         $id = Expression::identifier('id');
 
         $this->assertInstanceOf(SimpleIdentifier::class, $id);
         $this->assertSame('`id`', (string) $id);
     }
 
-    public function test_identifier_rejects_qualified_names(): void {
+    public function testIdentifierRejectsQualifiedNames(): void {
         $this->expectException(InvalidArgumentException::class);
 
         Expression::identifier('u.id');
     }
 
-    public function test_value_returns_value_expression(): void {
+    public function testValueReturnsValueExpression(): void {
         $value = Expression::value('foo');
 
         $this->assertInstanceOf(ValueExpression::class, $value);
         $this->assertSame("'foo'", (string) $value);
     }
 
-    public function test_func_uppercases_name_and_normalizes_args(): void {
+    public function testFuncUppercasesNameAndNormalizesArgs(): void {
         $fn = Expression::func('coalesce', 'name', null);
 
         $this->assertInstanceOf(FunctionExpression::class, $fn);
         $this->assertSame("COALESCE(`name`, NULL)", (string) $fn);
     }
 
-    public function test_subquery_wraps_a_select(): void {
+    public function testSubqueryWrapsASelect(): void {
         $select  = Select::create()->select('1');
         $subquery = Expression::subquery($select, 's');
 
@@ -111,19 +111,19 @@ final class ExpressionTest extends TestCase {
         $this->assertSame('(' . $select . ') AS `s`', (string) $subquery);
     }
 
-    public function test_binary_normalizes_string_to_column_reference(): void {
+    public function testBinaryNormalizesStringToColumnReference(): void {
         $expr = Expression::binary('age', BinaryOperator::GreaterThanOrEqual, 18);
 
         $this->assertSame('(`age` >= 18)', (string) $expr);
     }
 
-    public function test_unary_normalizes_operand(): void {
+    public function testUnaryNormalizesOperand(): void {
         $expr = Expression::unary(UnaryOperator::Not, 'active');
 
         $this->assertSame('NOT (`active`)', (string) $expr);
     }
 
-    public function test_and_combines_multiple_expressions_left_to_right(): void {
+    public function testAndCombinesMultipleExpressionsLeftToRight(): void {
         $a = Expression::binary('x', BinaryOperator::Equal, 1);
         $b = Expression::binary('y', BinaryOperator::Equal, 2);
         $c = Expression::binary('z', BinaryOperator::Equal, 3);
@@ -131,26 +131,26 @@ final class ExpressionTest extends TestCase {
         $this->assertSame('(((`x` = 1) AND (`y` = 2)) AND (`z` = 3))', (string) Expression::and($a, $b, $c));
     }
 
-    public function test_or_combines_multiple_expressions(): void {
+    public function testOrCombinesMultipleExpressions(): void {
         $a = Expression::binary('x', BinaryOperator::Equal, 1);
         $b = Expression::binary('y', BinaryOperator::Equal, 2);
 
         $this->assertSame('((`x` = 1) OR (`y` = 2))', (string) Expression::or($a, $b));
     }
 
-    public function test_and_requires_at_least_one_expression(): void {
+    public function testAndRequiresAtLeastOneExpression(): void {
         $this->expectException(InvalidArgumentException::class);
 
         Expression::and();
     }
 
-    public function test_or_requires_at_least_one_expression(): void {
+    public function testOrRequiresAtLeastOneExpression(): void {
         $this->expectException(InvalidArgumentException::class);
 
         Expression::or();
     }
 
-    public function test_exists_wraps_subquery(): void {
+    public function testExistsWrapsSubquery(): void {
         $sub = Select::create()->select('1')->from('users');
         $expr = Expression::exists($sub);
 
@@ -158,21 +158,21 @@ final class ExpressionTest extends TestCase {
         $this->assertSame("EXISTS (($sub))", (string) $expr);
     }
 
-    public function test_not_negates_a_normalized_expression(): void {
+    public function testNotNegatesANormalizedExpression(): void {
         $expr = Expression::not('active');
 
         $this->assertSame('NOT (`active`)', (string) $expr);
     }
 
-    public function test_count_defaults_to_star_and_count_alias(): void {
+    public function testCountDefaultsToStarAndCountAlias(): void {
         $this->assertSame('COUNT(*) AS `COUNT`', (string) Expression::count());
     }
 
-    public function test_count_accepts_custom_alias(): void {
+    public function testCountAcceptsCustomAlias(): void {
         $this->assertSame('COUNT(`id`) AS `total`', (string) Expression::count('id', 'total'));
     }
 
-    public function test_sum_avg_min_max_render_as_aggregates(): void {
+    public function testSumAvgMinMaxRenderAsAggregates(): void {
         $this->assertSame('SUM(`amount`) AS `SUM`',  (string) Expression::sum('amount'));
         $this->assertSame('AVG(`amount`) AS `AVG`',  (string) Expression::avg('amount'));
         $this->assertSame('MIN(`amount`) AS `MIN`',  (string) Expression::min('amount'));

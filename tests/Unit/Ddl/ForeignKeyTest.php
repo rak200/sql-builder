@@ -10,7 +10,7 @@ use Rak200\SqlBuilder\Ddl\ForeignKey;
 
 final class ForeignKeyTest extends TestCase {
 
-    public function test_basic_foreign_key(): void {
+    public function testBasicForeignKey(): void {
         $sql = (string) ForeignKey::create('fk_users_role')
             ->columns(['role_id'])
             ->references('roles', ['id']);
@@ -21,7 +21,7 @@ final class ForeignKeyTest extends TestCase {
         );
     }
 
-    public function test_on_delete(): void {
+    public function testOnDelete(): void {
         $sql = (string) ForeignKey::create('fk_x')
             ->columns(['parent_id'])
             ->references('parents', ['id'])
@@ -30,7 +30,7 @@ final class ForeignKeyTest extends TestCase {
         $this->assertStringEndsWith('ON DELETE CASCADE', $sql);
     }
 
-    public function test_on_update(): void {
+    public function testOnUpdate(): void {
         $sql = (string) ForeignKey::create('fk_x')
             ->columns(['parent_id'])
             ->references('parents', ['id'])
@@ -39,7 +39,7 @@ final class ForeignKeyTest extends TestCase {
         $this->assertStringEndsWith('ON UPDATE SET NULL', $sql);
     }
 
-    public function test_on_delete_and_on_update(): void {
+    public function testOnDeleteAndOnUpdate(): void {
         $sql = (string) ForeignKey::create('fk_x')
             ->columns(['parent_id'])
             ->references('parents', ['id'])
@@ -50,7 +50,7 @@ final class ForeignKeyTest extends TestCase {
         $this->assertStringContainsString('ON UPDATE NO ACTION', $sql);
     }
 
-    public function test_composite_foreign_key(): void {
+    public function testCompositeForeignKey(): void {
         $sql = (string) ForeignKey::create('fk_x')
             ->columns(['a_id', 'b_id'])
             ->references('parents', ['a', 'b']);

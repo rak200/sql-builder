@@ -23,11 +23,11 @@ final class ValueExpressionTest extends TestCase {
     }
 
     #[DataProvider('valueProvider')]
-    public function test_renders_quoted_value(mixed $value, string $expected): void {
+    public function testRendersQuotedValue(mixed $value, string $expected): void {
         $this->assertSame($expected, (string) new ValueExpression($value));
     }
 
-    public function test_appends_alias(): void {
+    public function testAppendsAlias(): void {
         $expr = (new ValueExpression(1))->as('one');
 
         $this->assertSame('1 AS `one`', (string) $expr);

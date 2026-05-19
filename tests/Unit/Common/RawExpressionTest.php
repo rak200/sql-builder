@@ -9,16 +9,16 @@ use Rak200\SqlBuilder\Common\RawExpression;
 
 final class RawExpressionTest extends TestCase {
 
-    public function test_emits_input_verbatim(): void {
+    public function testEmitsInputVerbatim(): void {
         $this->assertSame('NOW()', (string) new RawExpression('NOW()'));
     }
 
-    public function test_does_not_escape_or_quote_anything(): void {
+    public function testDoesNotEscapeOrQuoteAnything(): void {
         $sql = "raw 'value' with \\ slash";
         $this->assertSame($sql, (string) new RawExpression($sql));
     }
 
-    public function test_appends_alias(): void {
+    public function testAppendsAlias(): void {
         $expr = (new RawExpression('NOW()'))->as('now');
 
         $this->assertSame('NOW() AS `now`', (string) $expr);

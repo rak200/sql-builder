@@ -10,14 +10,14 @@ use Rak200\SqlBuilder\Dml\Select;
 
 final class SubqueryExpressionTest extends TestCase {
 
-    public function test_wraps_select_in_parentheses(): void {
+    public function testWrapsSelectInParentheses(): void {
         $select  = Select::create()->select('id')->from('users');
         $subquery = new SubqueryExpression($select);
 
         $this->assertSame("($select)", (string) $subquery);
     }
 
-    public function test_appends_alias_when_provided(): void {
+    public function testAppendsAliasWhenProvided(): void {
         $select  = Select::create()->select('id')->from('users');
         $subquery = new SubqueryExpression($select, 'u');
 

@@ -12,23 +12,23 @@ use Rak200\SqlBuilder\Dml\Select;
 
 final class InsertTest extends TestCase {
 
-    public function test_requires_target_table(): void {
+    public function testRequiresTargetTable(): void {
         $this->expectException(InvalidArgumentException::class);
         (string) Insert::create()->values('x');
     }
 
-    public function test_requires_values_or_select(): void {
+    public function testRequiresValuesOrSelect(): void {
         $this->expectException(InvalidArgumentException::class);
         (string) Insert::create()->into('t');
     }
 
-    public function test_values_without_columns(): void {
+    public function testValuesWithoutColumns(): void {
         $sql = (string) Insert::create()->into('users')->values(1, 'Alice');
 
         $this->assertSame("INSERT INTO `users` VALUES (1, 'Alice')", $sql);
     }
 
-    public function test_values_with_columns(): void {
+    public function testValuesWithColumns(): void {
         $sql = (string) Insert::create()
             ->into('users')
             ->columns('id', 'name')
@@ -37,7 +37,7 @@ final class InsertTest extends TestCase {
         $this->assertSame("INSERT INTO `users` (`id`, `name`) VALUES (1, 'Alice')", $sql);
     }
 
-    public function test_multi_row_values(): void {
+    public function testMultiRowValues(): void {
         $sql = (string) Insert::create()
             ->into('users')
             ->columns('id', 'name')
@@ -50,17 +50,17 @@ final class InsertTest extends TestCase {
         );
     }
 
-    public function test_value_count_must_match_declared_columns(): void {
+    public function testValueCountMustMatchDeclaredColumns(): void {
         $this->expectException(InvalidArgumentException::class);
         Insert::create()->into('users')->columns('id', 'name')->values(1);
     }
 
-    public function test_subsequent_rows_must_match_first_row_arity_when_columns_undeclared(): void {
+    public function testSubsequentRowsMustMatchFirstRowArityWhenColumnsUndeclared(): void {
         $this->expectException(InvalidArgumentException::class);
         Insert::create()->into('users')->values(1, 'a')->values(1, 'a', 'b');
     }
 
-    public function test_expressions_pass_through_unquoted(): void {
+    public function testExpressionsPassThroughUnquoted(): void {
         $sql = (string) Insert::create()
             ->into('events')
             ->columns('type', 'created_at')
@@ -72,7 +72,7 @@ final class InsertTest extends TestCase {
         );
     }
 
-    public function test_null_and_boolean_values(): void {
+    public function testNullAndBooleanValues(): void {
         $sql = (string) Insert::create()
             ->into('t')
             ->values(null, true, false);
@@ -80,7 +80,7 @@ final class InsertTest extends TestCase {
         $this->assertSame('INSERT INTO `t` VALUES (NULL, TRUE, FALSE)', $sql);
     }
 
-    public function test_insert_from_select(): void {
+    public function testInsertFromSelect(): void {
         $source = Select::create()->select('id', 'name')->from('users');
         $sql    = (string) Insert::create()
             ->into('users_archive')
@@ -90,14 +90,14 @@ final class InsertTest extends TestCase {
         $this->assertSame("INSERT INTO `users_archive` (`id`, `name`) $source", $sql);
     }
 
-    public function test_insert_from_select_without_explicit_columns(): void {
+    public function testInsertFromSelectWithoutExplicitColumns(): void {
         $source = Select::create()->select('*')->from('users');
         $sql    = (string) Insert::create()->into('users_archive')->select($source);
 
         $this->assertSame("INSERT INTO `users_archive` $source", $sql);
     }
 
-    public function test_values_after_select_throws(): void {
+    public function testValuesAfterSelectThrows(): void {
         $this->expectException(InvalidArgumentException::class);
         Insert::create()
             ->into('t')
@@ -105,7 +105,7 @@ final class InsertTest extends TestCase {
             ->values(1);
     }
 
-    public function test_select_after_values_throws(): void {
+    public function testSelectAfterValuesThrows(): void {
         $this->expectException(InvalidArgumentException::class);
         Insert::create()
             ->into('t')
@@ -113,7 +113,7 @@ final class InsertTest extends TestCase {
             ->select(Select::create()->select('1'));
     }
 
-    public function test_on_duplicate_key_update_with_scalar_value(): void {
+    public function testOnDuplicateKeyUpdateWithScalarValue(): void {
         $sql = (string) Insert::create()
             ->into('users')
             ->columns('id', 'email')
@@ -126,7 +126,7 @@ final class InsertTest extends TestCase {
         );
     }
 
-    public function test_on_duplicate_key_update_with_expression(): void {
+    public function testOnDuplicateKeyUpdateWithExpression(): void {
         $sql = (string) Insert::create()
             ->into('counters')
             ->columns('id', 'count')
@@ -136,7 +136,7 @@ final class InsertTest extends TestCase {
         $this->assertStringEndsWith('ON DUPLICATE KEY UPDATE `count` = count + 1', $sql);
     }
 
-    public function test_on_duplicate_key_update_multiple_assignments(): void {
+    public function testOnDuplicateKeyUpdateMultipleAssignments(): void {
         $sql = (string) Insert::create()
             ->into('t')
             ->values(1, 'a')
@@ -146,7 +146,7 @@ final class InsertTest extends TestCase {
         $this->assertStringContainsString("ON DUPLICATE KEY UPDATE `a` = 'x', `b` = NOW()", $sql);
     }
 
-    public function test_on_duplicate_key_update_overrides_same_column(): void {
+    public function testOnDuplicateKeyUpdateOverridesSameColumn(): void {
         $sql = (string) Insert::create()
             ->into('t')
             ->values(1)
@@ -156,7 +156,7 @@ final class InsertTest extends TestCase {
         $this->assertStringEndsWith('ON DUPLICATE KEY UPDATE `a` = 2', $sql);
     }
 
-    public function test_returning_with_column_names(): void {
+    public function testReturningWithColumnNames(): void {
         $sql = (string) Insert::create()
             ->into('users')
             ->columns('email')
@@ -169,7 +169,7 @@ final class InsertTest extends TestCase {
         );
     }
 
-    public function test_returning_with_expressions(): void {
+    public function testReturningWithExpressions(): void {
         $sql = (string) Insert::create()
             ->into('users')
             ->values(1)
@@ -178,7 +178,7 @@ final class InsertTest extends TestCase {
         $this->assertStringEndsWith('RETURNING id, `email`', $sql);
     }
 
-    public function test_full_pipeline_with_on_duplicate_and_returning(): void {
+    public function testFullPipelineWithOnDuplicateAndReturning(): void {
         $sql = (string) Insert::create()
             ->into('users')
             ->columns('id', 'email')

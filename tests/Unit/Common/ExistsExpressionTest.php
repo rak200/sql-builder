@@ -11,7 +11,7 @@ use Rak200\SqlBuilder\Dml\Select;
 
 final class ExistsExpressionTest extends TestCase {
 
-    public function test_wraps_subquery_with_exists(): void {
+    public function testWrapsSubqueryWithExists(): void {
         $select  = Select::create()->select('1')->from('users');
         $expr    = new ExistsExpression(new SubqueryExpression($select));
 

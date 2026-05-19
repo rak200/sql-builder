@@ -13,29 +13,29 @@ use Rak200\SqlBuilder\Dml\Update;
 
 final class UpdateTest extends TestCase {
 
-    public function test_requires_target_table(): void {
+    public function testRequiresTargetTable(): void {
         $this->expectException(InvalidArgumentException::class);
         (string) Update::create()->set('a', 1);
     }
 
-    public function test_requires_at_least_one_set(): void {
+    public function testRequiresAtLeastOneSet(): void {
         $this->expectException(InvalidArgumentException::class);
         (string) Update::create()->table('t');
     }
 
-    public function test_basic_update(): void {
+    public function testBasicUpdate(): void {
         $sql = (string) Update::create()->table('users')->set('name', 'Alice');
 
         $this->assertSame("UPDATE `users` SET `name` = 'Alice'", $sql);
     }
 
-    public function test_update_with_alias(): void {
+    public function testUpdateWithAlias(): void {
         $sql = (string) Update::create()->table('users', 'u')->set('name', 'Alice');
 
         $this->assertSame("UPDATE `users` AS `u` SET `name` = 'Alice'", $sql);
     }
 
-    public function test_multiple_sets(): void {
+    public function testMultipleSets(): void {
         $sql = (string) Update::create()
             ->table('users')
             ->set('name', 'Alice')
@@ -44,7 +44,7 @@ final class UpdateTest extends TestCase {
         $this->assertSame("UPDATE `users` SET `name` = 'Alice', `active` = TRUE", $sql);
     }
 
-    public function test_set_with_expression_value(): void {
+    public function testSetWithExpressionValue(): void {
         $sql = (string) Update::create()
             ->table('users')
             ->set('updated_at', Expression::raw('NOW()'));
@@ -52,7 +52,7 @@ final class UpdateTest extends TestCase {
         $this->assertSame('UPDATE `users` SET `updated_at` = NOW()', $sql);
     }
 
-    public function test_set_overrides_previous_value_for_same_column(): void {
+    public function testSetOverridesPreviousValueForSameColumn(): void {
         $sql = (string) Update::create()
             ->table('t')
             ->set('a', 1)
@@ -61,7 +61,7 @@ final class UpdateTest extends TestCase {
         $this->assertSame('UPDATE `t` SET `a` = 2', $sql);
     }
 
-    public function test_with_where(): void {
+    public function testWithWhere(): void {
         $sql = (string) Update::create()
             ->table('users')
             ->set('active', false)
@@ -70,7 +70,7 @@ final class UpdateTest extends TestCase {
         $this->assertSame('UPDATE `users` SET `active` = FALSE WHERE (`id` = 1)', $sql);
     }
 
-    public function test_and_where_combines_with_and(): void {
+    public function testAndWhereCombinesWithAnd(): void {
         $sql = (string) Update::create()
             ->table('users')
             ->set('active', false)
@@ -83,7 +83,7 @@ final class UpdateTest extends TestCase {
         );
     }
 
-    public function test_or_where_combines_with_or(): void {
+    public function testOrWhereCombinesWithOr(): void {
         $sql = (string) Update::create()
             ->table('users')
             ->set('active', false)
@@ -96,13 +96,13 @@ final class UpdateTest extends TestCase {
         );
     }
 
-    public function test_null_value(): void {
+    public function testNullValue(): void {
         $sql = (string) Update::create()->table('t')->set('deleted_at', null);
 
         $this->assertSame('UPDATE `t` SET `deleted_at` = NULL', $sql);
     }
 
-    public function test_multi_table_from(): void {
+    public function testMultiTableFrom(): void {
         $sql = (string) Update::create()
             ->table('users', 'u')
             ->set('name', Expression::ref('a.new_name'))
@@ -116,7 +116,7 @@ final class UpdateTest extends TestCase {
         );
     }
 
-    public function test_multiple_from_tables(): void {
+    public function testMultipleFromTables(): void {
         $sql = (string) Update::create()
             ->table('t')
             ->set('x', 1)
@@ -126,7 +126,7 @@ final class UpdateTest extends TestCase {
         $this->assertStringContainsString('FROM `a`, `b` AS `b2`', $sql);
     }
 
-    public function test_order_by(): void {
+    public function testOrderBy(): void {
         $sql = (string) Update::create()
             ->table('users')
             ->set('active', false)
@@ -135,18 +135,18 @@ final class UpdateTest extends TestCase {
         $this->assertSame('UPDATE `users` SET `active` = FALSE ORDER BY `id` DESC', $sql);
     }
 
-    public function test_limit(): void {
+    public function testLimit(): void {
         $sql = (string) Update::create()->table('users')->set('x', 1)->limit(10);
 
         $this->assertSame('UPDATE `users` SET `x` = 1 LIMIT 10', $sql);
     }
 
-    public function test_limit_rejects_negative(): void {
+    public function testLimitRejectsNegative(): void {
         $this->expectException(InvalidArgumentException::class);
         Update::create()->limit(-1);
     }
 
-    public function test_returning_with_column_names(): void {
+    public function testReturningWithColumnNames(): void {
         $sql = (string) Update::create()
             ->table('users')
             ->set('x', 1)
@@ -155,7 +155,7 @@ final class UpdateTest extends TestCase {
         $this->assertSame('UPDATE `users` SET `x` = 1 RETURNING `id`, `x`', $sql);
     }
 
-    public function test_returning_with_expressions(): void {
+    public function testReturningWithExpressions(): void {
         $sql = (string) Update::create()
             ->table('users')
             ->set('x', 1)
@@ -164,7 +164,7 @@ final class UpdateTest extends TestCase {
         $this->assertStringEndsWith('RETURNING `u`.`id`', $sql);
     }
 
-    public function test_full_pipeline_clause_order(): void {
+    public function testFullPipelineClauseOrder(): void {
         $sql = (string) Update::create()
             ->table('users', 'u')
             ->set('name', Expression::ref('a.name'))

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-05-19
+
+### Added
+- Specification for the planned Dialect architecture in `CLAUDE.md`: a permissive `DefaultDialect` base, per-database subclasses (MariaDB, PostgreSQL, …) that override individual component renderers, optional per-version variants, one renderer class per renderable component, and runtime selection via `Dialect::fromDsn()`. No code yet — this is the contract for the upcoming implementation.
+
+### Changed
+- Renamed all PHPUnit test methods from snake_case (`test_some_thing`) to PSR-12 camelCase (`testSomeThing`). No behaviour change.
+
 ## [0.1.0] - 2026-05-18
 
 ### Added
@@ -45,7 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.1.1...HEAD
+[0.1.1]: https://github.com/rak200/sql-builder/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/rak200/sql-builder/compare/0.0.3...0.1.0
 [0.0.3]: https://github.com/rak200/sql-builder/compare/0.0.2...0.0.3
 [0.0.2]: https://github.com/rak200/sql-builder/compare/0.0.1...0.0.2

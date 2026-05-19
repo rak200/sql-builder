@@ -13,7 +13,7 @@ use Rak200\SqlBuilder\Common\ValueExpression;
 
 final class BinaryExpressionTest extends TestCase {
 
-    public function test_renders_operator_between_operands_with_outer_parens(): void {
+    public function testRendersOperatorBetweenOperandsWithOuterParens(): void {
         $expr = new BinaryExpression(
             new ColumnReference('age'),
             BinaryOperator::GreaterThan,
@@ -23,7 +23,7 @@ final class BinaryExpressionTest extends TestCase {
         $this->assertSame('(`age` > 18)', (string) $expr);
     }
 
-    public function test_appends_alias_when_set(): void {
+    public function testAppendsAliasWhenSet(): void {
         $expr = (new BinaryExpression(
             new ColumnReference('a'),
             BinaryOperator::Equal,
@@ -33,7 +33,7 @@ final class BinaryExpressionTest extends TestCase {
         $this->assertSame('(`a` = 1) AS `match`', (string) $expr);
     }
 
-    public function test_supports_logical_operators(): void {
+    public function testSupportsLogicalOperators(): void {
         $left  = Expression::binary('x', BinaryOperator::Equal, 1);
         $right = Expression::binary('y', BinaryOperator::Equal, 2);
         $expr  = new BinaryExpression($left, BinaryOperator::Or, $right);
@@ -41,19 +41,19 @@ final class BinaryExpressionTest extends TestCase {
         $this->assertSame('((`x` = 1) OR (`y` = 2))', (string) $expr);
     }
 
-    public function test_supports_is_null(): void {
+    public function testSupportsIsNull(): void {
         $expr = Expression::binary('deleted_at', BinaryOperator::Is, null);
 
         $this->assertSame('(`deleted_at` IS NULL)', (string) $expr);
     }
 
-    public function test_supports_like_with_literal_pattern(): void {
+    public function testSupportsLikeWithLiteralPattern(): void {
         $expr = Expression::binary('name', BinaryOperator::Like, Expression::value('A%'));
 
         $this->assertSame("(`name` LIKE 'A%')", (string) $expr);
     }
 
-    public function test_string_right_operand_is_normalized_as_column_reference(): void {
+    public function testStringRightOperandIsNormalizedAsColumnReference(): void {
         $expr = Expression::binary('u.name', BinaryOperator::Equal, 'r.name');
 
         $this->assertSame('(`u`.`name` = `r`.`name`)', (string) $expr);

@@ -11,27 +11,27 @@ use Rak200\SqlBuilder\Common\Order;
 
 final class OrderTest extends TestCase {
 
-    public function test_defaults_to_ascending(): void {
+    public function testDefaultsToAscending(): void {
         $this->assertSame('`name` ASC', (string) new Order('name'));
     }
 
-    public function test_descending(): void {
+    public function testDescending(): void {
         $this->assertSame('`name` DESC', (string) new Order('name', SortDirection::DESC));
     }
 
-    public function test_nulls_first(): void {
+    public function testNullsFirst(): void {
         $order = new Order('name', SortDirection::ASC, NullsPlacement::FIRST);
 
         $this->assertSame('`name` ASC NULLS FIRST', (string) $order);
     }
 
-    public function test_nulls_last_via_fluent_setter(): void {
+    public function testNullsLastViaFluentSetter(): void {
         $order = (new Order('name', SortDirection::DESC))->nullsLast();
 
         $this->assertSame('`name` DESC NULLS LAST', (string) $order);
     }
 
-    public function test_nulls_first_via_fluent_setter(): void {
+    public function testNullsFirstViaFluentSetter(): void {
         $order = (new Order('name'))->nullsFirst();
 
         $this->assertSame('`name` ASC NULLS FIRST', (string) $order);

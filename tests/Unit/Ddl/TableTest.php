@@ -13,14 +13,14 @@ use Rak200\SqlBuilder\Ddl\Table;
 
 final class TableTest extends TestCase {
 
-    public function test_create_table_emits_keyword_and_quoted_name(): void {
+    public function testCreateTableEmitsKeywordAndQuotedName(): void {
         $sql = (string) Table::create('users');
 
         $this->assertStringStartsWith('CREATE TABLE ', $sql);
         $this->assertStringContainsString('users', $sql);
     }
 
-    public function test_create_table_includes_column_definitions(): void {
+    public function testCreateTableIncludesColumnDefinitions(): void {
         $sql = (string) Table::create('users')
             ->column(Column::create('id', DataType::BigInt))
             ->column(Column::create('name', DataType::VarChar)->length(100));
@@ -29,7 +29,7 @@ final class TableTest extends TestCase {
         $this->assertStringContainsString('`name` VARCHAR(100) NULL', $sql);
     }
 
-    public function test_columns_plural_accepts_multiple_columns(): void {
+    public function testColumnsPluralAcceptsMultipleColumns(): void {
         $sql = (string) Table::create('t')
             ->columns(
                 Column::create('a', DataType::Int),
@@ -40,7 +40,7 @@ final class TableTest extends TestCase {
         $this->assertStringContainsString('`b` INT NULL', $sql);
     }
 
-    public function test_create_table_includes_constraint(): void {
+    public function testCreateTableIncludesConstraint(): void {
         $sql = (string) Table::create('users')
             ->column(Column::create('id', DataType::Int))
             ->constraint(PrimaryKey::create()->columns(['id']));
@@ -48,21 +48,21 @@ final class TableTest extends TestCase {
         $this->assertStringContainsString('PRIMARY KEY ("id")', $sql);
     }
 
-    public function test_alter_add_column(): void {
+    public function testAlterAddColumn(): void {
         $sql = (string) Table::alter('users')->addColumn(Column::create('age', DataType::Int));
 
         $this->assertStringStartsWith('ALTER TABLE ', $sql);
         $this->assertStringContainsString('ADD COLUMN `age` INT NULL', $sql);
     }
 
-    public function test_alter_drop_column(): void {
+    public function testAlterDropColumn(): void {
         $sql = (string) Table::alter('users')->dropColumn('legacy');
 
         $this->assertStringContainsString('DROP COLUMN', $sql);
         $this->assertStringContainsString('legacy', $sql);
     }
 
-    public function test_alter_rename_column(): void {
+    public function testAlterRenameColumn(): void {
         $sql = (string) Table::alter('users')->renameColumn('email', 'email_address');
 
         $this->assertStringContainsString('RENAME COLUMN', $sql);
@@ -70,38 +70,38 @@ final class TableTest extends TestCase {
         $this->assertStringContainsString('email_address', $sql);
     }
 
-    public function test_alter_rename_to(): void {
+    public function testAlterRenameTo(): void {
         $sql = (string) Table::alter('old')->renameTo('new');
 
         $this->assertStringContainsString('RENAME TO', $sql);
         $this->assertStringContainsString('new', $sql);
     }
 
-    public function test_alter_modify_column(): void {
+    public function testAlterModifyColumn(): void {
         $sql = (string) Table::alter('users')
             ->modifyColumn(Column::create('email', DataType::VarChar)->length(320));
 
         $this->assertStringContainsString('MODIFY COLUMN `email` VARCHAR(320) NULL', $sql);
     }
 
-    public function test_alter_drop_constraint(): void {
+    public function testAlterDropConstraint(): void {
         $sql = (string) Table::alter('users')->dropConstraint('pk_users');
 
         $this->assertStringContainsString('DROP CONSTRAINT', $sql);
         $this->assertStringContainsString('pk_users', $sql);
     }
 
-    public function test_alter_without_operations_throws(): void {
+    public function testAlterWithoutOperationsThrows(): void {
         $this->expectException(InvalidArgumentException::class);
         (string) Table::alter('users');
     }
 
-    public function test_alter_only_methods_reject_create_mode(): void {
+    public function testAlterOnlyMethodsRejectCreateMode(): void {
         $this->expectException(InvalidArgumentException::class);
         Table::create('users')->dropColumn('id');
     }
 
-    public function test_alter_combines_multiple_operations_with_commas(): void {
+    public function testAlterCombinesMultipleOperationsWithCommas(): void {
         $sql = (string) Table::alter('users')
             ->addColumn(Column::create('a', DataType::Int))
             ->addColumn(Column::create('b', DataType::Int));

@@ -9,21 +9,21 @@ use Rak200\SqlBuilder\Ddl\PrimaryKey;
 
 final class PrimaryKeyTest extends TestCase {
 
-    public function test_unnamed_primary_key(): void {
+    public function testUnnamedPrimaryKey(): void {
         $this->assertSame('PRIMARY KEY ("id")', (string) PrimaryKey::create()->columns(['id']));
     }
 
-    public function test_named_primary_key(): void {
+    public function testNamedPrimaryKey(): void {
         $sql = (string) PrimaryKey::create('pk_users')->columns(['id']);
 
         $this->assertSame('CONSTRAINT "pk_users" PRIMARY KEY ("id")', $sql);
     }
 
-    public function test_composite_primary_key(): void {
+    public function testCompositePrimaryKey(): void {
         $this->assertSame('PRIMARY KEY ("a", "b")', (string) PrimaryKey::create()->columns(['a', 'b']));
     }
 
-    public function test_no_columns_omits_parenthesis(): void {
+    public function testNoColumnsOmitsParenthesis(): void {
         $sql = (string) PrimaryKey::create();
 
         $this->assertSame('PRIMARY KEY', $sql);

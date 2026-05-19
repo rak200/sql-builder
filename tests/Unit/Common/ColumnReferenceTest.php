@@ -9,19 +9,19 @@ use Rak200\SqlBuilder\Common\ColumnReference;
 
 final class ColumnReferenceTest extends TestCase {
 
-    public function test_renders_unqualified_identifier(): void {
+    public function testRendersUnqualifiedIdentifier(): void {
         $this->assertSame('`id`', (string) new ColumnReference('id'));
     }
 
-    public function test_renders_qualified_identifier(): void {
+    public function testRendersQualifiedIdentifier(): void {
         $this->assertSame('`users`.`id`', (string) new ColumnReference('users.id'));
     }
 
-    public function test_preserves_star(): void {
+    public function testPreservesStar(): void {
         $this->assertSame('*', (string) new ColumnReference('*'));
     }
 
-    public function test_preserves_qualified_star(): void {
+    public function testPreservesQualifiedStar(): void {
         $this->assertSame('`u`.*', (string) new ColumnReference('u.*'));
     }
 }

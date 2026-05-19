@@ -11,20 +11,20 @@ use Rak200\SqlBuilder\Ddl\Sequence;
 
 final class SequenceTest extends TestCase {
 
-    public function test_create_minimal(): void {
+    public function testCreateMinimal(): void {
         $sql = (string) Sequence::create('s');
 
         $this->assertStringStartsWith('CREATE SEQUENCE', $sql);
         $this->assertStringContainsString('s', $sql);
     }
 
-    public function test_create_with_if_not_exists(): void {
+    public function testCreateWithIfNotExists(): void {
         $sql = (string) Sequence::create('s')->ifNotExists();
 
         $this->assertStringContainsString('IF NOT EXISTS', $sql);
     }
 
-    public function test_create_with_options(): void {
+    public function testCreateWithOptions(): void {
         $sql = (string) Sequence::create('s')
             ->startWith(100)
             ->incrementBy(2)
@@ -41,7 +41,7 @@ final class SequenceTest extends TestCase {
         $this->assertStringContainsString('CYCLE',           $sql);
     }
 
-    public function test_no_min_no_max_no_cache_no_cycle(): void {
+    public function testNoMinNoMaxNoCacheNoCycle(): void {
         $sql = (string) Sequence::create('s')->noMinValue()->noMaxValue()->noCache()->noCycle();
 
         $this->assertStringContainsString('NO MINVALUE', $sql);
@@ -50,40 +50,40 @@ final class SequenceTest extends TestCase {
         $this->assertStringContainsString('NO CYCLE',    $sql);
     }
 
-    public function test_increment_zero_throws(): void {
+    public function testIncrementZeroThrows(): void {
         $this->expectException(InvalidArgumentException::class);
         Sequence::create('s')->incrementBy(0);
     }
 
-    public function test_cache_must_be_positive(): void {
+    public function testCacheMustBePositive(): void {
         $this->expectException(InvalidArgumentException::class);
         Sequence::create('s')->cache(0);
     }
 
-    public function test_alter_requires_options(): void {
+    public function testAlterRequiresOptions(): void {
         $this->expectException(InvalidArgumentException::class);
         (string) Sequence::alter('s');
     }
 
-    public function test_alter_with_restart_with_value(): void {
+    public function testAlterWithRestartWithValue(): void {
         $sql = (string) Sequence::alter('s')->restart(500);
 
         $this->assertStringStartsWith('ALTER SEQUENCE', $sql);
         $this->assertStringContainsString('RESTART WITH 500', $sql);
     }
 
-    public function test_alter_with_default_restart(): void {
+    public function testAlterWithDefaultRestart(): void {
         $sql = (string) Sequence::alter('s')->restart();
 
         $this->assertStringEndsWith('RESTART', $sql);
     }
 
-    public function test_restart_requires_alter_mode(): void {
+    public function testRestartRequiresAlterMode(): void {
         $this->expectException(InvalidArgumentException::class);
         Sequence::create('s')->restart(1);
     }
 
-    public function test_next_val_returns_raw_expression(): void {
+    public function testNextValReturnsRawExpression(): void {
         $nextVal = Sequence::create('s')->nextVal();
 
         $this->assertInstanceOf(RawExpression::class, $nextVal);

@@ -11,24 +11,24 @@ use Rak200\SqlBuilder\Ddl\Check;
 
 final class CheckTest extends TestCase {
 
-    public function test_unnamed_check_with_string_condition(): void {
+    public function testUnnamedCheckWithStringCondition(): void {
         $this->assertSame('CHECK (age >= 18)', (string) Check::create()->condition('age >= 18'));
     }
 
-    public function test_named_check_with_string_condition(): void {
+    public function testNamedCheckWithStringCondition(): void {
         $sql = (string) Check::create('chk_age')->condition('age >= 18');
 
         $this->assertSame('CONSTRAINT "chk_age" CHECK (age >= 18)', $sql);
     }
 
-    public function test_check_with_expression_condition(): void {
+    public function testCheckWithExpressionCondition(): void {
         $expr = Expression::binary('age', BinaryOperator::GreaterThanOrEqual, 18);
         $sql  = (string) Check::create('chk_age')->condition($expr);
 
         $this->assertSame('CONSTRAINT "chk_age" CHECK ((`age` >= 18))', $sql);
     }
 
-    public function test_empty_condition_renders_keyword_only(): void {
+    public function testEmptyConditionRendersKeywordOnly(): void {
         $this->assertSame('CHECK', (string) Check::create());
     }
 }

@@ -9,19 +9,19 @@ use Rak200\SqlBuilder\Common\ColumnExpression;
 
 final class ColumnExpressionTest extends TestCase {
 
-    public function test_renders_simple_identifier(): void {
+    public function testRendersSimpleIdentifier(): void {
         $this->assertSame('`name`', (string) new ColumnExpression('name'));
     }
 
-    public function test_renders_qualified_identifier(): void {
+    public function testRendersQualifiedIdentifier(): void {
         $this->assertSame('`u`.`id`', (string) new ColumnExpression('u.id'));
     }
 
-    public function test_appends_alias_when_set(): void {
+    public function testAppendsAliasWhenSet(): void {
         $this->assertSame('`email` AS `e`', (string) new ColumnExpression('email', 'e'));
     }
 
-    public function test_from_array_with_integer_keys_yields_unaliased_columns(): void {
+    public function testFromArrayWithIntegerKeysYieldsUnaliasedColumns(): void {
         $columns = ColumnExpression::fromArray(['id', 'name']);
 
         $this->assertCount(2, $columns);
@@ -29,13 +29,13 @@ final class ColumnExpressionTest extends TestCase {
         $this->assertSame('`name`', (string) $columns[1]);
     }
 
-    public function test_from_array_with_string_keys_uses_key_as_column_and_value_as_alias(): void {
+    public function testFromArrayWithStringKeysUsesKeyAsColumnAndValueAsAlias(): void {
         $columns = ColumnExpression::fromArray(['u.name' => 'user_name']);
 
         $this->assertSame('`u`.`name` AS `user_name`', (string) $columns[0]);
     }
 
-    public function test_from_array_with_alias_is_key(): void {
+    public function testFromArrayWithAliasIsKey(): void {
         $columns = ColumnExpression::fromArray(['user_name' => 'u.name'], aliasIsKey: true);
 
         $this->assertSame('`u`.`name` AS `user_name`', (string) $columns[0]);

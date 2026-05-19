@@ -14,54 +14,54 @@ use Rak200\SqlBuilder\Dml\Select;
 
 final class SelectTest extends TestCase {
 
-    public function test_empty_select_renders_select_star(): void {
+    public function testEmptySelectRendersSelectStar(): void {
         $this->assertSame('SELECT *', (string) Select::create());
     }
 
-    public function test_select_columns(): void {
+    public function testSelectColumns(): void {
         $sql = (string) Select::create()->select('id', 'name', 'email');
 
         $this->assertSame('SELECT `id`, `name`, `email`', $sql);
     }
 
-    public function test_select_passes_through_expression_arguments(): void {
+    public function testSelectPassesThroughExpressionArguments(): void {
         $sql = (string) Select::create()->select(Expression::count(), Expression::ref('country'));
 
         $this->assertSame('SELECT COUNT(*) AS `COUNT`, `country`', $sql);
     }
 
-    public function test_distinct(): void {
+    public function testDistinct(): void {
         $sql = (string) Select::create()->distinct()->select('country');
 
         $this->assertSame('SELECT DISTINCT `country`', $sql);
     }
 
-    public function test_from_table(): void {
+    public function testFromTable(): void {
         $sql = (string) Select::create()->from('users');
 
         $this->assertSame('SELECT * FROM `users`', $sql);
     }
 
-    public function test_from_table_with_alias(): void {
+    public function testFromTableWithAlias(): void {
         $sql = (string) Select::create()->select('u.id')->from('users', 'u');
 
         $this->assertSame('SELECT `u`.`id` FROM `users` AS `u`', $sql);
     }
 
-    public function test_from_subquery_requires_alias(): void {
+    public function testFromSubqueryRequiresAlias(): void {
         $this->expectException(InvalidArgumentException::class);
 
         Select::create()->from(Select::create()->select('1'));
     }
 
-    public function test_from_subquery_with_alias(): void {
+    public function testFromSubqueryWithAlias(): void {
         $inner = Select::create()->select('id')->from('users');
         $outer = Select::create()->select('id')->from($inner, 't');
 
         $this->assertSame("SELECT `id` FROM ($inner) AS `t`", (string) $outer);
     }
 
-    public function test_inner_join(): void {
+    public function testInnerJoin(): void {
         $on  = Expression::binary('u.role_id', BinaryOperator::Equal, Expression::ref('r.id'));
         $sql = (string) Select::create()
             ->select('u.name', 'r.role')
@@ -74,7 +74,7 @@ final class SelectTest extends TestCase {
         );
     }
 
-    public function test_left_right_full_cross_helpers_emit_correct_keywords(): void {
+    public function testLeftRightFullCrossHelpersEmitCorrectKeywords(): void {
         $on = Expression::binary('a.id', BinaryOperator::Equal, Expression::ref('b.id'));
 
         $left  = (string) Select::create()->from('a')->leftJoin('b', null, $on);
@@ -86,7 +86,7 @@ final class SelectTest extends TestCase {
         $this->assertStringContainsString('FULL JOIN `b`',  $full);
     }
 
-    public function test_join_using(): void {
+    public function testJoinUsing(): void {
         $sql = (string) Select::create()
             ->from('users', 'u')
             ->joinUsing('roles', ['role_id']);
@@ -94,7 +94,7 @@ final class SelectTest extends TestCase {
         $this->assertSame('SELECT * FROM `users` AS `u` INNER JOIN `roles` USING (`role_id`)', $sql);
     }
 
-    public function test_where_appends_with_and_when_already_set(): void {
+    public function testWhereAppendsWithAndWhenAlreadySet(): void {
         $sql = (string) Select::create()
             ->from('users')
             ->where(Expression::binary('a', BinaryOperator::Equal, 1))
@@ -103,7 +103,7 @@ final class SelectTest extends TestCase {
         $this->assertSame('SELECT * FROM `users` WHERE ((`a` = 1) AND (`b` = 2))', $sql);
     }
 
-    public function test_or_where(): void {
+    public function testOrWhere(): void {
         $sql = (string) Select::create()
             ->from('users')
             ->where(Expression::binary('a', BinaryOperator::Equal, 1))
@@ -112,7 +112,7 @@ final class SelectTest extends TestCase {
         $this->assertSame('SELECT * FROM `users` WHERE ((`a` = 1) OR (`b` = 2))', $sql);
     }
 
-    public function test_group_by_and_having(): void {
+    public function testGroupByAndHaving(): void {
         $sql = (string) Select::create()
             ->select('country', Expression::count())
             ->from('users')
@@ -125,7 +125,7 @@ final class SelectTest extends TestCase {
         );
     }
 
-    public function test_order_by_multiple_entries(): void {
+    public function testOrderByMultipleEntries(): void {
         $sql = (string) Select::create()
             ->from('users')
             ->orderBy('country')
@@ -137,23 +137,23 @@ final class SelectTest extends TestCase {
         );
     }
 
-    public function test_limit_offset(): void {
+    public function testLimitOffset(): void {
         $sql = (string) Select::create()->from('users')->limit(20)->offset(40);
 
         $this->assertSame('SELECT * FROM `users` LIMIT 20 OFFSET 40', $sql);
     }
 
-    public function test_limit_rejects_negative(): void {
+    public function testLimitRejectsNegative(): void {
         $this->expectException(InvalidArgumentException::class);
         Select::create()->limit(-1);
     }
 
-    public function test_offset_rejects_negative(): void {
+    public function testOffsetRejectsNegative(): void {
         $this->expectException(InvalidArgumentException::class);
         Select::create()->offset(-1);
     }
 
-    public function test_full_pipeline(): void {
+    public function testFullPipeline(): void {
         $sql = (string) Select::create()
             ->distinct()
             ->select('u.id', 'u.name')
