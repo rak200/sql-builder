@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Dialect;
 
 use Rak200\SqlBuilder\Common\BinaryExpression;
+use Rak200\SqlBuilder\Common\CaseExpression;
 use Rak200\SqlBuilder\Common\ColumnExpression;
 use Rak200\SqlBuilder\Common\ColumnReference;
 use Rak200\SqlBuilder\Common\ExistsExpression;
@@ -18,6 +19,8 @@ use Rak200\SqlBuilder\Common\SubqueryExpression;
 use Rak200\SqlBuilder\Common\TableReference;
 use Rak200\SqlBuilder\Common\UnaryExpression;
 use Rak200\SqlBuilder\Common\ValueExpression;
+use Rak200\SqlBuilder\Common\Window;
+use Rak200\SqlBuilder\Common\WindowExpression;
 use Rak200\SqlBuilder\Ddl\Check;
 use Rak200\SqlBuilder\Ddl\Column;
 use Rak200\SqlBuilder\Ddl\ForeignKey;
@@ -29,6 +32,7 @@ use Rak200\SqlBuilder\Ddl\Table;
 use Rak200\SqlBuilder\Ddl\UniqueKey;
 use Rak200\SqlBuilder\Ddl\View;
 use Rak200\SqlBuilder\Dialect\Dsn\DsnParser;
+use Rak200\SqlBuilder\Dml\Cte;
 use Rak200\SqlBuilder\Dml\Delete;
 use Rak200\SqlBuilder\Dml\Insert;
 use Rak200\SqlBuilder\Dml\Select;
@@ -113,6 +117,7 @@ abstract class Dialect {
     abstract public function renderUpdate(Update $component): string;
     abstract public function renderDelete(Delete $component): string;
     abstract public function renderSet(Set $component): string;
+    abstract public function renderCte(Cte $component): string;
 
     // --- DDL ----------------------------------------------------------------
 
@@ -131,6 +136,7 @@ abstract class Dialect {
 
     abstract public function renderBinaryExpression(BinaryExpression $component): string;
     abstract public function renderUnaryExpression(UnaryExpression $component): string;
+    abstract public function renderCaseExpression(CaseExpression $component): string;
     abstract public function renderColumnExpression(ColumnExpression $component): string;
     abstract public function renderColumnReference(ColumnReference $component): string;
     abstract public function renderValueExpression(ValueExpression $component): string;
@@ -142,6 +148,8 @@ abstract class Dialect {
     abstract public function renderTableReference(TableReference $component): string;
     abstract public function renderOrder(Order $component): string;
     abstract public function renderJoin(Join $component): string;
+    abstract public function renderWindow(Window $component): string;
+    abstract public function renderWindowExpression(WindowExpression $component): string;
 
     /**
      * Polymorphic dispatch by concrete expression type.
@@ -155,8 +163,10 @@ abstract class Dialect {
     public function renderExpression(ExpressionInterface $expression): string {
         return match (true) {
             $expression instanceof ExistsExpression   => $this->renderExistsExpression($expression),
+            $expression instanceof WindowExpression   => $this->renderWindowExpression($expression),
             $expression instanceof BinaryExpression   => $this->renderBinaryExpression($expression),
             $expression instanceof UnaryExpression    => $this->renderUnaryExpression($expression),
+            $expression instanceof CaseExpression     => $this->renderCaseExpression($expression),
             $expression instanceof ColumnExpression   => $this->renderColumnExpression($expression),
             $expression instanceof ColumnReference    => $this->renderColumnReference($expression),
             $expression instanceof ValueExpression    => $this->renderValueExpression($expression),
@@ -167,6 +177,7 @@ abstract class Dialect {
             $expression instanceof TableReference     => $this->renderTableReference($expression),
             $expression instanceof Select             => $this->renderSelect($expression),
             $expression instanceof Set                => $this->renderSet($expression),
+            $expression instanceof Cte                => $this->renderCte($expression),
             $expression instanceof Insert             => $this->renderInsert($expression),
             $expression instanceof Update             => $this->renderUpdate($expression),
             $expression instanceof Delete             => $this->renderDelete($expression),

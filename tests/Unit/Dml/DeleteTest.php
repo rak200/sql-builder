@@ -33,7 +33,7 @@ final class DeleteTest extends TestCase {
     public function testDeleteWithWhere(): void {
         $sql = (string) Delete::create()
             ->from('users')
-            ->where(Expression::binary('active', BinaryOperator::Equal, 0));
+            ->where(Expression::binary('active', BinaryOperator::Eq, 0));
 
         $this->assertSame('DELETE FROM `users` WHERE (`active` = 0)', $sql);
     }
@@ -41,8 +41,8 @@ final class DeleteTest extends TestCase {
     public function testAndWhereCombinesWithAnd(): void {
         $sql = (string) Delete::create()
             ->from('users')
-            ->where(Expression::binary('a', BinaryOperator::Equal, 1))
-            ->andWhere(Expression::binary('b', BinaryOperator::Equal, 2));
+            ->where(Expression::binary('a', BinaryOperator::Eq, 1))
+            ->andWhere(Expression::binary('b', BinaryOperator::Eq, 2));
 
         $this->assertSame(
             'DELETE FROM `users` WHERE ((`a` = 1) AND (`b` = 2))',
@@ -53,8 +53,8 @@ final class DeleteTest extends TestCase {
     public function testOrWhereCombinesWithOr(): void {
         $sql = (string) Delete::create()
             ->from('users')
-            ->where(Expression::binary('a', BinaryOperator::Equal, 1))
-            ->orWhere(Expression::binary('b', BinaryOperator::Equal, 2));
+            ->where(Expression::binary('a', BinaryOperator::Eq, 1))
+            ->orWhere(Expression::binary('b', BinaryOperator::Eq, 2));
 
         $this->assertSame(
             'DELETE FROM `users` WHERE ((`a` = 1) OR (`b` = 2))',
@@ -66,7 +66,7 @@ final class DeleteTest extends TestCase {
         $sql = (string) Delete::create()
             ->from('users', 'u')
             ->using('audit', 'a')
-            ->where(Expression::binary('u.id', BinaryOperator::Equal, Expression::ref('a.user_id')));
+            ->where(Expression::binary('u.id', BinaryOperator::Eq, Expression::ref('a.user_id')));
 
         $this->assertSame(
             'DELETE FROM `users` AS `u` USING `audit` AS `a` WHERE (`u`.`id` = `a`.`user_id`)',
@@ -118,7 +118,7 @@ final class DeleteTest extends TestCase {
         $sql = (string) Delete::create()
             ->from('users', 'u')
             ->using('audit', 'a')
-            ->where(Expression::binary('u.id', BinaryOperator::Equal, Expression::ref('a.user_id')))
+            ->where(Expression::binary('u.id', BinaryOperator::Eq, Expression::ref('a.user_id')))
             ->orderBy('u.id', SortDirection::DESC)
             ->limit(100)
             ->returning('u.id');

@@ -62,7 +62,7 @@ final class SelectTest extends TestCase {
     }
 
     public function testInnerJoin(): void {
-        $on  = Expression::binary('u.role_id', BinaryOperator::Equal, Expression::ref('r.id'));
+        $on  = Expression::binary('u.role_id', BinaryOperator::Eq, Expression::ref('r.id'));
         $sql = (string) Select::create()
             ->select('u.name', 'r.role')
             ->from('users', 'u')
@@ -75,7 +75,7 @@ final class SelectTest extends TestCase {
     }
 
     public function testLeftRightFullCrossHelpersEmitCorrectKeywords(): void {
-        $on = Expression::binary('a.id', BinaryOperator::Equal, Expression::ref('b.id'));
+        $on = Expression::binary('a.id', BinaryOperator::Eq, Expression::ref('b.id'));
 
         $left  = (string) Select::create()->from('a')->leftJoin('b', null, $on);
         $right = (string) Select::create()->from('a')->rightJoin('b', null, $on);
@@ -97,8 +97,8 @@ final class SelectTest extends TestCase {
     public function testWhereAppendsWithAndWhenAlreadySet(): void {
         $sql = (string) Select::create()
             ->from('users')
-            ->where(Expression::binary('a', BinaryOperator::Equal, 1))
-            ->andWhere(Expression::binary('b', BinaryOperator::Equal, 2));
+            ->where(Expression::binary('a', BinaryOperator::Eq, 1))
+            ->andWhere(Expression::binary('b', BinaryOperator::Eq, 2));
 
         $this->assertSame('SELECT * FROM `users` WHERE ((`a` = 1) AND (`b` = 2))', $sql);
     }
@@ -106,8 +106,8 @@ final class SelectTest extends TestCase {
     public function testOrWhere(): void {
         $sql = (string) Select::create()
             ->from('users')
-            ->where(Expression::binary('a', BinaryOperator::Equal, 1))
-            ->orWhere(Expression::binary('b', BinaryOperator::Equal, 2));
+            ->where(Expression::binary('a', BinaryOperator::Eq, 1))
+            ->orWhere(Expression::binary('b', BinaryOperator::Eq, 2));
 
         $this->assertSame('SELECT * FROM `users` WHERE ((`a` = 1) OR (`b` = 2))', $sql);
     }
@@ -117,7 +117,7 @@ final class SelectTest extends TestCase {
             ->select('country', Expression::count())
             ->from('users')
             ->groupBy('country')
-            ->having(Expression::binary(Expression::count(), BinaryOperator::GreaterThan, Expression::value(10)));
+            ->having(Expression::binary(Expression::count(), BinaryOperator::Gt, Expression::value(10)));
 
         $this->assertSame(
             'SELECT `country`, COUNT(*) AS `COUNT` FROM `users` GROUP BY `country` HAVING (COUNT(*) AS `COUNT` > 10)',
@@ -158,8 +158,8 @@ final class SelectTest extends TestCase {
             ->distinct()
             ->select('u.id', 'u.name')
             ->from('users', 'u')
-            ->join('roles', 'r', Expression::binary('u.role_id', BinaryOperator::Equal, Expression::ref('r.id')))
-            ->where(Expression::binary('u.active', BinaryOperator::Equal, 1))
+            ->join('roles', 'r', Expression::binary('u.role_id', BinaryOperator::Eq, Expression::ref('r.id')))
+            ->where(Expression::binary('u.active', BinaryOperator::Eq, 1))
             ->groupBy('u.id')
             ->orderBy('u.name')
             ->limit(10);

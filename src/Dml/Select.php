@@ -15,6 +15,7 @@ use Rak200\SqlBuilder\Common\Join;
 use Rak200\SqlBuilder\Common\Order;
 use Rak200\SqlBuilder\Common\TableReference;
 use Rak200\SqlBuilder\Dialect\Dialect;
+// Cte lives in this namespace; explicit use omitted to avoid self-import.
 
 /**
  * SQL SELECT statement builder.
@@ -27,6 +28,12 @@ use Rak200\SqlBuilder\Dialect\Dialect;
  * @author Ricardo Augusto Küstner <rak.ricardo@windowslive.com>
  */
 final class Select implements ExpressionInterface {
+
+    /** @var Vector<Cte> Common Table Expressions declared via with()/withRecursive(). */
+    public readonly Vector $ctes;
+
+    /** @var bool Whether any CTE was added via withRecursive(); promotes the WITH clause to WITH RECURSIVE. */
+    public private(set) bool $recursive = false;
 
     /** @var bool Whether to apply the DISTINCT modifier. */
     public private(set) bool $distinct = false;
@@ -59,6 +66,7 @@ final class Select implements ExpressionInterface {
     public private(set) ?int $offset = null;
 
     public function __construct() {
+        $this->ctes    = new Vector(Cte::class);
         $this->columns = new Vector(ExpressionInterface::class);
         $this->joins   = new Vector(Join::class);
         $this->groupBy = new Vector(ExpressionInterface::class);
@@ -67,6 +75,37 @@ final class Select implements ExpressionInterface {
 
     public static function create(): self {
         return new self();
+    }
+
+    /**
+     * Append a Common Table Expression (`WITH name [(cols)] AS (query)`).
+     *
+     * Call multiple times to declare several CTEs in a single `WITH` clause.
+     * For recursive references use {@see withRecursive()} (the clause is
+     * promoted to `WITH RECURSIVE` even if only one of the CTEs is recursive).
+     *
+     * @param string $name CTE name (referenceable like a table inside the body).
+     * @param Select|Set $query CTE body.
+     * @param array<int, string>|null $columns Optional explicit column-name list.
+     */
+    public function with(string $name, Select|Set $query, ?array $columns = null): static {
+        $this->ctes[] = new Cte($name, $query, $columns);
+        return $this;
+    }
+
+    /**
+     * Append a recursive CTE — promotes the surrounding `WITH` clause to
+     * `WITH RECURSIVE` and registers the entry.
+     *
+     * @param string $name CTE name.
+     * @param Select|Set $query CTE body (typically a {@see Set} with a UNION
+     *                           combining the base case and recursive step).
+     * @param array<int, string>|null $columns Optional explicit column-name list.
+     */
+    public function withRecursive(string $name, Select|Set $query, ?array $columns = null): static {
+        $this->recursive = true;
+        $this->ctes[] = new Cte($name, $query, $columns);
+        return $this;
     }
 
     public function distinct(): static {

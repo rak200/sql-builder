@@ -14,14 +14,14 @@ use Rak200\SqlBuilder\Common\Join;
 final class JoinTest extends TestCase {
 
     public function testInnerJoinWithOnCondition(): void {
-        $on   = Expression::binary('u.role_id', BinaryOperator::Equal, Expression::ref('r.id'));
+        $on   = Expression::binary('u.role_id', BinaryOperator::Eq, Expression::ref('r.id'));
         $join = new Join(JoinType::INNER, 'roles', 'r', $on);
 
         $this->assertSame('INNER JOIN `roles` AS `r` ON (`u`.`role_id` = `r`.`id`)', (string) $join);
     }
 
     public function testLeftJoinWithOnCondition(): void {
-        $on   = Expression::binary('a.id', BinaryOperator::Equal, Expression::ref('b.id'));
+        $on   = Expression::binary('a.id', BinaryOperator::Eq, Expression::ref('b.id'));
         $join = (new Join(JoinType::LEFT, 'b'))->on($on);
 
         $this->assertSame('LEFT JOIN `b` ON (`a`.`id` = `b`.`id`)', (string) $join);
@@ -46,7 +46,7 @@ final class JoinTest extends TestCase {
     }
 
     public function testNaturalJoinForbidsOnCondition(): void {
-        $on   = Expression::binary('a.id', BinaryOperator::Equal, Expression::ref('b.id'));
+        $on   = Expression::binary('a.id', BinaryOperator::Eq, Expression::ref('b.id'));
         $join = (new Join(JoinType::INNER, 'b'))->natural()->on($on);
 
         $this->expectException(InvalidArgumentException::class);
@@ -61,7 +61,7 @@ final class JoinTest extends TestCase {
     }
 
     public function testOnAndUsingAreMutuallyExclusive(): void {
-        $on = Expression::binary('a.id', BinaryOperator::Equal, Expression::ref('b.id'));
+        $on = Expression::binary('a.id', BinaryOperator::Eq, Expression::ref('b.id'));
         $join = (new Join(JoinType::INNER, 'b'))->on($on)->using('id');
 
         $this->expectException(InvalidArgumentException::class);
@@ -69,7 +69,7 @@ final class JoinTest extends TestCase {
     }
 
     public function testCrossJoinRejectsOnCondition(): void {
-        $on   = Expression::binary('a.id', BinaryOperator::Equal, Expression::ref('b.id'));
+        $on   = Expression::binary('a.id', BinaryOperator::Eq, Expression::ref('b.id'));
         $join = (new Join(JoinType::CROSS, 'b'))->on($on);
 
         $this->expectException(InvalidArgumentException::class);

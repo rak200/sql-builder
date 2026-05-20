@@ -16,7 +16,7 @@ final class BinaryExpressionTest extends TestCase {
     public function testRendersOperatorBetweenOperandsWithOuterParens(): void {
         $expr = new BinaryExpression(
             new ColumnReference('age'),
-            BinaryOperator::GreaterThan,
+            BinaryOperator::Gt,
             new ValueExpression(18)
         );
 
@@ -26,7 +26,7 @@ final class BinaryExpressionTest extends TestCase {
     public function testAppendsAliasWhenSet(): void {
         $expr = (new BinaryExpression(
             new ColumnReference('a'),
-            BinaryOperator::Equal,
+            BinaryOperator::Eq,
             new ValueExpression(1)
         ))->as('match');
 
@@ -34,8 +34,8 @@ final class BinaryExpressionTest extends TestCase {
     }
 
     public function testSupportsLogicalOperators(): void {
-        $left  = Expression::binary('x', BinaryOperator::Equal, 1);
-        $right = Expression::binary('y', BinaryOperator::Equal, 2);
+        $left  = Expression::binary('x', BinaryOperator::Eq, 1);
+        $right = Expression::binary('y', BinaryOperator::Eq, 2);
         $expr  = new BinaryExpression($left, BinaryOperator::Or, $right);
 
         $this->assertSame('((`x` = 1) OR (`y` = 2))', (string) $expr);
@@ -54,7 +54,7 @@ final class BinaryExpressionTest extends TestCase {
     }
 
     public function testStringRightOperandIsNormalizedAsColumnReference(): void {
-        $expr = Expression::binary('u.name', BinaryOperator::Equal, 'r.name');
+        $expr = Expression::binary('u.name', BinaryOperator::Eq, 'r.name');
 
         $this->assertSame('(`u`.`name` = `r`.`name`)', (string) $expr);
     }

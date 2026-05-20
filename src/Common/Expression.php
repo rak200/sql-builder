@@ -286,6 +286,32 @@ abstract class Expression implements ExpressionInterface {
     }
 
     /**
+     * Create a `CASE` expression.
+     *
+     * Pass a `$subject` for the simple form (`CASE subj WHEN val THEN ...`);
+     * omit it for the searched form (`CASE WHEN cond THEN ...`).
+     *
+     * @param mixed $subject Optional simple-form subject; expression or column reference.
+     */
+    public static function case(mixed $subject = null): CaseExpression {
+        return new CaseExpression($subject === null ? null : self::normalize($subject));
+    }
+
+    /**
+     * Wrap a function call in an `OVER (...)` window clause.
+     *
+     * Build the {@see Window} fluently — `Window::create()->partitionBy(...)
+     * ->orderBy(...)->rows(...)` — and pass it alongside the aggregate or
+     * window-only function (`ROW_NUMBER`, `RANK`, `LAG`, …) to construct.
+     *
+     * @param ExpressionInterface $function The function call expression.
+     * @param Window $window The window specification.
+     */
+    public static function over(ExpressionInterface $function, Window $window): WindowExpression {
+        return new WindowExpression($function, $window);
+    }
+
+    /**
      * Combine multiple expressions with a logical operator.
      *
      * @param BinaryOperator $operator The combining operator (AND, OR).

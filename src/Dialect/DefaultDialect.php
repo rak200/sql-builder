@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Dialect;
 
 use Rak200\SqlBuilder\Common\BinaryExpression;
+use Rak200\SqlBuilder\Common\CaseExpression;
 use Rak200\SqlBuilder\Common\ColumnExpression;
 use Rak200\SqlBuilder\Common\ColumnReference;
 use Rak200\SqlBuilder\Common\ExistsExpression;
@@ -17,6 +18,8 @@ use Rak200\SqlBuilder\Common\SubqueryExpression;
 use Rak200\SqlBuilder\Common\TableReference;
 use Rak200\SqlBuilder\Common\UnaryExpression;
 use Rak200\SqlBuilder\Common\ValueExpression;
+use Rak200\SqlBuilder\Common\Window;
+use Rak200\SqlBuilder\Common\WindowExpression;
 use Rak200\SqlBuilder\Ddl\Check;
 use Rak200\SqlBuilder\Ddl\Column;
 use Rak200\SqlBuilder\Ddl\ForeignKey;
@@ -28,6 +31,7 @@ use Rak200\SqlBuilder\Ddl\Table;
 use Rak200\SqlBuilder\Ddl\UniqueKey;
 use Rak200\SqlBuilder\Ddl\View;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\BinaryExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Common\CaseExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\ColumnExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\ColumnReferenceRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\ExistsExpressionRenderer;
@@ -40,6 +44,8 @@ use Rak200\SqlBuilder\Dialect\Renderer\Common\SubqueryExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\TableReferenceRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\UnaryExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\ValueExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Common\WindowExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Common\WindowRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\CheckRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\ColumnRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\ForeignKeyRenderer;
@@ -50,11 +56,13 @@ use Rak200\SqlBuilder\Dialect\Renderer\Ddl\SequenceRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\TableRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\UniqueKeyRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\ViewRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Dml\CteRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\DeleteRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\InsertRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\SelectRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\SetRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\UpdateRenderer;
+use Rak200\SqlBuilder\Dml\Cte;
 use Rak200\SqlBuilder\Dml\Delete;
 use Rak200\SqlBuilder\Dml\Insert;
 use Rak200\SqlBuilder\Dml\Select;
@@ -77,6 +85,7 @@ class DefaultDialect extends Dialect {
     // --- Common renderers ---------------------------------------------------
     protected ?BinaryExpressionRenderer   $binaryExpressionRenderer   = null;
     protected ?UnaryExpressionRenderer    $unaryExpressionRenderer    = null;
+    protected ?CaseExpressionRenderer     $caseExpressionRenderer     = null;
     protected ?ColumnExpressionRenderer   $columnExpressionRenderer   = null;
     protected ?ColumnReferenceRenderer    $columnReferenceRenderer    = null;
     protected ?ValueExpressionRenderer    $valueExpressionRenderer    = null;
@@ -88,6 +97,8 @@ class DefaultDialect extends Dialect {
     protected ?TableReferenceRenderer     $tableReferenceRenderer     = null;
     protected ?OrderRenderer              $orderRenderer              = null;
     protected ?JoinRenderer               $joinRenderer               = null;
+    protected ?WindowRenderer             $windowRenderer             = null;
+    protected ?WindowExpressionRenderer   $windowExpressionRenderer   = null;
 
     // --- DML renderers ------------------------------------------------------
     protected ?SelectRenderer $selectRenderer = null;
@@ -95,6 +106,7 @@ class DefaultDialect extends Dialect {
     protected ?UpdateRenderer $updateRenderer = null;
     protected ?DeleteRenderer $deleteRenderer = null;
     protected ?SetRenderer    $setRenderer    = null;
+    protected ?CteRenderer    $cteRenderer    = null;
 
     // --- DDL renderers ------------------------------------------------------
     protected ?TableRenderer      $tableRenderer      = null;
@@ -151,6 +163,10 @@ class DefaultDialect extends Dialect {
         return $this->setRenderer()->render($component);
     }
 
+    public function renderCte(Cte $component): string {
+        return $this->cteRenderer()->render($component);
+    }
+
     // --- DDL --------------------------------------------------------------
 
     public function renderTable(Table $component): string {
@@ -203,6 +219,10 @@ class DefaultDialect extends Dialect {
         return $this->unaryExpressionRenderer()->render($component);
     }
 
+    public function renderCaseExpression(CaseExpression $component): string {
+        return $this->caseExpressionRenderer()->render($component);
+    }
+
     public function renderColumnExpression(ColumnExpression $component): string {
         return $this->columnExpressionRenderer()->render($component);
     }
@@ -247,6 +267,14 @@ class DefaultDialect extends Dialect {
         return $this->joinRenderer()->render($component);
     }
 
+    public function renderWindow(Window $component): string {
+        return $this->windowRenderer()->render($component);
+    }
+
+    public function renderWindowExpression(WindowExpression $component): string {
+        return $this->windowExpressionRenderer()->render($component);
+    }
+
     // --- Renderer factories (override-points) -----------------------------
 
     protected function selectRenderer(): SelectRenderer {
@@ -267,6 +295,10 @@ class DefaultDialect extends Dialect {
 
     protected function setRenderer(): SetRenderer {
         return $this->setRenderer ??= new SetRenderer($this);
+    }
+
+    protected function cteRenderer(): CteRenderer {
+        return $this->cteRenderer ??= new CteRenderer($this);
     }
 
     protected function tableRenderer(): TableRenderer {
@@ -317,6 +349,10 @@ class DefaultDialect extends Dialect {
         return $this->unaryExpressionRenderer ??= new UnaryExpressionRenderer($this);
     }
 
+    protected function caseExpressionRenderer(): CaseExpressionRenderer {
+        return $this->caseExpressionRenderer ??= new CaseExpressionRenderer($this);
+    }
+
     protected function columnExpressionRenderer(): ColumnExpressionRenderer {
         return $this->columnExpressionRenderer ??= new ColumnExpressionRenderer($this);
     }
@@ -359,5 +395,13 @@ class DefaultDialect extends Dialect {
 
     protected function joinRenderer(): JoinRenderer {
         return $this->joinRenderer ??= new JoinRenderer($this);
+    }
+
+    protected function windowRenderer(): WindowRenderer {
+        return $this->windowRenderer ??= new WindowRenderer($this);
+    }
+
+    protected function windowExpressionRenderer(): WindowExpressionRenderer {
+        return $this->windowExpressionRenderer ??= new WindowExpressionRenderer($this);
     }
 }

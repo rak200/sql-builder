@@ -22,7 +22,7 @@ final class CheckTest extends TestCase {
     }
 
     public function testCheckWithExpressionCondition(): void {
-        $expr = Expression::binary('age', BinaryOperator::GreaterThanOrEqual, 18);
+        $expr = Expression::binary('age', BinaryOperator::Ge, 18);
         $sql  = (string) Check::create('chk_age')->condition($expr);
 
         $this->assertSame('CONSTRAINT "chk_age" CHECK ((`age` >= 18))', $sql);

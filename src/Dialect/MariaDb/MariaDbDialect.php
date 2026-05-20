@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Dialect\MariaDb;
 
 use Rak200\SqlBuilder\Dialect\DefaultDialect;
+use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\BinaryExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\DeleteRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\IndexRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\InsertRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\SchemaRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\TableRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\UpdateRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Common\BinaryExpressionRenderer as DefaultBinaryExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\IndexRenderer as DefaultIndexRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\SchemaRenderer as DefaultSchemaRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\TableRenderer as DefaultTableRenderer;
@@ -29,6 +31,9 @@ use Rak200\SqlBuilder\Dialect\Renderer\Dml\UpdateRenderer as DefaultUpdateRender
  *   so multi-tenant code that addresses tables with a schema prefix keeps
  *   working without touching the database. The `Schema` DDL builder refuses
  *   to emit CREATE/DROP/ALTER SCHEMA (see {@see SchemaRenderer}).
+ * - **Null-safe comparison**: rewrites `BinaryOperator::NullSafeEq` /
+ *   `NullSafeNe` from the SQL-standard `IS [NOT] DISTINCT FROM` form to
+ *   MariaDB's native `<=>` / `NOT (a <=> b)` (see {@see BinaryExpressionRenderer}).
  * - **DROP INDEX** requires the parent table (`DROP INDEX name ON table`)
  *   and does not accept `CASCADE`.
  * - **TRUNCATE TABLE** rejects PostgreSQL-only `RESTART IDENTITY` /
@@ -88,5 +93,9 @@ class MariaDbDialect extends DefaultDialect {
 
     protected function indexRenderer(): DefaultIndexRenderer {
         return $this->indexRenderer ??= new IndexRenderer($this);
+    }
+
+    protected function binaryExpressionRenderer(): DefaultBinaryExpressionRenderer {
+        return $this->binaryExpressionRenderer ??= new BinaryExpressionRenderer($this);
     }
 }

@@ -112,7 +112,7 @@ final class ExpressionTest extends TestCase {
     }
 
     public function testBinaryNormalizesStringToColumnReference(): void {
-        $expr = Expression::binary('age', BinaryOperator::GreaterThanOrEqual, 18);
+        $expr = Expression::binary('age', BinaryOperator::Ge, 18);
 
         $this->assertSame('(`age` >= 18)', (string) $expr);
     }
@@ -124,16 +124,16 @@ final class ExpressionTest extends TestCase {
     }
 
     public function testAndCombinesMultipleExpressionsLeftToRight(): void {
-        $a = Expression::binary('x', BinaryOperator::Equal, 1);
-        $b = Expression::binary('y', BinaryOperator::Equal, 2);
-        $c = Expression::binary('z', BinaryOperator::Equal, 3);
+        $a = Expression::binary('x', BinaryOperator::Eq, 1);
+        $b = Expression::binary('y', BinaryOperator::Eq, 2);
+        $c = Expression::binary('z', BinaryOperator::Eq, 3);
 
         $this->assertSame('(((`x` = 1) AND (`y` = 2)) AND (`z` = 3))', (string) Expression::and($a, $b, $c));
     }
 
     public function testOrCombinesMultipleExpressions(): void {
-        $a = Expression::binary('x', BinaryOperator::Equal, 1);
-        $b = Expression::binary('y', BinaryOperator::Equal, 2);
+        $a = Expression::binary('x', BinaryOperator::Eq, 1);
+        $b = Expression::binary('y', BinaryOperator::Eq, 2);
 
         $this->assertSame('((`x` = 1) OR (`y` = 2))', (string) Expression::or($a, $b));
     }

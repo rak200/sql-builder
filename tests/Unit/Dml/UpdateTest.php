@@ -65,7 +65,7 @@ final class UpdateTest extends TestCase {
         $sql = (string) Update::create()
             ->table('users')
             ->set('active', false)
-            ->where(Expression::binary('id', BinaryOperator::Equal, 1));
+            ->where(Expression::binary('id', BinaryOperator::Eq, 1));
 
         $this->assertSame('UPDATE `users` SET `active` = FALSE WHERE (`id` = 1)', $sql);
     }
@@ -74,8 +74,8 @@ final class UpdateTest extends TestCase {
         $sql = (string) Update::create()
             ->table('users')
             ->set('active', false)
-            ->where(Expression::binary('a', BinaryOperator::Equal, 1))
-            ->andWhere(Expression::binary('b', BinaryOperator::Equal, 2));
+            ->where(Expression::binary('a', BinaryOperator::Eq, 1))
+            ->andWhere(Expression::binary('b', BinaryOperator::Eq, 2));
 
         $this->assertSame(
             'UPDATE `users` SET `active` = FALSE WHERE ((`a` = 1) AND (`b` = 2))',
@@ -87,8 +87,8 @@ final class UpdateTest extends TestCase {
         $sql = (string) Update::create()
             ->table('users')
             ->set('active', false)
-            ->where(Expression::binary('a', BinaryOperator::Equal, 1))
-            ->orWhere(Expression::binary('b', BinaryOperator::Equal, 2));
+            ->where(Expression::binary('a', BinaryOperator::Eq, 1))
+            ->orWhere(Expression::binary('b', BinaryOperator::Eq, 2));
 
         $this->assertSame(
             'UPDATE `users` SET `active` = FALSE WHERE ((`a` = 1) OR (`b` = 2))',
@@ -107,7 +107,7 @@ final class UpdateTest extends TestCase {
             ->table('users', 'u')
             ->set('name', Expression::ref('a.new_name'))
             ->from('audit', 'a')
-            ->where(Expression::binary('u.id', BinaryOperator::Equal, Expression::ref('a.user_id')));
+            ->where(Expression::binary('u.id', BinaryOperator::Eq, Expression::ref('a.user_id')));
 
         $this->assertSame(
             'UPDATE `users` AS `u` SET `name` = `a`.`new_name` FROM `audit` AS `a` '
@@ -169,7 +169,7 @@ final class UpdateTest extends TestCase {
             ->table('users', 'u')
             ->set('name', Expression::ref('a.name'))
             ->from('audit', 'a')
-            ->where(Expression::binary('u.id', BinaryOperator::Equal, Expression::ref('a.user_id')))
+            ->where(Expression::binary('u.id', BinaryOperator::Eq, Expression::ref('a.user_id')))
             ->orderBy('u.id')
             ->limit(50)
             ->returning('u.id');

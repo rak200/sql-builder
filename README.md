@@ -30,7 +30,7 @@ use Rak200\SqlBuilder\Dml\Select;
 $query = Select::create()
     ->select('id', 'name', 'email')
     ->from('users', 'u')
-    ->where(Expression::binary('u.active', BinaryOperator::Equal, 1))
+    ->where(Expression::binary('u.active', BinaryOperator::Eq, 1))
     ->orderBy('u.name', SortDirection::ASC)
     ->limit(20)
     ->offset(0);
@@ -53,9 +53,75 @@ $query = Select::create()
     ->join(
         'roles',
         'r',
-        Expression::binary('u.role_id', BinaryOperator::Equal, Expression::ref('r.id'))
+        Expression::binary('u.role_id', BinaryOperator::Eq, Expression::ref('r.id'))
     );
 ```
+
+### Common Table Expressions (`WITH`)
+
+```php
+use Rak200\SqlBuilder\Dml\Select;
+use Rak200\SqlBuilder\Dml\Set;
+
+$totals = Select::create()
+    ->select('user_id', Expression::count('*'))
+    ->from('orders')
+    ->groupBy('user_id');
+
+$query = Select::create()
+    ->with('order_totals', $totals)
+    ->select('user_id')
+    ->from('order_totals');
+
+// Recursive
+$base = Select::create()->select(Expression::value(1));
+$step = Select::create()
+    ->select(Expression::raw('n + 1'))
+    ->from('numbers')
+    ->where(Expression::binary('n', BinaryOperator::Lt, 10));
+
+$recursive = Select::create()
+    ->withRecursive('numbers', Set::create($base)->union($step, all: true), ['n'])
+    ->select('n')
+    ->from('numbers');
+```
+
+### Window functions (`OVER`)
+
+```php
+use Rak200\SqlBuilder\Common\Window;
+
+$running = Expression::over(
+    Expression::sum('amount'),
+    Window::create()
+        ->partitionBy('user_id')
+        ->orderBy('paid_at')
+        ->rows('BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW')
+)->as('running_total');
+
+$query = Select::create()->select('user_id', $running)->from('payments');
+```
+
+`Window` exposes `partitionBy()`, `orderBy()`, plus `rows()` / `range()` / `groups()` shorthands or a raw `frame()` setter for any standards-compliant frame clause.
+
+### `CASE WHEN`
+
+```php
+// Searched CASE
+Expression::case()
+    ->when(Expression::binary('amount', BinaryOperator::Gt, 100), Expression::value('high'))
+    ->when(Expression::binary('amount', BinaryOperator::Gt, 10),  Expression::value('medium'))
+    ->else(Expression::value('low'))
+    ->as('bucket');
+
+// Simple CASE
+Expression::case('status')
+    ->when('active', 1)
+    ->when('inactive', 0)
+    ->else(-1);
+```
+
+In simple form, scalar `when()` values are auto-wrapped as literals. In searched form, the condition must be an `ExpressionInterface` (typically a binary expression).
 
 ### Set operations (UNION, EXCEPT, INTERSECT)
 
@@ -113,14 +179,14 @@ $update = Update::create()
     ->table('users', 'u')
     ->set('name', 'New Name')
     ->set('updated_at', Expression::raw('NOW()'))
-    ->where(Expression::binary('id', BinaryOperator::Equal, 1));
+    ->where(Expression::binary('id', BinaryOperator::Eq, 1));
 
 // Multi-table (PostgreSQL FROM), ORDER BY / LIMIT (MySQL), RETURNING
 $bulk = Update::create()
     ->table('users', 'u')
     ->set('name', Expression::ref('a.new_name'))
     ->from('audit', 'a')
-    ->where(Expression::binary('u.id', BinaryOperator::Equal, Expression::ref('a.user_id')))
+    ->where(Expression::binary('u.id', BinaryOperator::Eq, Expression::ref('a.user_id')))
     ->orderBy('u.id', SortDirection::DESC)
     ->limit(100)
     ->returning('u.id');
@@ -138,13 +204,13 @@ use Rak200\SqlBuilder\Dml\Delete;
 
 $delete = Delete::create()
     ->from('users')
-    ->where(Expression::binary('active', BinaryOperator::Equal, 0));
+    ->where(Expression::binary('active', BinaryOperator::Eq, 0));
 
 // Multi-table (PostgreSQL USING), ORDER BY / LIMIT (MySQL), RETURNING
 $bulk = Delete::create()
     ->from('users', 'u')
     ->using('audit', 'a')
-    ->where(Expression::binary('u.id', BinaryOperator::Equal, Expression::ref('a.user_id')))
+    ->where(Expression::binary('u.id', BinaryOperator::Eq, Expression::ref('a.user_id')))
     ->orderBy('u.id', SortDirection::DESC)
     ->limit(100)
     ->returning('u.id');
@@ -259,7 +325,7 @@ MariaDB rejects PostgreSQL-only TRUNCATE modifiers (`RESTART IDENTITY`, `CONTINU
 use Rak200\SqlBuilder\Common\Expression;
 use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
 
-Expression::binary('age', BinaryOperator::GreaterThanOrEqual, 18); // `age` >= 18
+Expression::binary('age', BinaryOperator::Ge, 18); // `age` >= 18
 Expression::and($expr1, $expr2, $expr3);                           // (a AND b AND c)
 Expression::or($expr1, $expr2);                                    // (a OR b)
 Expression::not($expr);                                            // NOT (...)
@@ -273,22 +339,18 @@ Use `Expression::column()` for SELECT projections (supports an alias), `Expressi
 
 ## Status & Roadmap
 
-Current version: **0.4.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
+Current version: **0.5.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
 
 ### What works today
 
 - **DML:** `Select` (DISTINCT, JOINs incl. NATURAL/USING, WHERE/AND/OR, GROUP BY, HAVING, ORDER BY with NULL placement, LIMIT/OFFSET, subqueries), `Set` (UNION, UNION ALL, EXCEPT, INTERSECT) with ORDER BY/LIMIT/OFFSET on the combined result, `Insert` (single/multi-row VALUES, INSERT ... SELECT, ON DUPLICATE KEY UPDATE, RETURNING), `Update` (SET, multi-table FROM, WHERE, ORDER BY/LIMIT, RETURNING), `Delete` (multi-table USING, WHERE, ORDER BY/LIMIT, RETURNING).
 - **DDL:** `Table` (CREATE, ALTER, DROP, TRUNCATE — with IF EXISTS / CASCADE / RESTRICT / RESTART IDENTITY / CONTINUE IDENTITY modifiers and ADD/DROP/MODIFY/RENAME column, ADD/DROP CONSTRAINT, ADD INDEX, RENAME TO in ALTER mode), `Column`, `View` (CREATE with OR REPLACE / TEMPORARY / IF NOT EXISTS / WITH CHECK OPTION, plus DROP), `Sequence` (CREATE, ALTER incl. RESTART / NEXTVAL, and DROP), `Index` (CREATE and DROP), `Schema` (CREATE / DROP / ALTER ... RENAME TO; on MariaDB simulated as table-name prefixing), and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
-- **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting.
+- **Expressions:** binary/unary operators (compact mnemonics `Eq`/`Ne`/`Gt`/`Lt`/`Ge`/`Le`, plus null-safe `NullSafeEq`/`NullSafeNe` that emit `IS [NOT] DISTINCT FROM` on the default/Postgres dialect and `<=>` / `NOT (<=>)` on MariaDB), AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), `CASE WHEN` (searched and simple forms), window functions (`OVER (PARTITION BY ... ORDER BY ... ROWS/RANGE/GROUPS ...)`), raw SQL escape hatch, identifier and value quoting.
+- **SELECT extensions:** Common Table Expressions (`WITH name [(cols)] AS (...)`) with `Select::with()` / `withRecursive()`, including multi-CTE and recursive bodies via `Set` unions.
 - **Dialects:** abstract `Dialect` base with a permissive `DefaultDialect`, vendor dialects (`MariaDbDialect` / `MariaDb105Dialect`, `PostgresDialect` / `Postgres15Dialect`), one renderer class per component, runtime selection via `Dialect::fromDsn()`, opt-in per-call rendering via `toSql(Dialect)`. Vendor-specific feature gates (e.g. PostgreSQL rejects `ON DUPLICATE KEY UPDATE`, MariaDB <10.5 rejects `RETURNING`) raise `UnsupportedFeatureException`.
 - **Tests:** PHPUnit 13 unit suite under `tests/Unit/`; run with `composer test`.
 
 ### Not yet implemented
-
-SELECT extensions
-- [ ] `WITH` / Common Table Expressions (CTEs), incl. recursive
-- [ ] Window functions (`OVER`, `PARTITION BY`, frame clauses)
-- [ ] `CASE WHEN ... THEN ... ELSE ... END` expression factory
 
 Safety & quality
 - [ ] Parameter binding / prepared-statement placeholders. Today values are inlined via string concatenation and quoting — **SQL injection risk if user input reaches value positions**.

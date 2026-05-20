@@ -43,7 +43,7 @@ final class DefaultDialectTest extends TestCase {
         $select = Select::create()
             ->select('u.name')
             ->from('users', 'u')
-            ->where(Expression::binary('u.id', BinaryOperator::Equal, 1));
+            ->where(Expression::binary('u.id', BinaryOperator::Eq, 1));
 
         $this->assertSame((string) $select, $select->toSql(Dialect::default()));
     }

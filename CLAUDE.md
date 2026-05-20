@@ -233,7 +233,7 @@ Test classes mirror the source namespace (e.g. `Rak200\SqlBuilder\Common\Express
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.4.0** — unstable while the API stabilises.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.5.0** — unstable while the API stabilises.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

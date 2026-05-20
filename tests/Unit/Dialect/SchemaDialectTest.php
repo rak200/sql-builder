@@ -118,7 +118,7 @@ final class SchemaDialectTest extends TestCase {
     }
 
     public function testMariaDbFlattensJoinTarget(): void {
-        $on = Expression::binary('e.user_id', BinaryOperator::Equal, Expression::ref('u.id'));
+        $on = Expression::binary('e.user_id', BinaryOperator::Eq, Expression::ref('u.id'));
         $sql = Select::create()
             ->from('reporting.events', 'e')
             ->join('auth.users', 'u', $on)
@@ -181,7 +181,7 @@ final class SchemaDialectTest extends TestCase {
     public function testMariaDbFlattensDeleteTarget(): void {
         $sql = Delete::create()
             ->from('reporting.events')
-            ->where(Expression::binary('id', BinaryOperator::Equal, 1))
+            ->where(Expression::binary('id', BinaryOperator::Eq, 1))
             ->toSql(new MariaDbDialect());
         $this->assertSame('DELETE FROM `reporting_events` WHERE (`id` = 1)', $sql);
     }

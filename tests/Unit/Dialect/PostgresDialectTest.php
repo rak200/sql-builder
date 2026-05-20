@@ -31,7 +31,7 @@ final class PostgresDialectTest extends TestCase {
         $sql = Select::create()
             ->select('id')
             ->from('users')
-            ->where(Expression::binary('id', BinaryOperator::Equal, 1))
+            ->where(Expression::binary('id', BinaryOperator::Eq, 1))
             ->toSql(new PostgresDialect());
 
         $this->assertSame('SELECT "id" FROM "users" WHERE ("id" = 1)', $sql);

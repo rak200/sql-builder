@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-20
+
+### Added
+- **SELECT extensions** from the roadmap:
+  - **Common Table Expressions**: `Cte` value object and `Select::with(name, query[, columns])` / `Select::withRecursive(...)` fluent methods. `SelectRenderer` now prefixes the statement with `WITH` (or `WITH RECURSIVE`) when CTEs are present. Multiple CTEs are comma-separated and recursive bodies typically use a `Set` UNION.
+  - **Window functions**: `Window` value object with `partitionBy()`, `orderBy()`, and `rows()` / `range()` / `groups()` (or raw `frame()`) shorthands, plus a `WindowExpression` produced by `Expression::over(function, window)` for the `<function> OVER (<window>)` form.
+  - **CASE WHEN**: `CaseExpression` for both searched (`CASE WHEN cond THEN val`) and simple (`CASE subj WHEN val THEN result`) forms with `when()`/`else()` chains and alias support. Factory: `Expression::case([subject])`. Searched form requires `ExpressionInterface` conditions; simple form auto-wraps scalars as literals.
+- Wired four new renderers into the `Dialect` contract (`renderCte`, `renderWindow`, `renderWindowExpression`, `renderCaseExpression`) and the polymorphic dispatch in `Dialect::renderExpression()`. All inherit identifier quoting / value escaping from the dialect, so Postgres' double quotes and MariaDB's schema-prefix flattening apply automatically inside CTEs, windows and CASE branches.
+- 25 new tests under `tests/Unit/Common/CaseExpressionTest.php`, `tests/Unit/Common/WindowTest.php`, `tests/Unit/Dml/CteTest.php`, and `tests/Unit/Dialect/SelectExtensionsDialectTest.php`.
+- **Null-safe comparison operators**: `BinaryOperator::NullSafeEq` (default value `IS NOT DISTINCT FROM`) and `BinaryOperator::NullSafeNe` (`IS DISTINCT FROM`). The MariaDB dialect rewrites them to its native spaceship operator via a new `MariaDb\Renderer\BinaryExpressionRenderer`: `(a <=> b)` for equal and `NOT (a <=> b)` for not-equal. PostgreSQL and the default dialect emit the SQL-standard form. 9 new tests under `tests/Unit/Dialect/NullSafeOperatorTest.php`.
+
+### Changed
+- **BREAKING (0.x): comparison operator names shortened** to two-letter mnemonics. Migration: `BinaryOperator::Equal` → `Eq`, `NotEqual` → `Ne`, `GreaterThan` → `Gt`, `LessThan` → `Lt`, `GreaterThanOrEqual` → `Ge`, `LessThanOrEqual` → `Le`. Enum string values (`=`, `<>`, `>`, `<`, `>=`, `<=`) are unchanged, so emitted SQL is identical.
+
 ## [0.4.0] - 2026-05-20
 
 ### Added
@@ -73,7 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Migrated internal containers in `Select`, `Set` and `Table` from the deprecated `Rak200\Collections\Collection` to `Rak200\Collections\Vector`.
-- Rewrote `README.md` examples to match the actual fluent API: correct enum cases (`BinaryOperator::Equal`, `SortDirection::ASC`, `DataType::BigInt`, …), join helpers (`Select::join()` / `leftJoin()` / `joinUsing()` / `naturalJoin()`), `Set::create($a)->union($b)`, `Table::create()->column()` / `->constraint()`, `View::query()`, and added a `Sequence` example.
+- Rewrote `README.md` examples to match the actual fluent API: correct enum cases (`BinaryOperator::Eq`, `SortDirection::ASC`, `DataType::BigInt`, …), join helpers (`Select::join()` / `leftJoin()` / `joinUsing()` / `naturalJoin()`), `Set::create($a)->union($b)`, `Table::create()->column()` / `->constraint()`, `View::query()`, and added a `Sequence` example.
 
 ### Fixed
 - `Join::__toString()` no longer emits an empty string for joins without `ON` or `USING` (e.g. `NATURAL` joins, `CROSS JOIN` with no condition). Previously routed through `StringUtils::join()` with an empty list, which discarded the prefix.
@@ -91,7 +105,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/rak200/sql-builder/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/rak200/sql-builder/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/rak200/sql-builder/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/rak200/sql-builder/compare/0.1.1...0.2.0

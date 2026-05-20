@@ -21,7 +21,8 @@ class SelectRenderer implements ComponentRenderer {
     public function __construct(protected Dialect $dialect) {}
 
     public function render(Select $component): string {
-        $sql  = $this->renderSelectClause($component);
+        $sql  = $this->renderWith($component);
+        $sql .= $this->renderSelectClause($component);
         $sql .= $this->renderFrom($component);
         $sql .= $this->renderJoins($component);
         $sql .= $this->renderWhere($component);
@@ -31,6 +32,20 @@ class SelectRenderer implements ComponentRenderer {
         $sql .= $this->renderLimitOffset($component);
 
         return trim($sql);
+    }
+
+    protected function renderWith(Select $component): string {
+        if (count($component->ctes) === 0) {
+            return '';
+        }
+
+        $keyword = $component->recursive ? 'WITH RECURSIVE ' : 'WITH ';
+        $entries = [];
+        foreach ($component->ctes as $cte) {
+            $entries[] = $this->dialect->renderCte($cte);
+        }
+
+        return $keyword . implode(', ', $entries) . ' ';
     }
 
     protected function renderSelectClause(Select $component): string {

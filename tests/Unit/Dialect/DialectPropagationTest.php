@@ -38,7 +38,7 @@ final class DialectPropagationTest extends TestCase {
     }
 
     public function testJoinOnConditionUsesDialectQuoting(): void {
-        $on = Expression::binary('u.role_id', BinaryOperator::Equal, Expression::ref('r.id'));
+        $on = Expression::binary('u.role_id', BinaryOperator::Eq, Expression::ref('r.id'));
 
         $sql = Select::create()
             ->select('u.name')
@@ -66,7 +66,7 @@ final class DialectPropagationTest extends TestCase {
         $sub = Select::create()
             ->select('1')
             ->from('roles')
-            ->where(Expression::binary('roles.user_id', BinaryOperator::Equal, Expression::ref('u.id')));
+            ->where(Expression::binary('roles.user_id', BinaryOperator::Eq, Expression::ref('u.id')));
 
         $sql = Select::create()
             ->select('u.id')
@@ -83,8 +83,8 @@ final class DialectPropagationTest extends TestCase {
     public function testNestedAndOrRendersWithDialect(): void {
         $condition = Expression::or(
             Expression::and(
-                Expression::binary('status', BinaryOperator::Equal, Expression::value('active')),
-                Expression::binary('role', BinaryOperator::Equal, Expression::value('admin'))
+                Expression::binary('status', BinaryOperator::Eq, Expression::value('active')),
+                Expression::binary('role', BinaryOperator::Eq, Expression::value('admin'))
             ),
             Expression::binary('email', BinaryOperator::Like, Expression::value('%@example.com'))
         );
@@ -106,7 +106,7 @@ final class DialectPropagationTest extends TestCase {
             ->select(Expression::count('*'))
             ->from('orders')
             ->groupBy('customer_id')
-            ->having(Expression::binary(Expression::raw('COUNT(*)'), BinaryOperator::GreaterThan, 5))
+            ->having(Expression::binary(Expression::raw('COUNT(*)'), BinaryOperator::Gt, 5))
             ->orderBy('customer_id')
             ->toSql(new PostgresDialect());
 
@@ -158,7 +158,7 @@ final class DialectPropagationTest extends TestCase {
             ->table('users', 'u')
             ->set('name', "O'Brien")
             ->set('updated_at', Expression::raw('NOW()'))
-            ->where(Expression::binary('u.id', BinaryOperator::Equal, 7))
+            ->where(Expression::binary('u.id', BinaryOperator::Eq, 7))
             ->toSql(new PostgresDialect());
 
         $this->assertSame(
@@ -201,7 +201,7 @@ final class DialectPropagationTest extends TestCase {
         $select = Select::create()
             ->select('u.name', Expression::count('*')->as('total'))
             ->from('users', 'u')
-            ->where(Expression::binary('u.active', BinaryOperator::Equal, true))
+            ->where(Expression::binary('u.active', BinaryOperator::Eq, true))
             ->groupBy('u.name')
             ->orderBy('total');
 
