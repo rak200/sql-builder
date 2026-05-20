@@ -220,6 +220,171 @@ The migration that landed 0.2.0 (introduce the contract → decompose into rende
 4. Add unit tests under `tests/Unit/Dialect/` — both vendor-specific assertions and a dialect-propagation case to make sure nested expressions inherit the dialect.
 5. Register the scheme in `Dsn\DsnParser` if you want DSN-based selection.
 
+## Planned: Safety & Quality
+
+Two items remain on the `README.md` "Not yet implemented" list. This section is the **specification** the implementation must follow; nothing here is built yet. Both touch the rendering layer — land them in this order to minimise re-test churn.
+
+### 1. Consistent identifier quoting (do first)
+
+Smaller, contained refactor. Doing it before parameter binding means the new bind-mode tests compare against the cleaned-up output.
+
+#### Current inconsistency
+
+`Dialect::quoteIdentifier()` (default) produces backticks. The DDL renderers, however, wrap the result in literal double quotes — `CREATE TABLE "`users`" (...)` — and several places skip the dialect entirely and emit `"%s"` with the raw identifier name. Inventory of offenders:
+
+```
+src/Dialect/Renderer/Ddl/TableRenderer.php       CREATE TABLE "...", ALTER TABLE "...", RENAME COLUMN "...", DROP COLUMN "...", DROP CONSTRAINT "..."
+src/Dialect/Renderer/Ddl/ViewRenderer.php        CREATE VIEW "..." and the explicit column list
+src/Dialect/Renderer/Ddl/IndexRenderer.php       "name", "table", and each column inside the parentheses
+src/Dialect/Renderer/Ddl/SequenceRenderer.php    CREATE SEQUENCE "...", ALTER SEQUENCE "...", DROP SEQUENCE "..."
+src/Dialect/Renderer/Ddl/PrimaryKeyRenderer.php  CONSTRAINT "...", and the column list
+src/Dialect/Renderer/Ddl/UniqueKeyRenderer.php   same shape as PrimaryKey
+src/Dialect/Renderer/Ddl/ForeignKeyRenderer.php  CONSTRAINT "...", REFERENCES "..." and both column lists
+src/Dialect/Renderer/Ddl/CheckRenderer.php       CONSTRAINT "..."
+```
+
+#### Target
+
+Every identifier — table, view, index, sequence, schema, constraint, column inside a constraint or index column list — is emitted via `$this->dialect->quoteIdentifier(...)`. No literal `"..."` wraps remain in any renderer. Output becomes uniform: backticks on the default dialect, double quotes on Postgres, etc.
+
+#### Migration steps
+
+1. Sweep the eight DDL renderer files; replace every `sprintf('"%s"', ...)` and every `"%s"` template with a call through `$this->dialect->quoteIdentifier(...)`.
+2. Run the suite. Tests under `tests/Unit/Ddl/{TableTest, ViewTest, IndexTest, SequenceTest, PrimaryKeyTest, UniqueKeyTest, ForeignKeyTest, CheckTest}.php` plus several `tests/Unit/Dialect/*Test.php` files assert the current quirky output literally — expect ~40-60 assertions to need updates.
+3. Update each failing assertion to the cleaned-up string. **Do not** revert the renderer change to keep an old test green — the test is the artefact, the new output is the goal.
+4. Cross-check `SchemaDialectTest`, `DropTruncateDialectTest`, `SelectExtensionsDialectTest` and the propagation tests for cosmetic regressions.
+5. Update the README's DDL example snippets so the comment-after-`echo` matches the new output (the artefacts appear in several places).
+6. CHANGELOG: list this as a **BREAKING (0.x) output change** — emitted SQL changes for every DDL statement even though it remains semantically equivalent and parses identically.
+
+### 2. Parameter binding (prepared-statement placeholders)
+
+Today values are inlined via `ValueExpression` → `$dialect->quoteValue($value)`. Goal: provide an opt-in path that returns SQL with placeholders alongside the array of bound values, suitable for `PDO::prepare()` / `PDOStatement::execute()`.
+
+#### Goals
+
+1. Backward compatible — `__toString()` and `toSql(Dialect)` continue to inline. Bind mode is opt-in via a new `prepare(Dialect)` method on every renderable component.
+2. The result is a `PreparedStatement` value object exposing `sql` and `parameters` so the caller can hand both straight to PDO.
+3. Placeholder syntax is dialect-specific: positional `?` (MariaDB/MySQL) by default; `$1`, `$2`, … on Postgres.
+4. Only **values** become placeholders. Identifiers and raw SQL never do; `LIMIT` and `OFFSET` integers stay inlined (MariaDB <8.0 rejects placeholders there, and they're not user-strings — no injection risk).
+
+#### New abstractions
+
+```
+src/Prepared/
+├── PreparedStatement.php           # final value object: ->sql, ->parameters
+└── Binder.php                      # default `?` positional; PostgresBinder subclass emits `$N`
+
+src/Dialect/MariaDb/
+└── (Binder unchanged — default `?` is already MariaDB-shaped)
+
+src/Dialect/Postgres/
+└── PostgresBinder.php              # emits `$1`, `$2`, …
+```
+
+```php
+final class PreparedStatement {
+    public function __construct(
+        public readonly string $sql,
+        /** @var list<mixed> */
+        public readonly array $parameters
+    ) {}
+}
+
+class Binder {
+    /** @var list<mixed> */
+    private array $values = [];
+
+    public function bind(mixed $value): string {
+        $this->values[] = $value;
+        return $this->placeholder(count($this->values));
+    }
+
+    /** @return list<mixed> */
+    public function values(): array { return $this->values; }
+
+    protected function placeholder(int $oneBasedIndex): string { return '?'; }
+}
+
+final class PostgresBinder extends Binder {
+    protected function placeholder(int $oneBasedIndex): string { return '$' . $oneBasedIndex; }
+}
+```
+
+#### Dialect contract additions
+
+```php
+abstract class Dialect {
+    /** Current binder; set during prepare() rendering, null otherwise. */
+    public private(set) ?Binder $binder = null;
+
+    /** Factory hook — Postgres overrides to return PostgresBinder. */
+    public function newBinder(): Binder { return new Binder(); }
+
+    /** Clone+attach so the singleton dialect is not mutated. */
+    public function withBinder(?Binder $binder): static {
+        $clone = clone $this;
+        $clone->binder = $binder;
+        return $clone;
+    }
+}
+```
+
+`prepare(Dialect)` lifecycle on each component:
+
+```php
+public function prepare(Dialect $dialect): PreparedStatement {
+    $binder  = $dialect->newBinder();
+    $bound   = $dialect->withBinder($binder);
+    $sql     = $bound->renderSelect($this);   // or renderInsert / renderUpdate / …
+    return new PreparedStatement($sql, $binder->values());
+}
+```
+
+Cloning isolates the binder state on the dialect instance used for one prepare() call — critical because `Dialect::default()` is a process-wide singleton and `__toString()` users would otherwise see a stale binder.
+
+#### Renderer changes
+
+Only one renderer truly switches behaviour:
+
+```php
+// src/Dialect/Renderer/Common/ValueExpressionRenderer.php
+public function render(ValueExpression $component): string {
+    $sql = $this->dialect->binder !== null
+        ? $this->dialect->binder->bind($component->value)
+        : $this->dialect->quoteValue($component->value);
+
+    if ($component->alias !== null) {
+        $sql .= ' AS ' . $this->dialect->quoteIdentifier($component->alias);
+    }
+
+    return $sql;
+}
+```
+
+Every other renderer that handles a value already routes through `ValueExpression` (Insert::values() wraps scalars, Update::set() wraps scalars, CaseExpression::when() wraps simple-form scalars, Expression::binary() wraps via normalize, …) — so they pick up bind mode for free.
+
+Renderers that explicitly do **not** change:
+- ColumnExpression, ColumnReference, SimpleIdentifier, TableReference, RawExpression — identifiers and raw SQL never get parameterised.
+- Sub-statements (Select inside subquery, Set, Cte) — recursion already propagates the dialect, which carries the binder.
+
+#### Special cases
+
+- **`BinaryOperator::In` with an array right operand**: each array element becomes its own placeholder. The SQL shape (`IN (?, ?, ?)`) depends on the array's length — that's expected, and matches how callers use PDO with `IN`.
+- **LIMIT / OFFSET**: rendered as integers, never bound. The integer cast in the builder constructor already guarantees safety.
+- **`DEFAULT` values in INSERT / UPDATE that are `Expression::raw('NOW()')` or a sequence's `nextVal`**: these are RawExpression / FunctionExpression, not ValueExpression, so they pass through verbatim — no placeholder, correct behaviour.
+
+#### Migration steps
+
+1. Create `PreparedStatement`, `Binder`, `PostgresBinder`. Add `newBinder()` on `Dialect` / `PostgresDialect` and `withBinder()` on `Dialect`.
+2. Add the `?Binder $binder` slot on `Dialect` and the `prepare(Dialect)` method on every renderable component (every DML builder, plus `CaseExpression` / `BinaryExpression` for completeness — handy for unit-test fixtures).
+3. Modify `ValueExpressionRenderer` to consult `$this->dialect->binder`. No other renderer changes.
+4. Add `tests/Unit/Prepared/` covering: simple SELECT/WHERE, multi-row INSERT, UPDATE SET, DELETE WHERE, JOIN ON, `IN (array)`, EXISTS subquery (placeholders carry across the nested render), CASE WHEN branches, Postgres `$N` numbering with a JOIN that introduces six placeholders.
+5. Document `prepare(Dialect)` in the README with a small PDO example, and drop the "Safety & quality / Parameter binding" bullet from the roadmap.
+
+### Sequencing
+
+Land **§1 (identifier quoting)** first as one self-contained release — it's a pure output-cleanup with no API additions. Then land **§2 (parameter binding)** as a separate release with the new `prepare()` / `PreparedStatement` / `Binder` surface. Tests written against §2 then naturally compare against the already-clean DDL output from §1, avoiding a double rewrite.
+
 ## Testing
 
 PHPUnit 13 is configured via `phpunit.xml` with two suites: `Unit` and `Integration`. The strict flags `failOnWarning` and `failOnRisky` are enabled — risky/incomplete tests fail the run.
