@@ -23,6 +23,7 @@ use Rak200\SqlBuilder\Ddl\Column;
 use Rak200\SqlBuilder\Ddl\ForeignKey;
 use Rak200\SqlBuilder\Ddl\Index;
 use Rak200\SqlBuilder\Ddl\PrimaryKey;
+use Rak200\SqlBuilder\Ddl\Schema;
 use Rak200\SqlBuilder\Ddl\Sequence;
 use Rak200\SqlBuilder\Ddl\Table;
 use Rak200\SqlBuilder\Ddl\UniqueKey;
@@ -70,6 +71,41 @@ abstract class Dialect {
      */
     abstract public function quoteValue(mixed $value): string;
 
+    /**
+     * Resolve a table name before it is quoted.
+     *
+     * Returns the input unchanged on the default dialect; vendor dialects
+     * that lack first-class schema support (e.g.
+     * {@see \Rak200\SqlBuilder\Dialect\MariaDb\MariaDbDialect}) override this
+     * to flatten `schema.table` into a single identifier such as
+     * `schema_table`, preserving the multi-tenant intent of the caller.
+     *
+     * Renderers that emit a *table* identifier (CREATE/ALTER TABLE, FROM,
+     * JOIN, REFERENCES, ON, CREATE VIEW, CREATE SEQUENCE, …) must run table
+     * names through this hook before quoting.
+     *
+     * @param string $name Table name, optionally schema-qualified.
+     * @return string Resolved name suitable for {@see quoteIdentifier()}.
+     */
+    public function resolveTableName(string $name): string {
+        return $name;
+    }
+
+    /**
+     * Resolve a column reference whose name may include a schema qualifier.
+     *
+     * Default: identity. MariaDB-style dialects override this to flatten the
+     * leading two parts of three-part identifiers (`schema.table.column` →
+     * `schema_table.column`) so that schema-simulated tables remain
+     * addressable inside expressions.
+     *
+     * @param string $name Possibly qualified column reference.
+     * @return string Resolved identifier suitable for {@see quoteIdentifier()}.
+     */
+    public function resolveColumnReference(string $name): string {
+        return $name;
+    }
+
     // --- DML ----------------------------------------------------------------
 
     abstract public function renderSelect(Select $component): string;
@@ -85,6 +121,7 @@ abstract class Dialect {
     abstract public function renderView(View $component): string;
     abstract public function renderSequence(Sequence $component): string;
     abstract public function renderIndex(Index $component): string;
+    abstract public function renderSchema(Schema $component): string;
     abstract public function renderPrimaryKey(PrimaryKey $component): string;
     abstract public function renderUniqueKey(UniqueKey $component): string;
     abstract public function renderForeignKey(ForeignKey $component): string;
@@ -138,6 +175,7 @@ abstract class Dialect {
             $expression instanceof View               => $this->renderView($expression),
             $expression instanceof Sequence           => $this->renderSequence($expression),
             $expression instanceof Index              => $this->renderIndex($expression),
+            $expression instanceof Schema             => $this->renderSchema($expression),
             $expression instanceof PrimaryKey         => $this->renderPrimaryKey($expression),
             $expression instanceof UniqueKey          => $this->renderUniqueKey($expression),
             $expression instanceof ForeignKey         => $this->renderForeignKey($expression),

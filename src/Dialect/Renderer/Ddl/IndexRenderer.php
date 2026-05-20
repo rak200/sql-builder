@@ -29,7 +29,7 @@ class IndexRenderer implements ComponentRenderer {
             'CREATE %sINDEX "%s" ON "%s" (%s)',
             $unique,
             $component->name,
-            $component->table,
+            $this->dialect->resolveTableName($component->table),
             $columns
         );
     }

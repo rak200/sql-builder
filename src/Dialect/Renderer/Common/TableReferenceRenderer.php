@@ -31,11 +31,11 @@ class TableReferenceRenderer implements ComponentRenderer {
         if ($component->alias !== null) {
             return sprintf(
                 '%s AS %s',
-                $this->dialect->quoteIdentifier($component->source),
+                $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->source)),
                 $this->dialect->quoteIdentifier($component->alias)
             );
         }
 
-        return $this->dialect->quoteIdentifier($component->source);
+        return $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->source));
     }
 }

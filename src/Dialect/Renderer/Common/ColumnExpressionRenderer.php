@@ -19,7 +19,7 @@ class ColumnExpressionRenderer implements ComponentRenderer {
     public function __construct(protected Dialect $dialect) {}
 
     public function render(ColumnExpression $component): string {
-        $sql = $this->dialect->quoteIdentifier($component->name);
+        $sql = $this->dialect->quoteIdentifier($this->dialect->resolveColumnReference($component->name));
 
         if ($component->alias !== null) {
             $sql .= ' AS ' . $this->dialect->quoteIdentifier($component->alias);

@@ -37,7 +37,7 @@ class TableRenderer implements ComponentRenderer {
 
         $sql = sprintf(
             'CREATE TABLE "%s" (%s)',
-            $this->dialect->quoteIdentifier($component->name),
+            $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name)),
             implode(', ', $parts)
         );
 
@@ -55,7 +55,10 @@ class TableRenderer implements ComponentRenderer {
             throw new InvalidArgumentException('No ALTER TABLE operations defined.');
         }
 
-        $sql = sprintf('ALTER TABLE "%s"', $this->dialect->quoteIdentifier($component->name));
+        $sql = sprintf(
+            'ALTER TABLE "%s"',
+            $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name))
+        );
         $operations = array_map(
             fn(array $operation) => $this->renderAlterOperation($operation),
             $component->alterOperations
@@ -74,7 +77,10 @@ class TableRenderer implements ComponentRenderer {
                 $this->dialect->quoteIdentifier($operation['old']),
                 $this->dialect->quoteIdentifier($operation['new'])
             ),
-            'RENAME TO'       => sprintf('RENAME TO %s', $this->dialect->quoteIdentifier($operation['name'])),
+            'RENAME TO'       => sprintf(
+                'RENAME TO %s',
+                $this->dialect->quoteIdentifier($this->dialect->resolveTableName($operation['name']))
+            ),
             'ADD CONSTRAINT'  => sprintf('ADD %s', $this->dialect->renderExpression($operation['definition'])),
             'DROP CONSTRAINT' => sprintf('DROP CONSTRAINT "%s"', $this->dialect->quoteIdentifier($operation['name'])),
             'ADD INDEX'       => sprintf('ADD %s', $this->dialect->renderIndex($operation['definition'])),

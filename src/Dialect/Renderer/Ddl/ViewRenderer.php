@@ -39,7 +39,7 @@ class ViewRenderer implements ComponentRenderer {
             $orReplace,
             $temporary,
             $ifNotExists,
-            $this->dialect->quoteIdentifier($component->name)
+            $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name))
         );
 
         $sql .= $this->renderColumnList($component);

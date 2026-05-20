@@ -19,6 +19,6 @@ class ColumnReferenceRenderer implements ComponentRenderer {
     public function __construct(protected Dialect $dialect) {}
 
     public function render(ColumnReference $component): string {
-        return $this->dialect->quoteIdentifier($component->name);
+        return $this->dialect->quoteIdentifier($this->dialect->resolveColumnReference($component->name));
     }
 }

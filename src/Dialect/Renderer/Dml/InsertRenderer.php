@@ -29,7 +29,10 @@ class InsertRenderer implements ComponentRenderer {
             throw new InvalidArgumentException('INSERT requires VALUES or a SELECT source.');
         }
 
-        $sql  = sprintf('INSERT INTO %s', $this->dialect->quoteIdentifier($component->table));
+        $sql  = sprintf(
+            'INSERT INTO %s',
+            $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->table))
+        );
         $sql .= $this->renderColumnList($component);
         $sql .= $component->select !== null
             ? ' ' . $this->dialect->renderSelect($component->select)

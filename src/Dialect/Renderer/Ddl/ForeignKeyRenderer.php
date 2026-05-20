@@ -38,7 +38,7 @@ class ForeignKeyRenderer implements ComponentRenderer {
             $sql .= StringUtils::join(
                 array_map(fn(string $column) => sprintf('"%s"', $column), $component->referenceColumns),
                 ', ',
-                sprintf(' REFERENCES "%s" (', $component->referenceTable),
+                sprintf(' REFERENCES "%s" (', $this->dialect->resolveTableName($component->referenceTable)),
                 ')'
             );
         }

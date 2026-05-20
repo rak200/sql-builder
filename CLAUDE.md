@@ -181,7 +181,18 @@ abstract class Dialect {
 
 - **Throw on unsupported feature** — `Postgres\Renderer\InsertRenderer::renderOnDuplicateKeyUpdate()` throws `UnsupportedFeatureException` because PostgreSQL uses `ON CONFLICT` instead. Same pattern in `MariaDb\Renderer\InsertRenderer::renderReturning()`.
 - **Override at the dialect level** — `PostgresDialect::quoteIdentifier()` and `quoteValue()` are overridden directly on the dialect (not via a renderer), and every default renderer that calls `$this->dialect->quoteIdentifier(...)` automatically picks up the new behaviour. Most identifier-quoting overrides do *not* need a renderer override.
-- **Hack/simulate** — a future `Sqlite\Renderer\TableRenderer` could rewrite `schema.table` to `schema_table` because SQLite has no schemas, preserving the multi-tenant intent of the caller.
+- **Hack/simulate** — `MariaDbDialect::resolveTableName()` flattens `schema.table` to `schema_table` (and `resolveColumnReference()` flattens the schema prefix in three-part column refs) so callers that address tables in a logical schema keep working on an engine that has no schema namespace. The `Schema` DDL builder, in turn, refuses to emit CREATE/DROP/ALTER SCHEMA on MariaDB — the schema simulation is purely a naming convention, not a physical operation on the database.
+
+### Schema simulation hooks
+
+`Dialect` exposes two concrete (non-abstract) override points used by every table-aware renderer:
+
+```php
+public function resolveTableName(string $name): string;        // default: identity
+public function resolveColumnReference(string $name): string;  // default: identity
+```
+
+Every default renderer that emits a *table* identifier (CREATE/ALTER TABLE, RENAME TO, INSERT INTO, FROM/JOIN, CREATE VIEW, CREATE/ALTER SEQUENCE, REFERENCES, CREATE INDEX ... ON) runs the name through `resolveTableName()` before quoting. `ColumnReferenceRenderer` and `ColumnExpressionRenderer` run their names through `resolveColumnReference()`. The default dialect leaves both untouched; `MariaDbDialect` overrides them to do the schema-to-prefix flattening. Adding a new "schema simulation" for another engine is a single dialect-level override of those two methods.
 
 ### DSN parsing
 
@@ -222,7 +233,7 @@ Test classes mirror the source namespace (e.g. `Rak200\SqlBuilder\Common\Express
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.2.0** — unstable while the API stabilises.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.3.0** — unstable while the API stabilises.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

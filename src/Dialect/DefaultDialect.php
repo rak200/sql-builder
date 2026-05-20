@@ -22,6 +22,7 @@ use Rak200\SqlBuilder\Ddl\Column;
 use Rak200\SqlBuilder\Ddl\ForeignKey;
 use Rak200\SqlBuilder\Ddl\Index;
 use Rak200\SqlBuilder\Ddl\PrimaryKey;
+use Rak200\SqlBuilder\Ddl\Schema;
 use Rak200\SqlBuilder\Ddl\Sequence;
 use Rak200\SqlBuilder\Ddl\Table;
 use Rak200\SqlBuilder\Ddl\UniqueKey;
@@ -44,6 +45,7 @@ use Rak200\SqlBuilder\Dialect\Renderer\Ddl\ColumnRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\ForeignKeyRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\IndexRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\PrimaryKeyRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Ddl\SchemaRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\SequenceRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\TableRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\UniqueKeyRenderer;
@@ -100,6 +102,7 @@ class DefaultDialect extends Dialect {
     protected ?ViewRenderer       $viewRenderer       = null;
     protected ?SequenceRenderer   $sequenceRenderer   = null;
     protected ?IndexRenderer      $indexRenderer      = null;
+    protected ?SchemaRenderer     $schemaRenderer     = null;
     protected ?PrimaryKeyRenderer $primaryKeyRenderer = null;
     protected ?UniqueKeyRenderer  $uniqueKeyRenderer  = null;
     protected ?ForeignKeyRenderer $foreignKeyRenderer = null;
@@ -168,6 +171,10 @@ class DefaultDialect extends Dialect {
 
     public function renderIndex(Index $component): string {
         return $this->indexRenderer()->render($component);
+    }
+
+    public function renderSchema(Schema $component): string {
+        return $this->schemaRenderer()->render($component);
     }
 
     public function renderPrimaryKey(PrimaryKey $component): string {
@@ -280,6 +287,10 @@ class DefaultDialect extends Dialect {
 
     protected function indexRenderer(): IndexRenderer {
         return $this->indexRenderer ??= new IndexRenderer($this);
+    }
+
+    protected function schemaRenderer(): SchemaRenderer {
+        return $this->schemaRenderer ??= new SchemaRenderer($this);
     }
 
     protected function primaryKeyRenderer(): PrimaryKeyRenderer {

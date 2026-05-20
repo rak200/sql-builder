@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-19
+
+### Added
+- `Schema` DDL builder under `src/Ddl/` for `CREATE SCHEMA`, `DROP SCHEMA` and `ALTER SCHEMA ... RENAME TO`, with `IF [NOT] EXISTS`, `AUTHORIZATION`, and `CASCADE`/`RESTRICT` modifiers. Wired into the `Dialect` contract via a new abstract `renderSchema()` and `Renderer/Ddl/SchemaRenderer.php`.
+- Two new override points on `Dialect`: `resolveTableName(string)` and `resolveColumnReference(string)`. Default: identity. Every table-aware default renderer (TableRenderer, TableReferenceRenderer, InsertRenderer, IndexRenderer, ForeignKeyRenderer, ViewRenderer, SequenceRenderer, ColumnReferenceRenderer, ColumnExpressionRenderer) now runs identifiers through these hooks before quoting.
+- MariaDB schema simulation: `MariaDbDialect::resolveTableName()` flattens `schema.table` to `schema_table`; `resolveColumnReference()` flattens the schema prefix in three-part column references (`schema.table.column` → `schema_table.column`). `MariaDb\Renderer\SchemaRenderer` throws `UnsupportedFeatureException` on CREATE/DROP/ALTER SCHEMA — MariaDB has no schema namespace independent of the database, so schema-level DDL is intentionally refused.
+- 35 new tests under `tests/Unit/Ddl/SchemaTest.php` and `tests/Unit/Dialect/SchemaDialectTest.php` covering the builder, the default and Postgres rendering, MariaDB's refusal of schema DDL, and the MariaDB table-prefix simulation across SELECT/INSERT/UPDATE/DELETE/JOIN/Index/ForeignKey/View/Sequence.
+
 ## [0.2.0] - 2026-05-19
 
 ### Added
@@ -71,7 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/rak200/sql-builder/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/rak200/sql-builder/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/rak200/sql-builder/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/rak200/sql-builder/compare/0.0.3...0.1.0

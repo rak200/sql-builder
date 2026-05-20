@@ -30,7 +30,7 @@ class SequenceRenderer implements ComponentRenderer {
         return sprintf(
             'CREATE SEQUENCE%s "%s"%s',
             $ifNotExists,
-            $this->dialect->quoteIdentifier($component->name),
+            $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name)),
             $this->renderOptions($component)
         );
     }
@@ -45,7 +45,7 @@ class SequenceRenderer implements ComponentRenderer {
 
         return sprintf(
             'ALTER SEQUENCE "%s"%s%s',
-            $this->dialect->quoteIdentifier($component->name),
+            $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name)),
             $options,
             $restart
         );
