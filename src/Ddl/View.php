@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Ddl;
 
+use InvalidArgumentException;
 use Rak200\SqlBuilder\Common\Enum\CheckOption;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Dialect\Dialect;
@@ -12,14 +13,20 @@ use Rak200\SqlBuilder\Dml\Select;
 /**
  * DDL View builder.
  *
- * Builds SQL CREATE VIEW statements using a fluent interface.
- * Supports OR REPLACE, TEMPORARY, IF NOT EXISTS, optional column lists,
- * and WITH [CASCADED|LOCAL] CHECK OPTION.
+ * Builds `CREATE VIEW` and `DROP VIEW` statements. CREATE supports
+ * `OR REPLACE`, `TEMPORARY`, `IF NOT EXISTS`, explicit column lists and
+ * `WITH [CASCADED|LOCAL] CHECK OPTION`. DROP supports `IF EXISTS` and
+ * `CASCADE`/`RESTRICT`.
  *
  * @package Rak200\SqlBuilder\Ddl
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 class View implements ExpressionInterface {
+
+    public const string MODE_CREATE = 'CREATE';
+    public const string MODE_DROP   = 'DROP';
+
+    public private(set) string $mode = self::MODE_CREATE;
 
     public private(set) bool $orReplace = false;
     public private(set) bool $temporary = false;
@@ -34,10 +41,20 @@ class View implements ExpressionInterface {
     public private(set) bool $withCheckOption = false;
     public private(set) ?CheckOption $checkOption = null;
 
+    public private(set) bool $ifExists = false;
+    public private(set) bool $cascade = false;
+    public private(set) bool $restrict = false;
+
     public function __construct(public private(set) string $name) {}
 
     public static function create(string $name): static {
         return new static($name);
+    }
+
+    public static function drop(string $name): static {
+        $view = new static($name);
+        $view->mode = self::MODE_DROP;
+        return $view;
     }
 
     public function name(string $name): static {
@@ -76,14 +93,33 @@ class View implements ExpressionInterface {
         return $this;
     }
 
+    /**
+     * `IF EXISTS` guard for `DROP VIEW`.
+     */
+    public function ifExists(bool $ifExists = true): static {
+        $this->ifExists = $ifExists;
+        return $this;
+    }
+
+    /** `CASCADE` modifier (DROP). Clears any prior `RESTRICT`. */
+    public function cascade(): static {
+        $this->cascade  = true;
+        $this->restrict = false;
+        return $this;
+    }
+
+    /** `RESTRICT` modifier (DROP). Clears any prior `CASCADE`. */
+    public function restrict(): static {
+        $this->restrict = true;
+        $this->cascade  = false;
+        return $this;
+    }
+
     /** {@inheritdoc} */
     public function __toString(): string {
         return Dialect::default()->renderView($this);
     }
 
-    /**
-     * Render this view with a specific dialect.
-     */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderView($this);
     }

@@ -11,7 +11,7 @@ use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 use Rak200\SqlBuilder\Utils\StringUtils;
 
 /**
- * Renders a {@see Sequence} as CREATE SEQUENCE or ALTER SEQUENCE.
+ * Renders a {@see Sequence} as `CREATE`, `ALTER` or `DROP SEQUENCE`.
  *
  * @package Rak200\SqlBuilder\Dialect\Renderer\Ddl
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -21,7 +21,14 @@ class SequenceRenderer implements ComponentRenderer {
     public function __construct(protected Dialect $dialect) {}
 
     public function render(Sequence $component): string {
-        return $component->alterMode ? $this->renderAlter($component) : $this->renderCreate($component);
+        return match ($component->mode) {
+            Sequence::MODE_CREATE => $this->renderCreate($component),
+            Sequence::MODE_ALTER  => $this->renderAlter($component),
+            Sequence::MODE_DROP   => $this->renderDrop($component),
+            default               => throw new InvalidArgumentException(
+                "Unsupported sequence mode: {$component->mode}"
+            ),
+        };
     }
 
     protected function renderCreate(Sequence $component): string {
@@ -49,6 +56,23 @@ class SequenceRenderer implements ComponentRenderer {
             $options,
             $restart
         );
+    }
+
+    protected function renderDrop(Sequence $component): string {
+        $ifExists = $component->ifExists ? ' IF EXISTS' : '';
+        $sql = sprintf(
+            'DROP SEQUENCE%s "%s"',
+            $ifExists,
+            $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name))
+        );
+
+        if ($component->cascade) {
+            $sql .= ' CASCADE';
+        } elseif ($component->restrict) {
+            $sql .= ' RESTRICT';
+        }
+
+        return $sql;
     }
 
     protected function renderOptions(Sequence $component): string {

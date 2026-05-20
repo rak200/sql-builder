@@ -11,8 +11,7 @@ use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 use Rak200\SqlBuilder\Utils\StringUtils;
 
 /**
- * Renders a {@see View} as a CREATE [OR REPLACE] [TEMPORARY] VIEW
- * [IF NOT EXISTS] ... AS ... [WITH CHECK OPTION] statement.
+ * Renders a {@see View} as `CREATE VIEW` or `DROP VIEW` based on mode.
  *
  * @package Rak200\SqlBuilder\Dialect\Renderer\Ddl
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -22,6 +21,16 @@ class ViewRenderer implements ComponentRenderer {
     public function __construct(protected Dialect $dialect) {}
 
     public function render(View $component): string {
+        return match ($component->mode) {
+            View::MODE_CREATE => $this->renderCreate($component),
+            View::MODE_DROP   => $this->renderDrop($component),
+            default           => throw new InvalidArgumentException(
+                "Unsupported view mode: {$component->mode}"
+            ),
+        };
+    }
+
+    protected function renderCreate(View $component): string {
         if ($component->query === null) {
             throw new InvalidArgumentException('A SELECT query must be provided via query() for CREATE VIEW.');
         }
@@ -45,6 +54,23 @@ class ViewRenderer implements ComponentRenderer {
         $sql .= $this->renderColumnList($component);
         $sql .= ' AS ' . $this->dialect->renderSelect($component->query);
         $sql .= $this->renderCheckOption($component);
+
+        return $sql;
+    }
+
+    protected function renderDrop(View $component): string {
+        $ifExists = $component->ifExists ? ' IF EXISTS' : '';
+        $sql = sprintf(
+            'DROP VIEW%s %s',
+            $ifExists,
+            $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name))
+        );
+
+        if ($component->cascade) {
+            $sql .= ' CASCADE';
+        } elseif ($component->restrict) {
+            $sql .= ' RESTRICT';
+        }
 
         return $sql;
     }

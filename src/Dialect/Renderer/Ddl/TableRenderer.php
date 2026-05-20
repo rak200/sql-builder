@@ -11,7 +11,8 @@ use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 use Rak200\SqlBuilder\Utils\StringUtils;
 
 /**
- * Renders a {@see Table} as a CREATE TABLE or ALTER TABLE statement.
+ * Renders a {@see Table} as `CREATE TABLE`, `ALTER TABLE`, `DROP TABLE`
+ * or `TRUNCATE TABLE` based on the builder's mode.
  *
  * @package Rak200\SqlBuilder\Dialect\Renderer\Ddl
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -21,10 +22,18 @@ class TableRenderer implements ComponentRenderer {
     public function __construct(protected Dialect $dialect) {}
 
     public function render(Table $component): string {
-        if ($component->alterMode) {
-            return $this->renderAlter($component);
-        }
+        return match ($component->mode) {
+            Table::MODE_CREATE   => $this->renderCreate($component),
+            Table::MODE_ALTER    => $this->renderAlter($component),
+            Table::MODE_DROP     => $this->renderDrop($component),
+            Table::MODE_TRUNCATE => $this->renderTruncate($component),
+            default              => throw new InvalidArgumentException(
+                "Unsupported table mode: {$component->mode}"
+            ),
+        };
+    }
 
+    protected function renderCreate(Table $component): string {
         $parts = [];
 
         foreach ($component->columns as $column) {
@@ -86,5 +95,43 @@ class TableRenderer implements ComponentRenderer {
             'ADD INDEX'       => sprintf('ADD %s', $this->dialect->renderIndex($operation['definition'])),
             default           => throw new InvalidArgumentException('Unsupported ALTER TABLE operation: ' . $operation['type']),
         };
+    }
+
+    protected function renderDrop(Table $component): string {
+        $ifExists = $component->ifExists ? ' IF EXISTS' : '';
+        $sql = sprintf(
+            'DROP TABLE%s %s',
+            $ifExists,
+            $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name))
+        );
+
+        if ($component->cascade) {
+            $sql .= ' CASCADE';
+        } elseif ($component->restrict) {
+            $sql .= ' RESTRICT';
+        }
+
+        return $sql;
+    }
+
+    protected function renderTruncate(Table $component): string {
+        $sql = sprintf(
+            'TRUNCATE TABLE %s',
+            $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name))
+        );
+
+        if ($component->restartIdentity) {
+            $sql .= ' RESTART IDENTITY';
+        } elseif ($component->continueIdentity) {
+            $sql .= ' CONTINUE IDENTITY';
+        }
+
+        if ($component->cascade) {
+            $sql .= ' CASCADE';
+        } elseif ($component->restrict) {
+            $sql .= ' RESTRICT';
+        }
+
+        return $sql;
     }
 }

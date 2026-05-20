@@ -6,23 +6,27 @@ namespace Rak200\SqlBuilder\Ddl;
 
 use InvalidArgumentException;
 use Rak200\SqlBuilder\Common\Expression;
-use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Common\RawExpression;
+use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Dialect\Dialect;
 
 /**
  * DDL Sequence builder.
  *
- * Builds SQL CREATE SEQUENCE and ALTER SEQUENCE statements using a fluent
- * interface. Use {@see nextVal()} to obtain a NEXTVAL expression suitable as
- * a column DEFAULT.
+ * Builds `CREATE SEQUENCE`, `ALTER SEQUENCE` and `DROP SEQUENCE` statements.
+ * Use {@see nextVal()} to obtain a `NEXTVAL` expression suitable as a
+ * column DEFAULT.
  *
  * @package Rak200\SqlBuilder\Ddl
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 class Sequence implements ExpressionInterface {
 
-    public private(set) bool $alterMode = false;
+    public const string MODE_CREATE = 'CREATE';
+    public const string MODE_ALTER  = 'ALTER';
+    public const string MODE_DROP   = 'DROP';
+
+    public private(set) string $mode = self::MODE_CREATE;
     public private(set) bool $ifNotExists = false;
     public private(set) ?int $start = null;
     public private(set) ?int $increment = null;
@@ -36,6 +40,10 @@ class Sequence implements ExpressionInterface {
     public private(set) ?int $restart = null;
     public private(set) bool $restartDefault = false;
 
+    public private(set) bool $ifExists = false;
+    public private(set) bool $cascade = false;
+    public private(set) bool $restrict = false;
+
     public function __construct(public private(set) string $name) {}
 
     public static function create(string $name): static {
@@ -44,7 +52,13 @@ class Sequence implements ExpressionInterface {
 
     public static function alter(string $name): static {
         $sequence = new static($name);
-        $sequence->alterMode = true;
+        $sequence->mode = self::MODE_ALTER;
+        return $sequence;
+    }
+
+    public static function drop(string $name): static {
+        $sequence = new static($name);
+        $sequence->mode = self::MODE_DROP;
         return $sequence;
     }
 
@@ -121,7 +135,9 @@ class Sequence implements ExpressionInterface {
     }
 
     public function restart(?int $value = null): static {
-        $this->ensureAlterMode();
+        if ($this->mode !== self::MODE_ALTER) {
+            throw new InvalidArgumentException('restart() is only available in ALTER mode. Use Sequence::alter().');
+        }
 
         if ($value === null) {
             $this->restartDefault = true;
@@ -131,6 +147,26 @@ class Sequence implements ExpressionInterface {
             $this->restartDefault = false;
         }
 
+        return $this;
+    }
+
+    /** `IF EXISTS` guard for `DROP SEQUENCE`. */
+    public function ifExists(bool $ifExists = true): static {
+        $this->ifExists = $ifExists;
+        return $this;
+    }
+
+    /** `CASCADE` modifier (DROP). Clears any prior `RESTRICT`. */
+    public function cascade(): static {
+        $this->cascade  = true;
+        $this->restrict = false;
+        return $this;
+    }
+
+    /** `RESTRICT` modifier (DROP). Clears any prior `CASCADE`. */
+    public function restrict(): static {
+        $this->restrict = true;
+        $this->cascade  = false;
         return $this;
     }
 
@@ -149,16 +185,7 @@ class Sequence implements ExpressionInterface {
         return Dialect::default()->renderSequence($this);
     }
 
-    /**
-     * Render this sequence with a specific dialect.
-     */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderSequence($this);
-    }
-
-    private function ensureAlterMode(): void {
-        if (!$this->alterMode) {
-            throw new InvalidArgumentException('This method is only available in alter mode. Use Sequence::alter().');
-        }
     }
 }

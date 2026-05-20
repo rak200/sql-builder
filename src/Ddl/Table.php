@@ -12,16 +12,24 @@ use Rak200\SqlBuilder\Dialect\Dialect;
 /**
  * DDL Table builder.
  *
- * Builds SQL CREATE TABLE and ALTER TABLE statements using a fluent interface.
- * Supports columns, indexes, and various constraints.
+ * Builds SQL `CREATE TABLE`, `ALTER TABLE`, `DROP TABLE` and `TRUNCATE TABLE`
+ * statements using a fluent interface. CREATE-mode columns, indexes, and
+ * constraints are stored in vectors; ALTER mode collects an ordered list of
+ * operations; DROP and TRUNCATE carry the relevant SQL modifiers
+ * (`IF EXISTS`, `CASCADE`/`RESTRICT`, `RESTART IDENTITY`).
  *
  * @package Rak200\SqlBuilder\Ddl
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 class Table implements ExpressionInterface {
 
-    /** @var bool Whether the builder is in ALTER TABLE mode. */
-    public private(set) bool $alterMode = false;
+    public const string MODE_CREATE   = 'CREATE';
+    public const string MODE_ALTER    = 'ALTER';
+    public const string MODE_DROP     = 'DROP';
+    public const string MODE_TRUNCATE = 'TRUNCATE';
+
+    /** @var string The statement mode (CREATE/ALTER/DROP/TRUNCATE). */
+    public private(set) string $mode = self::MODE_CREATE;
 
     /** @var array<int, array<string, mixed>> ALTER TABLE operations. */
     public private(set) array $alterOperations = [];
@@ -34,6 +42,21 @@ class Table implements ExpressionInterface {
 
     /** @var Vector<ExpressionInterface> Table constraints (CREATE mode). */
     public readonly Vector $constraints;
+
+    /** @var bool `IF EXISTS` modifier (DROP) / `IF NOT EXISTS` (reserved for CREATE). */
+    public private(set) bool $ifExists = false;
+
+    /** @var bool `CASCADE` modifier (DROP / TRUNCATE). */
+    public private(set) bool $cascade = false;
+
+    /** @var bool `RESTRICT` modifier (DROP / TRUNCATE). */
+    public private(set) bool $restrict = false;
+
+    /** @var bool `RESTART IDENTITY` modifier (TRUNCATE). */
+    public private(set) bool $restartIdentity = false;
+
+    /** @var bool `CONTINUE IDENTITY` modifier (TRUNCATE). */
+    public private(set) bool $continueIdentity = false;
 
     /**
      * @param string $name Table name.
@@ -58,7 +81,19 @@ class Table implements ExpressionInterface {
 
     public static function alter(string $name): static {
         $table = new static($name);
-        $table->alterMode = true;
+        $table->mode = self::MODE_ALTER;
+        return $table;
+    }
+
+    public static function drop(string $name): static {
+        $table = new static($name);
+        $table->mode = self::MODE_DROP;
+        return $table;
+    }
+
+    public static function truncate(string $name): static {
+        $table = new static($name);
+        $table->mode = self::MODE_TRUNCATE;
         return $table;
     }
 
@@ -68,7 +103,7 @@ class Table implements ExpressionInterface {
     }
 
     public function column(Column $column): static {
-        if ($this->alterMode) {
+        if ($this->mode === self::MODE_ALTER) {
             $this->alterOperations[] = ['type' => 'ADD COLUMN', 'definition' => $column];
             return $this;
         }
@@ -85,7 +120,7 @@ class Table implements ExpressionInterface {
     }
 
     public function index(Index $index): static {
-        if ($this->alterMode) {
+        if ($this->mode === self::MODE_ALTER) {
             $this->alterOperations[] = ['type' => 'ADD INDEX', 'definition' => $index];
             return $this;
         }
@@ -102,37 +137,37 @@ class Table implements ExpressionInterface {
     }
 
     public function addColumn(Column $column): static {
-        $this->ensureAlterMode();
+        $this->ensureMode(self::MODE_ALTER, 'alter');
         $this->alterOperations[] = ['type' => 'ADD COLUMN', 'definition' => $column];
         return $this;
     }
 
     public function dropColumn(string $columnName): static {
-        $this->ensureAlterMode();
+        $this->ensureMode(self::MODE_ALTER, 'alter');
         $this->alterOperations[] = ['type' => 'DROP COLUMN', 'name' => $columnName];
         return $this;
     }
 
     public function modifyColumn(Column $column): static {
-        $this->ensureAlterMode();
+        $this->ensureMode(self::MODE_ALTER, 'alter');
         $this->alterOperations[] = ['type' => 'MODIFY COLUMN', 'definition' => $column];
         return $this;
     }
 
     public function renameColumn(string $oldName, string $newName): static {
-        $this->ensureAlterMode();
+        $this->ensureMode(self::MODE_ALTER, 'alter');
         $this->alterOperations[] = ['type' => 'RENAME COLUMN', 'old' => $oldName, 'new' => $newName];
         return $this;
     }
 
     public function renameTo(string $newName): static {
-        $this->ensureAlterMode();
+        $this->ensureMode(self::MODE_ALTER, 'alter');
         $this->alterOperations[] = ['type' => 'RENAME TO', 'name' => $newName];
         return $this;
     }
 
     public function constraint(ExpressionInterface $constraint): static {
-        if ($this->alterMode) {
+        if ($this->mode === self::MODE_ALTER) {
             $this->alterOperations[] = ['type' => 'ADD CONSTRAINT', 'definition' => $constraint];
             return $this;
         }
@@ -149,8 +184,54 @@ class Table implements ExpressionInterface {
     }
 
     public function dropConstraint(string $constraintName): static {
-        $this->ensureAlterMode();
+        $this->ensureMode(self::MODE_ALTER, 'alter');
         $this->alterOperations[] = ['type' => 'DROP CONSTRAINT', 'name' => $constraintName];
+        return $this;
+    }
+
+    /**
+     * `IF EXISTS` guard for `DROP TABLE`.
+     */
+    public function ifExists(bool $ifExists = true): static {
+        $this->ifExists = $ifExists;
+        return $this;
+    }
+
+    /**
+     * `CASCADE` modifier (DROP / TRUNCATE). Clears any prior `RESTRICT`.
+     */
+    public function cascade(): static {
+        $this->cascade  = true;
+        $this->restrict = false;
+        return $this;
+    }
+
+    /**
+     * `RESTRICT` modifier (DROP / TRUNCATE). Clears any prior `CASCADE`.
+     */
+    public function restrict(): static {
+        $this->restrict = true;
+        $this->cascade  = false;
+        return $this;
+    }
+
+    /**
+     * Append `RESTART IDENTITY` to a `TRUNCATE TABLE` statement.
+     * Mutually exclusive with {@see continueIdentity()}.
+     */
+    public function restartIdentity(): static {
+        $this->restartIdentity  = true;
+        $this->continueIdentity = false;
+        return $this;
+    }
+
+    /**
+     * Append `CONTINUE IDENTITY` to a `TRUNCATE TABLE` statement.
+     * Mutually exclusive with {@see restartIdentity()}.
+     */
+    public function continueIdentity(): static {
+        $this->continueIdentity = true;
+        $this->restartIdentity  = false;
         return $this;
     }
 
@@ -159,16 +240,15 @@ class Table implements ExpressionInterface {
         return Dialect::default()->renderTable($this);
     }
 
-    /**
-     * Render this table with a specific dialect.
-     */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderTable($this);
     }
 
-    private function ensureAlterMode(): void {
-        if (!$this->alterMode) {
-            throw new InvalidArgumentException('This method is only available in alter mode. Use Table::alter().');
+    private function ensureMode(string $mode, string $factoryHint): void {
+        if ($this->mode !== $mode) {
+            throw new InvalidArgumentException(
+                "This method is only available in $mode mode. Use Table::$factoryHint()."
+            );
         }
     }
 }

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-20
+
+### Added
+- DDL drop / truncate operations: `Table::drop()`, `Table::truncate()`, `View::drop()`, `Index::drop()`, `Sequence::drop()`. Each supports the relevant SQL modifiers — `IF EXISTS`, `CASCADE` / `RESTRICT`, and (for TRUNCATE) `RESTART IDENTITY` / `CONTINUE IDENTITY` — as fluent methods.
+- MariaDB `IndexRenderer` override: `DROP INDEX name ON table` (requires the parent table; rejects CASCADE).
+- MariaDB `TableRenderer` override: rejects PostgreSQL-only TRUNCATE modifiers (`RESTART IDENTITY`, `CONTINUE IDENTITY`, `CASCADE`, `RESTRICT`).
+- 43 new tests under `tests/Unit/Ddl/DropTruncateTest.php` and `tests/Unit/Dialect/DropTruncateDialectTest.php`.
+
+### Changed
+- `Table`, `View`, `Index` and `Sequence` builders now expose a `mode: string` property (constants `MODE_CREATE` / `MODE_ALTER` / `MODE_DROP` / `MODE_TRUNCATE` where applicable). The previous `Table::$alterMode` / `Sequence::$alterMode` boolean properties are gone — read `$component->mode === Table::MODE_ALTER` instead. The fluent setter API (`Table::alter()`, `Sequence::alter()`, etc.) is unchanged for callers.
+- All four DDL renderers (`TableRenderer`, `ViewRenderer`, `IndexRenderer`, `SequenceRenderer`) now dispatch via `match` on the builder's `mode`.
+
 ## [0.3.0] - 2026-05-19
 
 ### Added
@@ -79,7 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.3.0...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.4.0...HEAD
+[0.4.0]: https://github.com/rak200/sql-builder/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/rak200/sql-builder/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/rak200/sql-builder/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/rak200/sql-builder/compare/0.1.0...0.1.1

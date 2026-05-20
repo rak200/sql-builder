@@ -223,6 +223,36 @@ $orders = Table::create('orders')
     ->column(Column::create('id', DataType::BigInt)->nullable(false)->sequence($seq));
 ```
 
+### Drop / truncate
+
+Every DDL builder exposes a `drop()` factory; `Table` additionally exposes `truncate()`. `IF EXISTS`, `CASCADE` / `RESTRICT` and `RESTART IDENTITY` / `CONTINUE IDENTITY` are fluent modifiers.
+
+```php
+use Rak200\SqlBuilder\Ddl\Index;
+use Rak200\SqlBuilder\Ddl\Sequence;
+use Rak200\SqlBuilder\Ddl\Table;
+use Rak200\SqlBuilder\Ddl\View;
+
+echo Table::drop('users')->ifExists()->cascade();
+// DROP TABLE IF EXISTS `users` CASCADE
+
+echo Table::truncate('users')->restartIdentity()->cascade();
+// TRUNCATE TABLE `users` RESTART IDENTITY CASCADE
+
+echo View::drop('active_users')->ifExists();
+// DROP VIEW IF EXISTS `active_users`
+
+echo Index::drop('idx_users_email')->ifExists()->cascade();
+// DROP INDEX IF EXISTS "idx_users_email" CASCADE
+// (MariaDB requires the parent table; call ->table('users') and the dialect
+//  will emit `DROP INDEX "idx_users_email" ON "users"`.)
+
+echo Sequence::drop('order_id_seq')->ifExists()->cascade();
+// DROP SEQUENCE IF EXISTS "`order_id_seq`" CASCADE
+```
+
+MariaDB rejects PostgreSQL-only TRUNCATE modifiers (`RESTART IDENTITY`, `CONTINUE IDENTITY`, `CASCADE`, `RESTRICT`) with `UnsupportedFeatureException`. `DROP INDEX` on MariaDB requires the parent table — see {@see MariaDbDialect}.
+
 ## Expressions
 
 ```php
@@ -243,24 +273,17 @@ Use `Expression::column()` for SELECT projections (supports an alias), `Expressi
 
 ## Status & Roadmap
 
-Current version: **0.3.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
+Current version: **0.4.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
 
 ### What works today
 
 - **DML:** `Select` (DISTINCT, JOINs incl. NATURAL/USING, WHERE/AND/OR, GROUP BY, HAVING, ORDER BY with NULL placement, LIMIT/OFFSET, subqueries), `Set` (UNION, UNION ALL, EXCEPT, INTERSECT) with ORDER BY/LIMIT/OFFSET on the combined result, `Insert` (single/multi-row VALUES, INSERT ... SELECT, ON DUPLICATE KEY UPDATE, RETURNING), `Update` (SET, multi-table FROM, WHERE, ORDER BY/LIMIT, RETURNING), `Delete` (multi-table USING, WHERE, ORDER BY/LIMIT, RETURNING).
-- **DDL:** `Table` (CREATE and ALTER: ADD/DROP/MODIFY/RENAME column, ADD/DROP CONSTRAINT, ADD INDEX, RENAME TO), `Column`, `View` (with OR REPLACE / TEMPORARY / IF NOT EXISTS / WITH CHECK OPTION), `Sequence` (CREATE and ALTER incl. RESTART / NEXTVAL), `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
+- **DDL:** `Table` (CREATE, ALTER, DROP, TRUNCATE — with IF EXISTS / CASCADE / RESTRICT / RESTART IDENTITY / CONTINUE IDENTITY modifiers and ADD/DROP/MODIFY/RENAME column, ADD/DROP CONSTRAINT, ADD INDEX, RENAME TO in ALTER mode), `Column`, `View` (CREATE with OR REPLACE / TEMPORARY / IF NOT EXISTS / WITH CHECK OPTION, plus DROP), `Sequence` (CREATE, ALTER incl. RESTART / NEXTVAL, and DROP), `Index` (CREATE and DROP), `Schema` (CREATE / DROP / ALTER ... RENAME TO; on MariaDB simulated as table-name prefixing), and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting.
 - **Dialects:** abstract `Dialect` base with a permissive `DefaultDialect`, vendor dialects (`MariaDbDialect` / `MariaDb105Dialect`, `PostgresDialect` / `Postgres15Dialect`), one renderer class per component, runtime selection via `Dialect::fromDsn()`, opt-in per-call rendering via `toSql(Dialect)`. Vendor-specific feature gates (e.g. PostgreSQL rejects `ON DUPLICATE KEY UPDATE`, MariaDB <10.5 rejects `RETURNING`) raise `UnsupportedFeatureException`.
 - **Tests:** PHPUnit 13 unit suite under `tests/Unit/`; run with `composer test`.
 
 ### Not yet implemented
-
-DDL drop / truncate
-- [ ] `DROP TABLE` (incl. `IF EXISTS`, `CASCADE`)
-- [ ] `DROP VIEW`
-- [ ] `DROP INDEX`
-- [ ] `DROP SEQUENCE`
-- [ ] `TRUNCATE TABLE`
 
 SELECT extensions
 - [ ] `WITH` / Common Table Expressions (CTEs), incl. recursive
