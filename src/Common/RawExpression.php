@@ -15,10 +15,5 @@ final class RawExpression extends Expression {
     /**
      * @param string $sql Raw SQL string to embed verbatim.
      */
-    public function __construct(private string $sql) {}
-
-    /** {@inheritdoc} */
-    public function __toString(): string {
-        return $this->sql . $this->aliasToSql();
-    }
+    public function __construct(public readonly string $sql) {}
 }

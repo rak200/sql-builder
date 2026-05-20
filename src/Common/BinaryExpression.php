@@ -13,15 +13,15 @@ use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 final class BinaryExpression extends Expression {
+
     /**
      * @param ExpressionInterface $left Left-hand operand.
      * @param BinaryOperator $operator SQL binary operator.
      * @param ExpressionInterface $right Right-hand operand.
      */
-    public function __construct(private ExpressionInterface $left, private BinaryOperator $operator, private ExpressionInterface $right) {}
-
-    /** {@inheritdoc} */
-    public function __toString(): string {
-        return sprintf('(%s %s %s)%s', $this->left, $this->operator->value, $this->right, $this->aliasToSql());
-    }
+    public function __construct(
+        public readonly ExpressionInterface $left,
+        public readonly BinaryOperator $operator,
+        public readonly ExpressionInterface $right
+    ) {}
 }

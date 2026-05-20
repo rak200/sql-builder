@@ -1,7 +1,7 @@
 {
   "name": "rak200/sql-builder",
   "description": "Fluent SQL query and schema builder for PHP 8.4+",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "library",
   "license": "MIT",
   "authors": [

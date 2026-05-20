@@ -11,20 +11,22 @@ namespace Rak200\SqlBuilder\Common;
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 final class FunctionExpression extends Expression {
-    /** @var ExpressionInterface[] $arguments Normalized argument expressions */
-    private array $arguments;
+
+    /** @var string Uppercased function name. */
+    public readonly string $name;
+
+    /** @var ExpressionInterface[] Normalised argument expressions. */
+    public readonly array $arguments;
 
     /**
      * @param string $name Function name (automatically uppercased).
      * @param mixed ...$arguments Arguments passed to the function.
      */
-    public function __construct(private string $name, mixed ...$arguments) {
+    public function __construct(string $name, mixed ...$arguments) {
         $this->name = strtoupper($name);
-        $this->arguments = array_map(static fn ($argument) => Expression::normalize($argument), $arguments);
-    }
-
-    /** {@inheritdoc} */
-    public function __toString(): string {
-        return sprintf('%s(%s)%s', $this->name, implode(', ', $this->arguments), $this->aliasToSql());
+        $this->arguments = array_map(
+            static fn($argument): ExpressionInterface => Expression::normalize($argument),
+            $arguments
+        );
     }
 }

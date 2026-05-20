@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-19
+
+### Added
+- Dialect architecture under `src/Dialect/` per the `CLAUDE.md` spec: abstract `Dialect` base, permissive `DefaultDialect`, one renderer class per renderable component (13 Common, 5 DML, 9 DDL under `Renderer/`), `UnsupportedFeatureException`, and `Dialect::default()` singleton.
+- Vendor dialects: `MariaDb\MariaDbDialect` (rejects PostgreSQL-only `UPDATE ... FROM`, `DELETE ... USING`, and `RETURNING`), `MariaDb\MariaDb105Dialect` (re-enables `RETURNING`), `Postgres\PostgresDialect` (double-quoted identifiers, standard-conforming string escaping, rejects `ON DUPLICATE KEY UPDATE`), `Postgres\Postgres15Dialect` (placeholder).
+- `Dialect::fromDsn(string $dsn)` and `Dsn\DsnParser` mapping `mariadb`/`mysql`/`postgres`/`pgsql`/`postgresql` schemes to dialects, with a `?version=` query-string hint that selects `MariaDb105Dialect` (≥10.5) or `Postgres15Dialect` (≥15). Unknown schemes fall back to `DefaultDialect`.
+- `toSql(Dialect $dialect): string` on every renderable component (Common expressions, DML builders, DDL builders) for opt-in per-call dialect rendering.
+- 35 new unit tests under `tests/Unit/Dialect/` covering default rendering parity, Postgres/MariaDB quoting and feature gates, DSN parsing, and dialect propagation through nested subqueries / JOIN / EXISTS / set operations / INSERT...SELECT / DDL.
+
+### Changed
+- Every builder is now a thin data carrier: `__toString()` delegates to `Dialect::default()->renderXxx($this)`; the private `buildXxx()` helpers are removed and the rendering logic lives in the per-component renderer classes.
+- Builder state is exposed to renderers via PHP 8.4 asymmetric visibility (`public private(set)`) for fluent-mutable properties, and `public readonly` for value-object properties. Fluent setter API is unchanged.
+- `Expression::quoteIdentifier()` and `Expression::quoteValue()` now delegate to `Dialect::default()`; behaviour is unchanged for callers.
+- `Join::validate()` is now public so the `JoinRenderer` can invoke it before producing SQL.
+
+### Removed
+- Private `buildXxx()` helpers on `Select`, `Insert`, `Update`, `Delete`, `Set`, `Table`, `View`, `Sequence` (logic moved into the corresponding renderer classes).
+
 ## [0.1.1] - 2026-05-19
 
 ### Added
@@ -53,7 +71,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.1.1...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/rak200/sql-builder/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/rak200/sql-builder/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/rak200/sql-builder/compare/0.0.3...0.1.0
 [0.0.3]: https://github.com/rak200/sql-builder/compare/0.0.2...0.0.3

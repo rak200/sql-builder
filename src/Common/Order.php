@@ -6,6 +6,7 @@ namespace Rak200\SqlBuilder\Common;
 
 use Rak200\SqlBuilder\Common\Enum\NullsPlacement;
 use Rak200\SqlBuilder\Common\Enum\SortDirection;
+use Rak200\SqlBuilder\Dialect\Dialect;
 
 /**
  * SQL ORDER BY entry with optional direction and NULL placement.
@@ -15,8 +16,8 @@ use Rak200\SqlBuilder\Common\Enum\SortDirection;
  */
 final class Order {
 
-    /** @var ExpressionInterface $expression The column or expression to order by */
-    private ExpressionInterface $expression;
+    /** @var ExpressionInterface The column or expression to order by. */
+    public readonly ExpressionInterface $expression;
 
     /**
      * @param ExpressionInterface|string $expression Column name or expression to sort by.
@@ -25,8 +26,8 @@ final class Order {
      */
     public function __construct(
         ExpressionInterface|string $expression,
-        private SortDirection $direction = SortDirection::ASC,
-        private ?NullsPlacement $nullsPlacement = null
+        public readonly SortDirection $direction = SortDirection::ASC,
+        public private(set) ?NullsPlacement $nullsPlacement = null
     ) {
         $this->expression = $expression instanceof ExpressionInterface
             ? $expression
@@ -55,16 +56,15 @@ final class Order {
 
     /**
      * Return the SQL representation of this ORDER BY entry.
-     *
-     * @return string
      */
     public function __toString(): string {
-        $sql = "{$this->expression} {$this->direction->value}";
+        return Dialect::default()->renderOrder($this);
+    }
 
-        if ($this->nullsPlacement !== null) {
-            return "$sql {$this->nullsPlacement->value}";
-        }
-
-        return $sql;
+    /**
+     * Render this entry with a specific dialect.
+     */
+    public function toSql(Dialect $dialect): string {
+        return $dialect->renderOrder($this);
     }
 }

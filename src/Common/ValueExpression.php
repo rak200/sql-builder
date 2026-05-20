@@ -15,10 +15,5 @@ final class ValueExpression extends Expression {
     /**
      * @param mixed $value The PHP value to quote as a SQL literal.
      */
-    public function __construct(private mixed $value) {}
-
-    /** {@inheritdoc} */
-    public function __toString(): string {
-        return self::quoteValue($this->value) . $this->aliasToSql();
-    }
+    public function __construct(public readonly mixed $value) {}
 }

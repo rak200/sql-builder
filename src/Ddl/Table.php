@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Ddl;
 
-use Rak200\SqlBuilder\Common\Expression;
-use Rak200\SqlBuilder\Common\ExpressionInterface;
-use Rak200\Collections\Vector;
-use Rak200\SqlBuilder\Utils\StringUtils;
 use InvalidArgumentException;
+use Rak200\Collections\Vector;
+use Rak200\SqlBuilder\Common\ExpressionInterface;
+use Rak200\SqlBuilder\Dialect\Dialect;
 
 /**
  * DDL Table builder.
@@ -20,67 +19,54 @@ use InvalidArgumentException;
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 class Table implements ExpressionInterface {
-    private bool $alterMode = false;
-    private array $alterOperations = [];
+
+    /** @var bool Whether the builder is in ALTER TABLE mode. */
+    public private(set) bool $alterMode = false;
+
+    /** @var array<int, array<string, mixed>> ALTER TABLE operations. */
+    public private(set) array $alterOperations = [];
+
+    /** @var Vector<Column> Table columns (CREATE mode). */
+    public readonly Vector $columns;
+
+    /** @var Vector<Index> Table indexes (CREATE mode). */
+    public readonly Vector $indexes;
+
+    /** @var Vector<ExpressionInterface> Table constraints (CREATE mode). */
+    public readonly Vector $constraints;
 
     /**
-     * Constructor for the Table class.
-     *
      * @param string $name Table name.
-     * @param Vector<Column>|null $columns Vector of columns.
-     * @param Vector<Index>|null $indexes Vector of indexes.
-     * @param Vector<Constraint>|null $constraints Vector of constraints.
+     * @param Vector<Column>|null $columns Initial columns.
+     * @param Vector<Index>|null $indexes Initial indexes.
+     * @param Vector<ExpressionInterface>|null $constraints Initial constraints.
      */
     public function __construct(
-        private string $name,
-        private ?Vector $columns = null,
-        private ?Vector $indexes = null,
-        private ?Vector $constraints = null
+        public private(set) string $name,
+        ?Vector $columns = null,
+        ?Vector $indexes = null,
+        ?Vector $constraints = null
     ) {
-        $this->columns ??= new Vector(Column::class);
-        $this->indexes ??= new Vector(Index::class);
-        $this->constraints ??= new Vector(Constraint::class);
+        $this->columns     = $columns     ?? new Vector(Column::class);
+        $this->indexes     = $indexes     ?? new Vector(Index::class);
+        $this->constraints = $constraints ?? new Vector(ExpressionInterface::class);
     }
 
-    /**
-     * Create a new CREATE TABLE statement builder.
-     *
-     * @param string $name Table name.
-     * @return static
-     */
     public static function create(string $name): static {
         return new static($name);
     }
 
-    /**
-     * Create a new ALTER TABLE statement builder.
-     *
-     * @param string $name Table name.
-     * @return static
-     */
     public static function alter(string $name): static {
         $table = new static($name);
         $table->alterMode = true;
         return $table;
     }
 
-    /**
-     * Set the table name.
-     *
-     * @param string $name Table name.
-     * @return static
-     */
     public function name(string $name): static {
         $this->name = $name;
         return $this;
     }
 
-    /**
-     * Add a column to the table.
-     *
-     * @param Column $column Column definition.
-     * @return static
-     */
     public function column(Column $column): static {
         if ($this->alterMode) {
             $this->alterOperations[] = ['type' => 'ADD COLUMN', 'definition' => $column];
@@ -91,29 +77,13 @@ class Table implements ExpressionInterface {
         return $this;
     }
 
-    /**
-     * Add multiple columns to the table.
-     *
-     * @param Column ...$columns Column definitions.
-     * @return static
-     */
     public function columns(Column ...$columns): static {
         foreach ($columns as $column) {
-            if ($this->alterMode) {
-                $this->alterOperations[] = ['type' => 'ADD COLUMN', 'definition' => $column];
-            } else {
-                $this->columns[] = $column;
-            }
+            $this->column($column);
         }
         return $this;
     }
 
-    /**
-     * Add an index to the table.
-     *
-     * @param Index $index Index definition.
-     * @return static
-     */
     public function index(Index $index): static {
         if ($this->alterMode) {
             $this->alterOperations[] = ['type' => 'ADD INDEX', 'definition' => $index];
@@ -124,95 +94,43 @@ class Table implements ExpressionInterface {
         return $this;
     }
 
-    /**
-     * Add multiple indexes to the table.
-     *
-     * @param Index ...$indexes Index definitions.
-     * @return static
-     */
     public function indexes(Index ...$indexes): static {
         foreach ($indexes as $index) {
-            if ($this->alterMode) {
-                $this->alterOperations[] = ['type' => 'ADD INDEX', 'definition' => $index];
-            } else {
-                $this->indexes[] = $index;
-            }
+            $this->index($index);
         }
         return $this;
     }
 
-    /**
-     * Add a column in ALTER mode.
-     *
-     * @param Column $column Column definition.
-     * @return static
-     * @throws InvalidArgumentException If not in ALTER mode.
-     */
     public function addColumn(Column $column): static {
         $this->ensureAlterMode();
         $this->alterOperations[] = ['type' => 'ADD COLUMN', 'definition' => $column];
         return $this;
     }
 
-    /**
-     * Drop a column in ALTER mode.
-     *
-     * @param string $columnName Name of the column to drop.
-     * @return static
-     * @throws InvalidArgumentException If not in ALTER mode.
-     */
     public function dropColumn(string $columnName): static {
         $this->ensureAlterMode();
         $this->alterOperations[] = ['type' => 'DROP COLUMN', 'name' => $columnName];
         return $this;
     }
 
-    /**
-     * Modify a column definition in ALTER mode.
-     *
-     * @param Column $column Modified column definition.
-     * @return static
-     * @throws InvalidArgumentException If not in ALTER mode.
-     */
     public function modifyColumn(Column $column): static {
         $this->ensureAlterMode();
         $this->alterOperations[] = ['type' => 'MODIFY COLUMN', 'definition' => $column];
         return $this;
     }
 
-    /**
-     * Rename a column in ALTER mode.
-     *
-     * @param string $oldName Current column name.
-     * @param string $newName New column name.
-     * @return static
-     * @throws InvalidArgumentException If not in ALTER mode.
-     */
     public function renameColumn(string $oldName, string $newName): static {
         $this->ensureAlterMode();
         $this->alterOperations[] = ['type' => 'RENAME COLUMN', 'old' => $oldName, 'new' => $newName];
         return $this;
     }
 
-    /**
-     * Rename the table in ALTER mode.
-     *
-     * @param string $newName New table name.
-     * @return static
-     * @throws InvalidArgumentException If not in ALTER mode.
-     */
     public function renameTo(string $newName): static {
         $this->ensureAlterMode();
         $this->alterOperations[] = ['type' => 'RENAME TO', 'name' => $newName];
         return $this;
     }
 
-    /**
-     * Add a constraint to the table.
-     *
-     * @param ExpressionInterface $constraint Constraint definition.
-     * @return static
-     */
     public function constraint(ExpressionInterface $constraint): static {
         if ($this->alterMode) {
             $this->alterOperations[] = ['type' => 'ADD CONSTRAINT', 'definition' => $constraint];
@@ -223,106 +141,31 @@ class Table implements ExpressionInterface {
         return $this;
     }
 
-    /**
-     * Add multiple constraints to the table.
-     *
-     * @param ExpressionInterface ...$constraints Constraint definitions.
-     * @return static
-     */
     public function constraints(ExpressionInterface ...$constraints): static {
         foreach ($constraints as $constraint) {
-            if ($this->alterMode) {
-                $this->alterOperations[] = ['type' => 'ADD CONSTRAINT', 'definition' => $constraint];
-            } else {
-                $this->constraints[] = $constraint;
-            }
+            $this->constraint($constraint);
         }
         return $this;
     }
 
-    /**
-     * Drop a constraint in ALTER mode.
-     *
-     * @param string $constraintName Name of the constraint to drop.
-     * @return static
-     * @throws InvalidArgumentException If not in ALTER mode.
-     */
     public function dropConstraint(string $constraintName): static {
         $this->ensureAlterMode();
         $this->alterOperations[] = ['type' => 'DROP CONSTRAINT', 'name' => $constraintName];
         return $this;
     }
 
-    /**
-     * Convert the table definition to SQL string representation.
-     *
-     * @return string The SQL representation of the table.
-     */
+    /** {@inheritdoc} */
     public function __toString(): string {
-        if ($this->alterMode) {
-            return $this->buildAlterSql();
-        }
-
-        $parts = [];
-
-        foreach ($this->columns as $column) {
-            $parts[] = (string) $column;
-        }
-
-        foreach ($this->constraints as $constraint) {
-            $parts[] = (string) $constraint;
-        }
-
-        $sql = sprintf('CREATE TABLE "%s" (%s)', Expression::quoteIdentifier($this->name), implode(', ', $parts));
-        $sql .= StringUtils::join($this->indexes->toArray(), ' ', ' ');
-
-        return $sql;
+        return Dialect::default()->renderTable($this);
     }
 
     /**
-     * Build the ALTER TABLE SQL statement.
-     *
-     * @return string The ALTER TABLE SQL statement.
-     * @throws InvalidArgumentException If no ALTER TABLE operations are defined.
+     * Render this table with a specific dialect.
      */
-    private function buildAlterSql(): string {
-        if (empty($this->alterOperations)) {
-            throw new InvalidArgumentException('No ALTER TABLE operations defined.');
-        }
-
-        $sql = sprintf('ALTER TABLE "%s"', Expression::quoteIdentifier($this->name));
-        $operations = array_map(fn(array $operation) => $this->buildAlterOperation($operation), $this->alterOperations);
-        return $sql . ' ' . implode(', ', $operations);
+    public function toSql(Dialect $dialect): string {
+        return $dialect->renderTable($this);
     }
 
-    /**
-     * Build a single ALTER TABLE operation.
-     *
-     * @param array $operation The operation details.
-     * @return string The SQL representation of the operation.
-     * @throws InvalidArgumentException If the operation type is unsupported.
-     * @todo string interpolation with Expression::quoteIdentifier() for column and constraint names and remove quotes.
-     */
-    private function buildAlterOperation(array $operation): string {
-        return match ($operation['type']) {
-            'ADD COLUMN'     => sprintf('ADD COLUMN %s', $operation['definition']),
-            'DROP COLUMN'    => sprintf('DROP COLUMN "%s"', Expression::quoteIdentifier($operation['name'])),
-            'MODIFY COLUMN'  => sprintf('MODIFY COLUMN %s', $operation['definition']),
-            'RENAME COLUMN'  => sprintf('RENAME COLUMN "%s" TO "%s"', Expression::quoteIdentifier($operation['old']), Expression::quoteIdentifier($operation['new'])),
-            'RENAME TO'      => sprintf('RENAME TO %s', Expression::quoteIdentifier($operation['name'])),
-            'ADD CONSTRAINT' => sprintf('ADD %s', $operation['definition']),
-            'DROP CONSTRAINT'=> sprintf('DROP CONSTRAINT "%s"', Expression::quoteIdentifier($operation['name'])),
-            'ADD INDEX'      => sprintf('ADD %s', $operation['definition']),
-            default          => throw new InvalidArgumentException('Unsupported ALTER TABLE operation: ' . $operation['type']),
-        };
-    }
-
-    /**
-     * Ensure the table is in ALTER mode.
-     *
-     * @return void
-     * @throws InvalidArgumentException If not in ALTER mode.
-     */
     private function ensureAlterMode(): void {
         if (!$this->alterMode) {
             throw new InvalidArgumentException('This method is only available in alter mode. Use Table::alter().');

@@ -5,34 +5,23 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Ddl;
 
 use Rak200\SqlBuilder\Common\ExpressionInterface;
+use Rak200\SqlBuilder\Dialect\Dialect;
 
 /**
  * Base class for DDL constraint builders.
  *
  * Provides the shared constraint name property and its fluent setter.
- * Subclasses implement {@see __toString()} to produce the constraint-specific SQL fragment.
  *
  * @package Rak200\SqlBuilder\Ddl
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 abstract class Constraint implements ExpressionInterface {
 
-    /** @var string $name Constraint name, empty when unnamed */
-    protected string $name;
-
     /**
      * @param string $name Constraint name (empty for unnamed constraints).
      */
-    public function __construct(string $name = '') {
-        $this->name = $name;
-    }
+    public function __construct(public private(set) string $name = '') {}
 
-    /**
-     * Set the constraint name.
-     *
-     * @param string $name Constraint name.
-     * @return static
-     */
     public function name(string $name): static {
         $this->name = $name;
         return $this;
@@ -40,4 +29,11 @@ abstract class Constraint implements ExpressionInterface {
 
     /** {@inheritdoc} */
     abstract public function __toString(): string;
+
+    /**
+     * Render this constraint with a specific dialect.
+     */
+    public function toSql(Dialect $dialect): string {
+        return $dialect->renderExpression($this);
+    }
 }

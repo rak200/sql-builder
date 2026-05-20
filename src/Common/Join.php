@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Common;
 
-use Rak200\SqlBuilder\Common\Enum\JoinType;
-use Rak200\SqlBuilder\Dml\Select;
-use Rak200\SqlBuilder\Utils\StringUtils;
 use InvalidArgumentException;
+use Rak200\SqlBuilder\Common\Enum\JoinType;
+use Rak200\SqlBuilder\Dialect\Dialect;
+use Rak200\SqlBuilder\Dml\Select;
 
 /**
  * SQL JOIN clause builder supporting INNER, LEFT, RIGHT, FULL, CROSS and NATURAL variants.
@@ -17,8 +17,17 @@ use InvalidArgumentException;
  */
 final class Join implements ExpressionInterface {
 
-    /** @var TableReference $table The joined table or subquery */
-    private TableReference $table;
+    /** @var TableReference The joined table or subquery. */
+    public readonly TableReference $table;
+
+    /** @var bool Whether this is a NATURAL JOIN. */
+    public private(set) bool $natural;
+
+    /** @var ExpressionInterface|null Optional ON condition. */
+    public private(set) ?ExpressionInterface $on;
+
+    /** @var array<int, ExpressionInterface>|null USING column list. */
+    public private(set) ?array $using;
 
     /**
      * @param JoinType $type JOIN type.
@@ -29,21 +38,21 @@ final class Join implements ExpressionInterface {
      * @param array<string>|null $using Column list for USING clause.
      */
     public function __construct(
-        private JoinType $type,
+        public readonly JoinType $type,
         string|Select $table,
         ?string $alias = null,
-        private ?ExpressionInterface $on = null,
-        private bool $natural = false,
-        private ?array $using = null
+        ?ExpressionInterface $on = null,
+        bool $natural = false,
+        ?array $using = null
     ) {
-        $this->table = new TableReference($table, $alias);
+        $this->table   = new TableReference($table, $alias);
+        $this->on      = $on;
+        $this->natural = $natural;
+        $this->using   = $using;
     }
 
     /**
      * Set the ON condition for the join.
-     *
-     * @param ExpressionInterface $condition Join condition expression.
-     * @return static
      */
     public function on(ExpressionInterface $condition): static {
         $this->on = $condition;
@@ -52,8 +61,6 @@ final class Join implements ExpressionInterface {
 
     /**
      * Mark this join as a NATURAL JOIN.
-     *
-     * @return static
      */
     public function natural(): static {
         $this->natural = true;
@@ -62,39 +69,37 @@ final class Join implements ExpressionInterface {
 
     /**
      * Set the USING column list for the join.
-     *
-     * @param mixed ...$columns Column names or expressions.
-     * @return static
      */
     public function using(mixed ...$columns): static {
-        $this->using = array_map(fn($column) => $column instanceof ExpressionInterface ? $column : Expression::identifier((string) $column), $columns);
+        $this->using = array_map(
+            static fn($column): ExpressionInterface => $column instanceof ExpressionInterface
+                ? $column
+                : Expression::identifier((string) $column),
+            $columns
+        );
         return $this;
     }
 
     /** {@inheritdoc} */
     public function __toString(): string {
-        $this->validate();
+        return Dialect::default()->renderJoin($this);
+    }
 
-        $type = $this->natural ? "NATURAL {$this->type->value}" : $this->type->value;
-        $sql  = "$type {$this->table}";
-
-        if ($this->on !== null) {
-            return "$sql ON {$this->on}";
-        }
-
-        if ($this->using === null) {
-            return $sql;
-        }
-
-        return StringUtils::join($this->using, ', ', "$sql USING (", ')');
+    /**
+     * Render this join with a specific dialect.
+     */
+    public function toSql(Dialect $dialect): string {
+        return $dialect->renderJoin($this);
     }
 
     /**
      * Validate that the join configuration is consistent.
      *
-     * @throws \InvalidArgumentException On conflicting join options.
+     * Called by renderers before producing SQL.
+     *
+     * @throws InvalidArgumentException On conflicting join options.
      */
-    private function validate(): void {
+    public function validate(): void {
         if ($this->natural && $this->on !== null) {
             throw new InvalidArgumentException('NATURAL JOIN cannot have an ON condition.');
         }
@@ -119,5 +124,4 @@ final class Join implements ExpressionInterface {
             throw new InvalidArgumentException('USING must have at least one column.');
         }
     }
-
 }

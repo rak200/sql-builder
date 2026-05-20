@@ -18,19 +18,11 @@ use Rak200\SqlBuilder\Common\Enum\UnaryOperator;
 class UnaryExpression extends Expression {
 
     /**
-     * Constructor for the UnaryExpression class.
-     *
      * @param UnaryOperator $operator The unary operator.
      * @param ExpressionInterface $operand The operand to apply the operator to.
      */
-    public function __construct(protected UnaryOperator $operator, protected ExpressionInterface $operand) {}
-
-    /**
-     * Convert the unary expression to SQL string representation.
-     *
-     * @return string The SQL representation of the unary expression.
-     */
-    public function __toString(): string {
-        return sprintf('%s (%s)%s', $this->operator->value, $this->operand, $this->aliasToSql());
-    }
+    public function __construct(
+        public readonly UnaryOperator $operator,
+        public readonly ExpressionInterface $operand
+    ) {}
 }

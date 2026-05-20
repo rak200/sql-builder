@@ -13,6 +13,7 @@ use Rak200\SqlBuilder\Common\Enum\UnaryOperator;
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 final class ExistsExpression extends UnaryExpression {
+
     /**
      * @param SubqueryExpression $operand The subquery to check existence of.
      */

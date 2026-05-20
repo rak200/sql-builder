@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Common;
 
 use InvalidArgumentException;
+use Rak200\SqlBuilder\Dialect\Dialect;
 
 /**
  * A simple unqualified SQL identifier for use in USING clauses.
@@ -23,7 +24,7 @@ final class SimpleIdentifier implements ExpressionInterface {
      * @param string $name Unqualified column name.
      * @throws InvalidArgumentException If the name contains a dot (table qualifier).
      */
-    public function __construct(private string $name) {
+    public function __construct(public readonly string $name) {
         if (preg_match('/[^a-zA-Z0-9_]/', $name)) {
             throw new InvalidArgumentException("USING column must be unqualified: '$name'");
         }
@@ -31,6 +32,13 @@ final class SimpleIdentifier implements ExpressionInterface {
 
     /** {@inheritdoc} */
     public function __toString(): string {
-        return Expression::quoteIdentifier($this->name);
+        return Dialect::default()->renderSimpleIdentifier($this);
+    }
+
+    /**
+     * Render this identifier with a specific dialect.
+     */
+    public function toSql(Dialect $dialect): string {
+        return $dialect->renderSimpleIdentifier($this);
     }
 }

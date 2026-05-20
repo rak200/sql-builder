@@ -11,11 +11,12 @@ namespace Rak200\SqlBuilder\Common;
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 final class ColumnExpression extends Expression {
+
     /**
      * @param string $name Column or qualified identifier (e.g. `table.column`).
      * @param string|null $alias Optional column alias.
      */
-    public function __construct(private string $name, ?string $alias = null) {
+    public function __construct(public readonly string $name, ?string $alias = null) {
         $this->as($alias);
     }
 
@@ -50,10 +51,5 @@ final class ColumnExpression extends Expression {
             }
         }
         return $result;
-    }
-
-    /** {@inheritdoc} */
-    public function __toString(): string {
-        return self::quoteIdentifier($this->name) . $this->aliasToSql();
     }
 }
