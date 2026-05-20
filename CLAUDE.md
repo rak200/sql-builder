@@ -65,31 +65,31 @@ Production classes live under `Rak200\SqlBuilder\` (PSR-4 from `src/`); test cla
 
 **Known limitation:** uses string concatenation with quoting helpers — no prepared statement parameters yet. SQL injection risk if user input reaches value positions.
 
-## Planned: Dialect Architecture
+## Dialect Architecture
 
-A dialect layer is planned to make SQL rendering portable across databases without bloating builders with per-vendor branches. This section is the **specification** the implementation must follow; nothing here is built yet.
+Landed in 0.2.0. The dialect layer makes SQL rendering portable across databases without bloating builders with per-vendor branches. Builders are thin data carriers — state + validation + factory methods — and a `Dialect` instance owns *how* each component turns into SQL.
 
-### Goals
+### Goals (all met in 0.2.0)
 
-1. A **default dialect** that permits every feature — useful for tests and as the inheritance root.
-2. **Database-specific dialects** extend the default and override individual component renderers to throw, silently ignore, or simulate a feature with a hack (e.g. flattening `schema.table` to `schema_table` for engines without schemas).
-3. **Version-specific dialects** branch off the database dialect (e.g. `MariaDb105` extending `MariaDb` to enable `RETURNING`).
-4. **All rendering logic currently in builder `__toString()` methods moves to the dialect.** Builders become thin data carriers: state + validation + factory methods. The dialect owns *how* a builder turns into SQL.
-5. Each renderable component (Select, Insert, Column, ForeignKey, …) gets its **own renderer class** under the dialect's namespace. Dialects compose these renderers, so a subclass can swap one renderer without rewriting the whole dialect.
-6. **`__toString()` defaults to the default dialect**; passing a specific dialect is opt-in via `toSql(Dialect $dialect)`.
-7. The dialect is selected **at runtime** via `Dialect::fromDsn(string $dsn)`, mirroring how PDO DSNs identify the driver. This lets the same code target different databases per environment.
+1. A **default dialect** (`DefaultDialect`) that permits every feature — used as the inheritance root and the implicit target of `__toString()`.
+2. **Database-specific dialects** extend the default and override individual component renderers to throw, silently ignore, or simulate a feature.
+3. **Version-specific dialects** branch off the database dialect (e.g. `MariaDb105Dialect` extending `MariaDbDialect` to re-enable `RETURNING`).
+4. **All rendering logic that used to live in builder `__toString()` methods is now in renderer classes.** The builders' `__toString()` does nothing but `return Dialect::default()->renderXxx($this);`.
+5. Each renderable component (Select, Insert, Column, ForeignKey, …) has its **own renderer class** under `src/Dialect/Renderer/`. Dialects compose these renderers, so a subclass can swap one without rewriting the whole dialect.
+6. **`__toString()` uses the default dialect**; passing a specific dialect is opt-in via `toSql(Dialect $dialect)` on every component.
+7. The dialect is selected at runtime via `Dialect::fromDsn(string $dsn)`, mirroring how PDO DSNs identify the driver.
 
-### Class layout
+### Class layout (as built)
 
 ```
 src/Dialect/
 ├── Dialect.php                         # abstract base
-├── DefaultDialect.php                  # final-default, permissive baseline
+├── DefaultDialect.php                  # permissive baseline; composes default renderers
 ├── UnsupportedFeatureException.php
 ├── Dsn/
 │   └── DsnParser.php                   # parses DSN → Dialect instance
-├── Renderer/                           # interfaces and default impls
-│   ├── ComponentRenderer.php           # interface: render(Component): string
+├── Renderer/
+│   ├── ComponentRenderer.php           # marker interface
 │   ├── Dml/
 │   │   ├── SelectRenderer.php
 │   │   ├── InsertRenderer.php
@@ -121,22 +121,22 @@ src/Dialect/
 │       ├── OrderRenderer.php
 │       └── JoinRenderer.php
 ├── MariaDb/
-│   ├── MariaDbDialect.php              # extends DefaultDialect
-│   ├── MariaDb105Dialect.php           # extends MariaDbDialect, adds RETURNING
-│   └── Renderer/                       # only the overrides live here
-│       ├── InsertRenderer.php          # adds ON DUPLICATE KEY UPDATE handling
-│       └── ...
+│   ├── MariaDbDialect.php              # rejects Postgres-only FROM/USING and RETURNING on writes
+│   ├── MariaDb105Dialect.php           # re-enables RETURNING (single-table only for DELETE)
+│   └── Renderer/
+│       ├── InsertRenderer.php          # throws on RETURNING
+│       ├── UpdateRenderer.php          # throws on FROM and on RETURNING
+│       ├── DeleteRenderer.php          # throws on USING and on RETURNING
+│       ├── UpdateRenderer105.php       # inherits FROM rejection, allows RETURNING
+│       └── DeleteRenderer105.php       # inherits USING rejection, allows RETURNING
 └── Postgres/
-    ├── PostgresDialect.php             # extends DefaultDialect
-    ├── Postgres15Dialect.php           # version-specific, if needed
+    ├── PostgresDialect.php             # double-quoted identifiers, standard-conforming strings
+    ├── Postgres15Dialect.php           # placeholder for MERGE / NULLS NOT DISTINCT
     └── Renderer/
-        ├── DeleteRenderer.php          # adds USING handling
-        ├── UpdateRenderer.php          # adds FROM handling
-        ├── ColumnReferenceRenderer.php # double-quoted identifiers
-        └── ValueExpressionRenderer.php # single-quote-only escaping
+        └── InsertRenderer.php          # throws on ON DUPLICATE KEY UPDATE
 ```
 
-Rationale for one class per component: it keeps each renderer small enough to read in one screen, makes overriding per-dialect a one-file change, and lets a subclass swap one renderer (`MariaDb\Renderer\InsertRenderer`) without touching the rest.
+Postgres-only multi-table forms (`UPDATE ... FROM`, `DELETE ... USING`) and `RETURNING` are inherited from the permissive default — `PostgresDialect` only needs the quoting / string-escape overrides on the dialect itself plus the one Insert renderer override.
 
 ### The `Dialect` contract
 
@@ -145,34 +145,26 @@ abstract class Dialect {
     abstract public function quoteIdentifier(string $identifier): string;
     abstract public function quoteValue(mixed $value): string;
 
-    // One method per renderable component. The default dialect implements
-    // them by delegating to the per-component renderer instances it composes.
+    // One abstract method per renderable component (Select, Insert, ..., Order, Join).
     abstract public function renderSelect(Select $component): string;
     abstract public function renderInsert(Insert $component): string;
-    abstract public function renderUpdate(Update $component): string;
-    abstract public function renderDelete(Delete $component): string;
-    abstract public function renderSet(Set $component): string;
-    abstract public function renderTable(Table $component): string;
-    abstract public function renderColumn(Column $component): string;
-    // ... one per component class
+    // ...
 
-    /** Default singleton, lazily instantiated. */
-    public static function default(): self {
-        return self::$default ??= new DefaultDialect();
-    }
+    /** Polymorphic dispatch by concrete expression type — used by renderers to
+     *  render nested ExpressionInterface instances without duplicating the
+     *  type-to-renderer switch in every renderer. */
+    public function renderExpression(ExpressionInterface $expression): string;
 
-    /** Runtime selection from a DSN. */
-    public static function fromDsn(string $dsn): self {
-        return Dsn\DsnParser::parse($dsn);
-    }
+    public static function default(): self;          // lazy singleton → DefaultDialect
+    public static function fromDsn(string $dsn): self; // delegates to Dsn\DsnParser
 }
 ```
 
-`DefaultDialect` composes one renderer per component (`Renderer\Dml\SelectRenderer`, …) and forwards each `renderXxx()` call. A dialect subclass overrides only the renderers it needs to specialise.
+`DefaultDialect` composes one renderer per component via **protected `xxxRenderer()` accessor methods** with lazy `??=` initialisation. A subclass overrides only the accessors whose renderer it wants to swap (e.g. `MariaDbDialect::insertRenderer()` returns `MariaDb\Renderer\InsertRenderer`). The renderer holds a back-reference to the owning dialect so nested rendering and identifier/value quoting always route through the right dialect.
 
-### Builder side — what changes in components
+### Builder side — how state is exposed
 
-- Each component (Select, Insert, …) drops its private `buildXxx()` helpers and its `__toString()` becomes:
+- Each component's `__toString()` is:
   ```php
   public function __toString(): string {
       return Dialect::default()->renderSelect($this);
@@ -182,37 +174,40 @@ abstract class Dialect {
       return $dialect->renderSelect($this);
   }
   ```
-- Builder state must be readable by the renderer. Two acceptable approaches: **public readonly** properties or **explicit getters**. Either is fine, but pick one and apply consistently. Validation that today lives in `__toString()` (e.g. "INSERT requires VALUES or SELECT") stays in the builder — it's pre-render validation, not rendering.
+- Builder state is exposed to renderers using **PHP 8.4 asymmetric visibility**: `public private(set)` for fluent-mutable properties, and `public readonly` for value-object properties set once in the constructor. The fluent setter API is unchanged for callers; renderers just read `$component->columns`, `$component->where`, etc.
+- Pre-render validation (e.g. "INSERT requires VALUES or SELECT", `Join::validate()`) lives in the builder or in the renderer entry-point — not in private build helpers, which have been removed entirely.
 
 ### Override patterns by example
 
-- **Throw on unsupported feature** — `Postgres\Renderer\InsertRenderer::renderOnDuplicateKeyUpdate()` throws `UnsupportedFeatureException` because PostgreSQL uses `ON CONFLICT` instead.
-- **Silently ignore** — a tiny dialect that doesn't support `IF NOT EXISTS` could just drop the clause from the rendered output (debatable; prefer throwing unless the omission is genuinely safe).
-- **Hack/simulate** — a `Sqlite\Renderer\TableRenderer` could rewrite `schema.table` to `schema_table` because SQLite has no schemas, preserving the multi-tenant intent of the caller.
+- **Throw on unsupported feature** — `Postgres\Renderer\InsertRenderer::renderOnDuplicateKeyUpdate()` throws `UnsupportedFeatureException` because PostgreSQL uses `ON CONFLICT` instead. Same pattern in `MariaDb\Renderer\InsertRenderer::renderReturning()`.
+- **Override at the dialect level** — `PostgresDialect::quoteIdentifier()` and `quoteValue()` are overridden directly on the dialect (not via a renderer), and every default renderer that calls `$this->dialect->quoteIdentifier(...)` automatically picks up the new behaviour. Most identifier-quoting overrides do *not* need a renderer override.
+- **Hack/simulate** — a future `Sqlite\Renderer\TableRenderer` could rewrite `schema.table` to `schema_table` because SQLite has no schemas, preserving the multi-tenant intent of the caller.
 
 ### DSN parsing
 
 `Dialect::fromDsn()` accepts common DSN forms and returns the right dialect:
 
-| DSN scheme               | Returned dialect          |
-| ------------------------ | ------------------------- |
-| `mariadb://...`          | `MariaDb\MariaDbDialect`  |
-| `mysql://...`            | `MariaDb\MariaDbDialect`  |
-| `postgres://...`         | `Postgres\PostgresDialect`|
-| `pgsql://...`            | `Postgres\PostgresDialect`|
-| Unknown / no scheme      | `DefaultDialect`          |
+| DSN scheme                                | Returned dialect                  |
+| ----------------------------------------- | --------------------------------- |
+| `mariadb://...`, `mysql://...`            | `MariaDb\MariaDbDialect`          |
+| `postgres://...`, `pgsql://...`, `postgresql://...` | `Postgres\PostgresDialect` |
+| Unknown / no scheme                       | `DefaultDialect`                  |
 
-Version hints come from a `version` query-string parameter (e.g. `mariadb://host/db?version=10.5` → `MariaDb105Dialect`). The parser is forgiving: unrecognised schemes or versions fall back to the closest base dialect rather than throwing.
+Version hints come from a `version` query-string parameter:
+- `mariadb://host/db?version=10.5` (or any ≥10.5) → `MariaDb105Dialect`
+- `postgres://host/db?version=15`   (or any ≥15)   → `Postgres15Dialect`
 
-### Migration steps (when this is implemented)
+The parser is forgiving: unrecognised schemes or older versions fall back to the closest base dialect rather than throwing.
 
-1. **Introduce the contract**: `Dialect`, `DefaultDialect`, `UnsupportedFeatureException`, and the renderer interface. Add `toSql(Dialect)` and the `__toString` → `Dialect::default()->renderXxx($this)` redirection to every component, keeping the existing per-`__toString` logic temporarily inside `DefaultDialect`'s renderers (cut-and-paste).
-2. **Decompose `DefaultDialect`** into per-component renderer classes. The `__toString` test suite stays green because output is unchanged.
-3. **Add `MariaDb` and `Postgres` dialects** with the overrides needed for their feature matrices (quoting, USING/FROM, ON DUPLICATE KEY UPDATE vs ON CONFLICT, RETURNING gates, ORDER BY/LIMIT on writes, …). Add dialect-specific test suites under `tests/Unit/Dialect/`.
-4. **Add version variants** as the matrix demands (`MariaDb105` enabling `RETURNING`, etc.).
-5. **Implement `Dialect::fromDsn()`** and document the supported schemes.
+### Adding a new dialect
 
-Once steps 1–2 land, every later dialect is additive: a new database means a new subclass with its renderer overrides; no churn in builders or existing tests.
+The migration that landed 0.2.0 (introduce the contract → decompose into renderers → add MariaDB/Postgres → add version variants → wire up `fromDsn`) is now done. Adding another database is additive:
+
+1. Create `src/Dialect/<Vendor>/<Vendor>Dialect.php` extending `DefaultDialect` (or another base).
+2. Override `quoteIdentifier()` / `quoteValue()` on the dialect itself if the vendor differs.
+3. For each component whose rendering deviates, create a renderer in `src/Dialect/<Vendor>/Renderer/` extending the matching default renderer, and override the protected `xxxRenderer()` factory on the dialect to wire it in.
+4. Add unit tests under `tests/Unit/Dialect/` — both vendor-specific assertions and a dialect-propagation case to make sure nested expressions inherit the dialect.
+5. Register the scheme in `Dsn\DsnParser` if you want DSN-based selection.
 
 ## Testing
 
@@ -227,7 +222,7 @@ Test classes mirror the source namespace (e.g. `Rak200\SqlBuilder\Common\Express
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.1.1** — unstable while the API stabilises.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.2.0** — unstable while the API stabilises.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`
