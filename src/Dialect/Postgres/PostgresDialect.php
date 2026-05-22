@@ -7,6 +7,7 @@ namespace Rak200\SqlBuilder\Dialect\Postgres;
 use Rak200\SqlBuilder\Dialect\DefaultDialect;
 use Rak200\SqlBuilder\Dialect\Postgres\Renderer\InsertRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\InsertRenderer as DefaultInsertRenderer;
+use Rak200\SqlBuilder\Prepared\Binder;
 
 /**
  * PostgreSQL dialect.
@@ -48,5 +49,10 @@ class PostgresDialect extends DefaultDialect {
 
     protected function insertRenderer(): DefaultInsertRenderer {
         return $this->insertRenderer ??= new InsertRenderer($this);
+    }
+
+    /** {@inheritdoc} */
+    public function newBinder(): Binder {
+        return new PostgresBinder();
     }
 }

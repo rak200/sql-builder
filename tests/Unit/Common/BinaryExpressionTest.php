@@ -7,6 +7,7 @@ namespace Rak200\SqlBuilder\Tests\Unit\Common;
 use PHPUnit\Framework\TestCase;
 use Rak200\SqlBuilder\Common\BinaryExpression;
 use Rak200\SqlBuilder\Common\ColumnReference;
+use Rak200\SqlBuilder\Common\Enum\ArithmeticOperator;
 use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
 use Rak200\SqlBuilder\Common\Expression;
 use Rak200\SqlBuilder\Common\ValueExpression;
@@ -57,5 +58,21 @@ final class BinaryExpressionTest extends TestCase {
         $expr = Expression::binary('u.name', BinaryOperator::Eq, 'r.name');
 
         $this->assertSame('(`u`.`name` = `r`.`name`)', (string) $expr);
+    }
+
+    public function testAcceptsArithmeticOperator(): void {
+        $expr = new BinaryExpression(
+            new ColumnReference('price'),
+            ArithmeticOperator::Add,
+            new ValueExpression(10)
+        );
+
+        $this->assertSame('(`price` + 10)', (string) $expr);
+    }
+
+    public function testBinaryFactoryAcceptsArithmeticOperator(): void {
+        $expr = Expression::binary('price', ArithmeticOperator::Mul, 1.2);
+
+        $this->assertSame('(`price` * 1.2)', (string) $expr);
     }
 }

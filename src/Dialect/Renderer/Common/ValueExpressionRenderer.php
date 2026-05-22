@@ -19,7 +19,9 @@ class ValueExpressionRenderer implements ComponentRenderer {
     public function __construct(protected Dialect $dialect) {}
 
     public function render(ValueExpression $component): string {
-        $sql = $this->dialect->quoteValue($component->value);
+        $sql = $this->dialect->binder !== null
+            ? $this->dialect->binder->bind($component->value)
+            : $this->dialect->quoteValue($component->value);
 
         if ($component->alias !== null) {
             $sql .= ' AS ' . $this->dialect->quoteIdentifier($component->alias);

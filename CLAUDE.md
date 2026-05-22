@@ -262,128 +262,94 @@ Today values are inlined via `ValueExpression` → `$dialect->quoteValue($value)
 
 #### Goals
 
-1. Backward compatible — `__toString()` and `toSql(Dialect)` continue to inline. Bind mode is opt-in via a new `prepare(Dialect)` method on every renderable component.
+1. Backward compatible — `__toString()` and `toSql(Dialect)` continue to inline.
 2. The result is a `PreparedStatement` value object exposing `sql` and `parameters` so the caller can hand both straight to PDO.
-3. Placeholder syntax is dialect-specific: positional `?` (MariaDB/MySQL) by default; `$1`, `$2`, … on Postgres.
-4. Only **values** become placeholders. Identifiers and raw SQL never do; `LIMIT` and `OFFSET` integers stay inlined (MariaDB <8.0 rejects placeholders there, and they're not user-strings — no injection risk).
+3. `parameters` can be replaced/rebound for new runs.
+4. Two options for creating a `PreparedStatement`:
+   - Create the SQL with parameters already declared via `ParameterExpression`; or
+   - Convert/replace existing `ValueExpression` into `ParameterExpression` at render time.
+5. **Both named and positional placeholders are supported.** `Expression::param(int|string)` declares the placeholder; the binder picks the on-wire form per dialect:
+   - **Named key** (`Expression::param('price')`) → `:price` on every dialect. PDO emulates named placeholders for both MariaDB/MySQL and Postgres. The same name reused N times across the SQL yields **one entry** in `parameters` keyed by name.
+   - **Positional key on Postgres** (`Expression::param(1)` + `PostgresDialect`) → `$1`. Postgres supports native placeholder reuse, so `$1` appears N times in the SQL but the value sits **once** in `parameters` at index 0.
+   - **Positional key on MariaDB/MySQL** (`Expression::param(1)` + default/`MariaDbDialect`) → `?`. `?` has no native reuse, so the binder emits a **fresh `?` per occurrence** and pushes the value into `parameters` at each occurrence; the array has the value duplicated at the matching positions. Caller behaviour with `PDOStatement::execute()` is unchanged — they bind a flat list as always.
+6. Only **values** become placeholders. Identifiers and raw SQL never do; `LIMIT` and `OFFSET` integers stay inlined (MariaDB <8.0 rejects placeholders there, and they're not user-strings — no injection risk).
 
 #### New abstractions
 
 ```
 src/Prepared/
 ├── PreparedStatement.php           # final value object: ->sql, ->parameters
-└── Binder.php                      # default `?` positional; PostgresBinder subclass emits `$N`
+└── Binder.php                      # stateful, keyed; default emits `?` (no reuse on MariaDB)
 
 src/Dialect/MariaDb/
-└── (Binder unchanged — default `?` is already MariaDB-shaped)
+└── (Binder unchanged — default `?` shape, value duplicated per occurrence for repeated keys)
 
 src/Dialect/Postgres/
-└── PostgresBinder.php              # emits `$1`, `$2`, …
+└── PostgresBinder.php              # emits `$N`; reuses the same `$N` for repeated keys
 ```
+
+##### Explicit Mode
+
+A `ParameterExpression` is created by `Expression::param(int|string)`. The key (int or string) identifies the **logical** parameter — repeated references to the same key are collapsed by the binder where the dialect supports it.
+
+Positional example, PostgreSQL dialect:
 
 ```php
-final class PreparedStatement {
-    public function __construct(
-        public readonly string $sql,
-        /** @var list<mixed> */
-        public readonly array $parameters
-    ) {}
-}
-
-class Binder {
-    /** @var list<mixed> */
-    private array $values = [];
-
-    public function bind(mixed $value): string {
-        $this->values[] = $value;
-        return $this->placeholder(count($this->values));
-    }
-
-    /** @return list<mixed> */
-    public function values(): array { return $this->values; }
-
-    protected function placeholder(int $oneBasedIndex): string { return '?'; }
-}
-
-final class PostgresBinder extends Binder {
-    protected function placeholder(int $oneBasedIndex): string { return '$' . $oneBasedIndex; }
-}
+Select::create()
+    ->select(Expression::column(Expression::param(1), 'price'))
+    ->select(Expression::column(Expression::param(2), 'qtd'))
+    ->select(Expression::column(
+        Expression::binary(Expression::param(1), BinaryOperator::Times, Expression::param(2)),
+        'total'
+    ));
 ```
 
-#### Dialect contract additions
+renders to:
+
+```sql
+SELECT $1 AS "price", $2 AS "qtd", $1 * $2 AS "total"
+```
+
+with `parameters = [<price>, <qtd>]` — `$1`/`$2` each appear twice in the SQL but only once in the array.
+
+The same builder under the default/MariaDB dialect renders:
+
+```sql
+SELECT ? AS `price`, ? AS `qtd`, ? * ? AS `total`
+```
+
+with `parameters = [<price>, <qtd>, <price>, <qtd>]` — one `?` per textual occurrence, value duplicated to match.
+
+Named example (identical shape on both dialects, since PDO emulates named placeholders):
 
 ```php
-abstract class Dialect {
-    /** Current binder; set during prepare() rendering, null otherwise. */
-    public private(set) ?Binder $binder = null;
-
-    /** Factory hook — Postgres overrides to return PostgresBinder. */
-    public function newBinder(): Binder { return new Binder(); }
-
-    /** Clone+attach so the singleton dialect is not mutated. */
-    public function withBinder(?Binder $binder): static {
-        $clone = clone $this;
-        $clone->binder = $binder;
-        return $clone;
-    }
-}
+Expression::param('price')   // → :price, parameters = ['price' => <value>, …]
 ```
 
-`prepare(Dialect)` lifecycle on each component:
+##### Bind Mode
 
-```php
-public function prepare(Dialect $dialect): PreparedStatement {
-    $binder  = $dialect->newBinder();
-    $bound   = $dialect->withBinder($binder);
-    $sql     = $bound->renderSelect($this);   // or renderInsert / renderUpdate / …
-    return new PreparedStatement($sql, $binder->values());
-}
-```
+Convert/replace existing `ValueExpression` into anonymous placeholders at render time. There is no key, so **no reuse** is possible — each `ValueExpression` becomes one placeholder and one new entry in `parameters`.
 
-Cloning isolates the binder state on the dialect instance used for one prepare() call — critical because `Dialect::default()` is a process-wide singleton and `__toString()` users would otherwise see a stale binder.
-
-#### Renderer changes
-
-Only one renderer truly switches behaviour:
-
-```php
-// src/Dialect/Renderer/Common/ValueExpressionRenderer.php
-public function render(ValueExpression $component): string {
-    $sql = $this->dialect->binder !== null
-        ? $this->dialect->binder->bind($component->value)
-        : $this->dialect->quoteValue($component->value);
-
-    if ($component->alias !== null) {
-        $sql .= ' AS ' . $this->dialect->quoteIdentifier($component->alias);
-    }
-
-    return $sql;
-}
-```
-
-Every other renderer that handles a value already routes through `ValueExpression` (Insert::values() wraps scalars, Update::set() wraps scalars, CaseExpression::when() wraps simple-form scalars, Expression::binary() wraps via normalize, …) — so they pick up bind mode for free.
+Every renderer that handles a value already routes through `ValueExpression` (`Insert::values()` wraps scalars, `Update::set()` wraps scalars, `CaseExpression::when()` wraps simple-form scalars, `Expression::binary()` wraps via normalize, …) — so they pick up bind mode for free.
 
 Renderers that explicitly do **not** change:
-- ColumnExpression, ColumnReference, SimpleIdentifier, TableReference, RawExpression — identifiers and raw SQL never get parameterised.
-- Sub-statements (Select inside subquery, Set, Cte) — recursion already propagates the dialect, which carries the binder.
+- `ColumnExpression`, `ColumnReference`, `SimpleIdentifier`, `TableReference`, `RawExpression` — identifiers and raw SQL never get parameterised.
+- Sub-statements (`Select` inside subquery, `Set`, `Cte`) — recursion already propagates the dialect, which carries the binder.
 
-#### Special cases
+##### Binder state
 
-- **`BinaryOperator::In` with an array right operand**: each array element becomes its own placeholder. The SQL shape (`IN (?, ?, ?)`) depends on the array's length — that's expected, and matches how callers use PDO with `IN`.
+The `Binder` is stateful and keyed per render. Responsibilities by key kind:
+
+- **Named** (`string` key): map `name → placeholder` and `name → value`. Re-encountering the same name returns the cached placeholder and does **not** append to `parameters`.
+- **Positional on Postgres** (`int` key + `PostgresBinder`): map `index → "$N"` and `index → value`. Re-encountering the same index returns the cached `$N`. `parameters` is a list ordered by first-seen index.
+- **Positional on MariaDB/MySQL** (`int` key + default `Binder`): `?` cannot be reused on the wire, so the binder keeps `index → value` for validation but **emits a fresh `?` and appends the value to `parameters` every time the index is hit**. Repeating a key here is purely an ergonomic affordance on the builder side — the wire format still duplicates.
+- **Anonymous** (Bind Mode, no key): fresh placeholder per occurrence, fresh array entry. No reuse possible.
+
+Special cases
+
+- **`BinaryOperator::In` with an array right operand**: each array element becomes its own placeholder (one key per element). The SQL shape (`IN (?, ?, ?)`) depends on the array's length — that's expected, and matches how callers use PDO with `IN`.
 - **LIMIT / OFFSET**: rendered as integers, never bound. The integer cast in the builder constructor already guarantees safety.
-- **`DEFAULT` values in INSERT / UPDATE that are `Expression::raw('NOW()')` or a sequence's `nextVal`**: these are RawExpression / FunctionExpression, not ValueExpression, so they pass through verbatim — no placeholder, correct behaviour.
-
-#### Migration steps
-
-1. Create `PreparedStatement`, `Binder`, `PostgresBinder`. Add `newBinder()` on `Dialect` / `PostgresDialect` and `withBinder()` on `Dialect`.
-2. Add the `?Binder $binder` slot on `Dialect` and the `prepare(Dialect)` method on every renderable component (every DML builder, plus `CaseExpression` / `BinaryExpression` for completeness — handy for unit-test fixtures).
-3. Modify `ValueExpressionRenderer` to consult `$this->dialect->binder`. No other renderer changes.
-4. Add `tests/Unit/Prepared/` covering: simple SELECT/WHERE, multi-row INSERT, UPDATE SET, DELETE WHERE, JOIN ON, `IN (array)`, EXISTS subquery (placeholders carry across the nested render), CASE WHEN branches, Postgres `$N` numbering with a JOIN that introduces six placeholders.
-5. Document `prepare(Dialect)` in the README with a small PDO example, and drop the "Safety & quality / Parameter binding" bullet from the roadmap.
-
-### Sequencing
-
-Land **§1 (identifier quoting)** first as one self-contained release — it's a pure output-cleanup with no API additions. Then land **§2 (parameter binding)** as a separate release with the new `prepare()` / `PreparedStatement` / `Binder` surface. Tests written against §2 then naturally compare against the already-clean DDL output from §1, avoiding a double rewrite.
+- **`DEFAULT` values in INSERT / UPDATE that are `Expression::raw('NOW()')` or a sequence's `nextVal`**: these are `RawExpression` / `FunctionExpression`, not `ValueExpression`, so they pass through verbatim — no placeholder, correct behaviour.
 
 ## Testing
 

@@ -17,6 +17,7 @@ use Rak200\SqlBuilder\Common\SimpleIdentifier;
 use Rak200\SqlBuilder\Common\SubqueryExpression;
 use Rak200\SqlBuilder\Common\TableReference;
 use Rak200\SqlBuilder\Common\UnaryExpression;
+use Rak200\SqlBuilder\Common\ParameterExpression;
 use Rak200\SqlBuilder\Common\ValueExpression;
 use Rak200\SqlBuilder\Common\Window;
 use Rak200\SqlBuilder\Common\WindowExpression;
@@ -43,6 +44,7 @@ use Rak200\SqlBuilder\Dialect\Renderer\Common\SimpleIdentifierRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\SubqueryExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\TableReferenceRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\UnaryExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Common\ParameterExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\ValueExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\WindowExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\WindowRenderer;
@@ -89,6 +91,7 @@ class DefaultDialect extends Dialect {
     protected ?ColumnExpressionRenderer   $columnExpressionRenderer   = null;
     protected ?ColumnReferenceRenderer    $columnReferenceRenderer    = null;
     protected ?ValueExpressionRenderer    $valueExpressionRenderer    = null;
+    protected ?ParameterExpressionRenderer $parameterExpressionRenderer = null;
     protected ?RawExpressionRenderer      $rawExpressionRenderer      = null;
     protected ?FunctionExpressionRenderer $functionExpressionRenderer = null;
     protected ?ExistsExpressionRenderer   $existsExpressionRenderer   = null;
@@ -119,6 +122,50 @@ class DefaultDialect extends Dialect {
     protected ?UniqueKeyRenderer  $uniqueKeyRenderer  = null;
     protected ?ForeignKeyRenderer $foreignKeyRenderer = null;
     protected ?CheckRenderer      $checkRenderer      = null;
+
+    /**
+     * Reset cached renderer instances so a cloned dialect (e.g. via
+     * {@see withBinder()}) gets renderers whose back-reference points at
+     * the clone, not the source dialect.
+     */
+    public function __clone(): void {
+        // Common renderers
+        $this->binaryExpressionRenderer    = null;
+        $this->unaryExpressionRenderer     = null;
+        $this->caseExpressionRenderer      = null;
+        $this->columnExpressionRenderer    = null;
+        $this->columnReferenceRenderer     = null;
+        $this->valueExpressionRenderer     = null;
+        $this->parameterExpressionRenderer = null;
+        $this->rawExpressionRenderer       = null;
+        $this->functionExpressionRenderer  = null;
+        $this->existsExpressionRenderer    = null;
+        $this->subqueryExpressionRenderer  = null;
+        $this->simpleIdentifierRenderer    = null;
+        $this->tableReferenceRenderer      = null;
+        $this->orderRenderer               = null;
+        $this->joinRenderer                = null;
+        $this->windowRenderer              = null;
+        $this->windowExpressionRenderer    = null;
+        // DML renderers
+        $this->selectRenderer = null;
+        $this->insertRenderer = null;
+        $this->updateRenderer = null;
+        $this->deleteRenderer = null;
+        $this->setRenderer    = null;
+        $this->cteRenderer    = null;
+        // DDL renderers
+        $this->tableRenderer      = null;
+        $this->columnRenderer     = null;
+        $this->viewRenderer       = null;
+        $this->sequenceRenderer   = null;
+        $this->indexRenderer      = null;
+        $this->schemaRenderer     = null;
+        $this->primaryKeyRenderer = null;
+        $this->uniqueKeyRenderer  = null;
+        $this->foreignKeyRenderer = null;
+        $this->checkRenderer      = null;
+    }
 
     /** {@inheritdoc} */
     public function quoteIdentifier(string $identifier): string {
@@ -233,6 +280,10 @@ class DefaultDialect extends Dialect {
 
     public function renderValueExpression(ValueExpression $component): string {
         return $this->valueExpressionRenderer()->render($component);
+    }
+
+    public function renderParameterExpression(ParameterExpression $component): string {
+        return $this->parameterExpressionRenderer()->render($component);
     }
 
     public function renderRawExpression(RawExpression $component): string {
@@ -363,6 +414,10 @@ class DefaultDialect extends Dialect {
 
     protected function valueExpressionRenderer(): ValueExpressionRenderer {
         return $this->valueExpressionRenderer ??= new ValueExpressionRenderer($this);
+    }
+
+    protected function parameterExpressionRenderer(): ParameterExpressionRenderer {
+        return $this->parameterExpressionRenderer ??= new ParameterExpressionRenderer($this);
     }
 
     protected function rawExpressionRenderer(): RawExpressionRenderer {

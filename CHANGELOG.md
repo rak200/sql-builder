@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-20
+
+### Added
+- **Parameter binding / prepared statements**. Opt-in via a new `prepare(Dialect): PreparedStatement` method on every DML builder (`Select`, `Insert`, `Update`, `Delete`, `Set`) and on `Expression`. Drops the long-standing "SQL injection risk if user input reaches value positions" caveat from the README.
+  - `Rak200\SqlBuilder\Prepared\PreparedStatement` — final value object pairing the rendered `sql` with a mutable `parameters` array (suitable for `PDO::prepare()` / `PDOStatement::execute()` and for rebinding between runs).
+  - `Rak200\SqlBuilder\Prepared\Binder` — stateful, keyed binder. Default emits MariaDB/MySQL-shaped positional `?` with no wire-level reuse; named placeholders (`:name`) are reusable on every dialect through PDO emulation.
+  - `Rak200\SqlBuilder\Dialect\Postgres\PostgresBinder` — emits `$N`, reuses the same `$N` for repeated positional keys (native Postgres support).
+  - `Expression::param(int|string $key, mixed $value = null)` factory and the `ParameterExpression` it returns. Int keys → positional (`?` / `$N`); string keys → named (`:name`). The optional default value is bound when the placeholder is first emitted; callers can override values per run via `PreparedStatement::$parameters`.
+  - `Dialect` now carries a `public private(set) ?Binder $binder`, plus `newBinder()` / `withBinder()` and an abstract `renderParameterExpression()`. `DefaultDialect::__clone()` resets all renderer caches so a `withBinder()` clone's renderers point at the clone — the `Dialect::default()` singleton is never mutated.
+  - `ValueExpressionRenderer` now consults `$dialect->binder`: in bind mode every `ValueExpression` becomes one anonymous placeholder; in inline mode the existing `quoteValue()` path is unchanged.
+  - 24 new tests under `tests/Unit/Prepared/` covering: binder shapes (default `?`, Postgres `$N`, named `:name`), positional reuse semantics (Postgres reuses, MariaDB duplicates the value per occurrence), SELECT/WHERE, multi-row INSERT, UPDATE SET, DELETE WHERE, EXISTS subquery propagation, CASE WHEN branches, `RawExpression` / `NOW()` bypass, LIMIT/OFFSET inlining, six-placeholder Postgres JOIN, default-value binding, `ParameterExpression` rendered outside `prepare()` raises `LogicException`, and a guard that `prepare()` does not contaminate the shared default dialect.
+- **Arithmetic operators in expressions.** New `ArithmeticOperator` enum (`Add`/`Sub`/`Mul`/`Div`/`Mod`), and `BinaryExpression::$operator` widened to `BinaryOperator|ArithmeticOperator` so the type system keeps predicate-producing operators separate from value-producing ones. Five new factories on `Expression` — `add()`, `sub()`, `mul()`, `div()`, `mod()` — combining operands left-associatively with operand normalization. 11 new tests under `tests/Unit/Common/{BinaryExpression,Expression}Test.php`.
+
+### Changed
+- `Expression::binary()` accepts `BinaryOperator|ArithmeticOperator` as its operator argument (previously `BinaryOperator` only). Backwards-compatible for existing callers.
+
 ## [0.5.0] - 2026-05-20
 
 ### Added
@@ -105,7 +121,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/rak200/sql-builder/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/rak200/sql-builder/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/rak200/sql-builder/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/rak200/sql-builder/compare/0.2.0...0.3.0

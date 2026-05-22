@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Common;
 
+use Rak200\SqlBuilder\Common\Enum\ArithmeticOperator;
 use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
 use Rak200\SqlBuilder\Common\Enum\UnaryOperator;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dml\Select;
+use Rak200\SqlBuilder\Prepared\PreparedStatement;
 use InvalidArgumentException;
 
 /**
@@ -49,6 +51,21 @@ abstract class Expression implements ExpressionInterface {
      */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderExpression($this);
+    }
+
+    /**
+     * Render this expression in bind mode for the given dialect.
+     *
+     * Values are emitted as dialect-specific placeholders and accumulated
+     * into the resulting {@see PreparedStatement::$parameters} array.
+     *
+     * @param Dialect $dialect The dialect to render with.
+     * @return PreparedStatement The SQL and bound parameters.
+     */
+    public function prepare(Dialect $dialect): PreparedStatement {
+        $binder = $dialect->newBinder();
+        $sql    = $dialect->withBinder($binder)->renderExpression($this);
+        return new PreparedStatement($sql, $binder->values());
     }
 
     /**
@@ -144,6 +161,28 @@ abstract class Expression implements ExpressionInterface {
     }
 
     /**
+     * Create a prepared-statement parameter placeholder.
+     *
+     * Use `int` keys for positional placeholders (`?` on MariaDB/MySQL, `$N`
+     * on Postgres) and `string` keys for named placeholders (`:name`, PDO-
+     * emulated on every dialect). Reuse of the same key collapses to a
+     * single entry in the resulting parameters array on dialects that
+     * support placeholder reuse on the wire (Postgres positional, named on
+     * both).
+     *
+     * The optional default value is bound when the placeholder is first
+     * emitted; callers can override values per run via
+     * {@see \Rak200\SqlBuilder\Prepared\PreparedStatement::$parameters}.
+     *
+     * @param int|string $key Positional index or parameter name.
+     * @param mixed $value Optional default value to associate with the slot.
+     * @return ParameterExpression
+     */
+    public static function param(int|string $key, mixed $value = null): ParameterExpression {
+        return new ParameterExpression($key, $value);
+    }
+
+    /**
      * Create a function call expression.
      *
      * @param string $name The function name (e.g., 'COUNT', 'MAX', 'SUM').
@@ -166,14 +205,14 @@ abstract class Expression implements ExpressionInterface {
     }
 
     /**
-     * Create a binary expression (e.g., column = value, count > 10).
+     * Create a binary expression (e.g., `column = value`, `count > 10`, `price + tax`).
      *
      * @param mixed $left Left operand.
-     * @param BinaryOperator $operator The binary operator.
+     * @param BinaryOperator|ArithmeticOperator $operator The binary or arithmetic operator.
      * @param mixed $right Right operand.
      * @return BinaryExpression
      */
-    public static function binary(mixed $left, BinaryOperator $operator, mixed $right): BinaryExpression {
+    public static function binary(mixed $left, BinaryOperator|ArithmeticOperator $operator, mixed $right): BinaryExpression {
         return new BinaryExpression(self::normalize($left), $operator, self::normalize($right));
     }
 
@@ -312,24 +351,83 @@ abstract class Expression implements ExpressionInterface {
     }
 
     /**
-     * Combine multiple expressions with a logical operator.
+     * Combine multiple operands with a binary operator, left-associatively.
      *
-     * @param BinaryOperator $operator The combining operator (AND, OR).
-     * @param ExpressionInterface ...$terms Expressions to combine.
+     * Each operand is normalized (strings become column references, scalars become
+     * value expressions, expressions are passed through), so callers can mix raw
+     * values, column names, and expressions freely.
+     *
+     * @param BinaryOperator|ArithmeticOperator $operator The combining operator.
+     * @param mixed ...$operands Operands to combine.
      * @return ExpressionInterface The combined expression.
-     * @throws InvalidArgumentException If no expressions are provided.
+     * @throws InvalidArgumentException If no operands are provided.
      */
-    protected static function combine(BinaryOperator $operator, ExpressionInterface ...$terms): ExpressionInterface {
-        if (count($terms) === 0) {
+    protected static function combine(BinaryOperator|ArithmeticOperator $operator, mixed ...$operands): ExpressionInterface {
+        if (count($operands) === 0) {
             throw new InvalidArgumentException('At least one expression is required.');
         }
 
-        $expression = array_shift($terms);
+        $expression = self::normalize(array_shift($operands));
 
-        foreach ($terms as $term) {
-            $expression = new BinaryExpression($expression, $operator, $term);
+        foreach ($operands as $operand) {
+            $expression = new BinaryExpression($expression, $operator, self::normalize($operand));
         }
 
         return $expression;
+    }
+
+    /**
+     * Create an arithmetic addition expression (e.g., `(a + b + c)`).
+     *
+     * @param mixed ...$operands Operands to sum.
+     * @return ExpressionInterface
+     * @throws InvalidArgumentException If no operands are provided.
+     */
+    public static function add(mixed ...$operands): ExpressionInterface {
+        return self::combine(ArithmeticOperator::Add, ...$operands);
+    }
+
+    /**
+     * Create an arithmetic subtraction expression (e.g., `((a - b) - c)`).
+     *
+     * @param mixed ...$operands Operands to subtract, left-associative.
+     * @return ExpressionInterface
+     * @throws InvalidArgumentException If no operands are provided.
+     */
+    public static function sub(mixed ...$operands): ExpressionInterface {
+        return self::combine(ArithmeticOperator::Sub, ...$operands);
+    }
+
+    /**
+     * Create an arithmetic multiplication expression (e.g., `(a * b * c)`).
+     *
+     * @param mixed ...$operands Operands to multiply.
+     * @return ExpressionInterface
+     * @throws InvalidArgumentException If no operands are provided.
+     */
+    public static function mul(mixed ...$operands): ExpressionInterface {
+        return self::combine(ArithmeticOperator::Mul, ...$operands);
+    }
+
+    /**
+     * Create an arithmetic division expression (e.g., `((a / b) / c)`).
+     *
+     * @param mixed ...$operands Operands to divide, left-associative.
+     * @return ExpressionInterface
+     * @throws InvalidArgumentException If no operands are provided.
+     */
+    public static function div(mixed ...$operands): ExpressionInterface {
+        return self::combine(ArithmeticOperator::Div, ...$operands);
+    }
+
+    /**
+     * Create an arithmetic modulo expression (e.g., `((a % b) % c)`).
+     *
+     * @param mixed ...$operands Operands to apply modulo to, left-associative.
+     * @return ExpressionInterface
+     * @throws InvalidArgumentException If no operands are provided.
+     */
+    public static function mod(mixed ...$operands): ExpressionInterface {
+        return self::combine(ArithmeticOperator::Mod, ...$operands);
     }
 }

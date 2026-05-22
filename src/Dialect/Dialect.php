@@ -13,6 +13,7 @@ use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Common\FunctionExpression;
 use Rak200\SqlBuilder\Common\Join;
 use Rak200\SqlBuilder\Common\Order;
+use Rak200\SqlBuilder\Common\ParameterExpression;
 use Rak200\SqlBuilder\Common\RawExpression;
 use Rak200\SqlBuilder\Common\SimpleIdentifier;
 use Rak200\SqlBuilder\Common\SubqueryExpression;
@@ -38,6 +39,7 @@ use Rak200\SqlBuilder\Dml\Insert;
 use Rak200\SqlBuilder\Dml\Select;
 use Rak200\SqlBuilder\Dml\Set;
 use Rak200\SqlBuilder\Dml\Update;
+use Rak200\SqlBuilder\Prepared\Binder;
 
 /**
  * Abstract base for SQL dialects.
@@ -58,6 +60,49 @@ use Rak200\SqlBuilder\Dml\Update;
 abstract class Dialect {
 
     private static ?Dialect $default = null;
+
+    /**
+     * Active parameter binder during a `prepare()` render, or null in
+     * inline-rendering mode.
+     *
+     * Renderers consult this to decide whether to emit a placeholder via
+     * the binder or to inline-quote the value through {@see quoteValue()}.
+     * It is only non-null on a dialect instance returned by
+     * {@see withBinder()} — the singleton from {@see default()} is never
+     * mutated.
+     */
+    public private(set) ?Binder $binder = null;
+
+    /**
+     * Factory for the dialect's preferred binder.
+     *
+     * Default returns the MariaDB/MySQL-shaped {@see Binder} (`?`,
+     * positional, no wire-level reuse). Postgres-flavoured dialects override
+     * this to return a `$N`-emitting binder with positional reuse.
+     *
+     * @return Binder A fresh binder, ready to accumulate values.
+     */
+    public function newBinder(): Binder {
+        return new Binder();
+    }
+
+    /**
+     * Return a clone of this dialect with the given binder attached.
+     *
+     * Cloning isolates the binder state on a one-shot dialect instance so
+     * the process-wide {@see default()} singleton (used by `__toString()`)
+     * is never observed in bind mode. Renderer caches on the clone are
+     * reset so newly-instantiated renderers point at the clone, not the
+     * source dialect.
+     *
+     * @param Binder|null $binder Binder to attach, or null to clear.
+     * @return static A clone configured with the given binder.
+     */
+    public function withBinder(?Binder $binder): static {
+        $clone         = clone $this;
+        $clone->binder = $binder;
+        return $clone;
+    }
 
     /**
      * Quote a SQL identifier (column name, table name, etc).
@@ -140,6 +185,7 @@ abstract class Dialect {
     abstract public function renderColumnExpression(ColumnExpression $component): string;
     abstract public function renderColumnReference(ColumnReference $component): string;
     abstract public function renderValueExpression(ValueExpression $component): string;
+    abstract public function renderParameterExpression(ParameterExpression $component): string;
     abstract public function renderRawExpression(RawExpression $component): string;
     abstract public function renderFunctionExpression(FunctionExpression $component): string;
     abstract public function renderExistsExpression(ExistsExpression $component): string;
@@ -170,6 +216,7 @@ abstract class Dialect {
             $expression instanceof ColumnExpression   => $this->renderColumnExpression($expression),
             $expression instanceof ColumnReference    => $this->renderColumnReference($expression),
             $expression instanceof ValueExpression    => $this->renderValueExpression($expression),
+            $expression instanceof ParameterExpression => $this->renderParameterExpression($expression),
             $expression instanceof RawExpression      => $this->renderRawExpression($expression),
             $expression instanceof FunctionExpression => $this->renderFunctionExpression($expression),
             $expression instanceof SubqueryExpression => $this->renderSubqueryExpression($expression),

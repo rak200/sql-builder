@@ -178,4 +178,46 @@ final class ExpressionTest extends TestCase {
         $this->assertSame('MIN(`amount`) AS `MIN`',  (string) Expression::min('amount'));
         $this->assertSame('MAX(`amount`) AS `MAX`',  (string) Expression::max('amount'));
     }
+
+    public function testAddChainsOperandsLeftToRight(): void {
+        $this->assertSame('((`a` + `b`) + 3)', (string) Expression::add('a', 'b', 3));
+    }
+
+    public function testSubChainsOperandsLeftToRight(): void {
+        $this->assertSame('((`total` - `discount`) - 5)', (string) Expression::sub('total', 'discount', 5));
+    }
+
+    public function testMulChainsOperandsLeftToRight(): void {
+        $this->assertSame('((`price` * `qty`) * 1.1)', (string) Expression::mul('price', 'qty', 1.1));
+    }
+
+    public function testDivChainsOperandsLeftToRight(): void {
+        $this->assertSame('((`amount` / `count`) / 2)', (string) Expression::div('amount', 'count', 2));
+    }
+
+    public function testModChainsOperandsLeftToRight(): void {
+        $this->assertSame('((`n` % 7) % 3)', (string) Expression::mod('n', 7, 3));
+    }
+
+    public function testArithmeticFactoriesNormalizeMixedOperands(): void {
+        $expr = Expression::add('subtotal', Expression::value(2.5), Expression::mul('qty', 'unit_price'));
+
+        $this->assertSame('((`subtotal` + 2.5) + (`qty` * `unit_price`))', (string) $expr);
+    }
+
+    public function testArithmeticFactoriesPreserveNestedPrecedenceViaParens(): void {
+        $expr = Expression::mul(Expression::add('a', 'b'), 'c');
+
+        $this->assertSame('((`a` + `b`) * `c`)', (string) $expr);
+    }
+
+    public function testAddWithSingleOperandReturnsNormalized(): void {
+        $this->assertSame('`a`', (string) Expression::add('a'));
+    }
+
+    public function testAddRequiresAtLeastOneOperand(): void {
+        $this->expectException(InvalidArgumentException::class);
+
+        Expression::add();
+    }
 }

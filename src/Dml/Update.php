@@ -12,6 +12,7 @@ use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Common\Order;
 use Rak200\SqlBuilder\Common\TableReference;
 use Rak200\SqlBuilder\Dialect\Dialect;
+use Rak200\SqlBuilder\Prepared\PreparedStatement;
 
 /**
  * SQL UPDATE statement builder.
@@ -121,5 +122,17 @@ final class Update implements ExpressionInterface {
      */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderUpdate($this);
+    }
+
+    /**
+     * Render this statement in bind mode for the given dialect.
+     *
+     * @param Dialect $dialect The dialect to render with.
+     * @return PreparedStatement
+     */
+    public function prepare(Dialect $dialect): PreparedStatement {
+        $binder = $dialect->newBinder();
+        $sql    = $dialect->withBinder($binder)->renderUpdate($this);
+        return new PreparedStatement($sql, $binder->values());
     }
 }

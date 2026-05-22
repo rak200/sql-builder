@@ -339,7 +339,7 @@ Use `Expression::column()` for SELECT projections (supports an alias), `Expressi
 
 ## Status & Roadmap
 
-Current version: **0.5.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
+Current version: **0.6.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
 
 ### What works today
 
@@ -353,7 +353,6 @@ Current version: **0.5.0** — early development, **unstable**. The API may stil
 ### Not yet implemented
 
 Safety & quality
-- [ ] Parameter binding / prepared-statement placeholders. Today values are inlined via string concatenation and quoting — **SQL injection risk if user input reaches value positions**.
 - [ ] Consistent identifier quoting across all builders (`Expression::quoteIdentifier()` uses backticks, while `Table`/`View`/`Index`/`Sequence`/constraint builders emit `"..."`).
 
 ## Versioning

@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Rak200\SqlBuilder\Common\Expression;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Dialect\Dialect;
+use Rak200\SqlBuilder\Prepared\PreparedStatement;
 
 /**
  * SQL INSERT statement builder.
@@ -117,6 +118,18 @@ final class Insert implements ExpressionInterface {
      */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderInsert($this);
+    }
+
+    /**
+     * Render this statement in bind mode for the given dialect.
+     *
+     * @param Dialect $dialect The dialect to render with.
+     * @return PreparedStatement
+     */
+    public function prepare(Dialect $dialect): PreparedStatement {
+        $binder = $dialect->newBinder();
+        $sql    = $dialect->withBinder($binder)->renderInsert($this);
+        return new PreparedStatement($sql, $binder->values());
     }
 
     /** @return int|null Expected number of values per row, or null when neither columns nor prior rows are set. */
