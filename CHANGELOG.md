@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-05-23
+
+### Fixed
+- `MariaDb\Renderer\UpdateRenderer105::renderReturning()` was referencing the removed `Rak200\SqlBuilder\Utils\Str` namespace (left over from the 0.10.0 extraction of `StringUtils` into `rak200/utils`), causing `Update::returning(...)->toSql(new MariaDb105Dialect())` to fail with a `Class not found` error. Switched to the new `Rak200\Utils\Str`. The sibling `DeleteRenderer105` was already correct.
+
+### Added
+- Two regression tests in `MariaDbDialectTest` covering `Update::returning()` and `Delete::returning()` on `MariaDb105Dialect` — the gap that let the 0.10.0 renderer regression ship undetected.
+- `README.md` "Planned" subsection enumerating the roadmap items not yet implemented: `MERGE`, portable `INSERT ... ON CONFLICT` / `ON DUPLICATE KEY UPDATE`, `NULLS [NOT] DISTINCT`, `LATERAL` joins, and `GROUPING SETS` / `ROLLUP` / `CUBE`.
+
+### Changed
+- README version reference bumped to 0.10.1 (the 0.10.0 release commit forgot the README sweep).
+
 ## [0.10.0] - 2026-05-23
 
 ### Changed
@@ -192,7 +204,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.10.0...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.10.1...HEAD
+[0.10.1]: https://github.com/rak200/sql-builder/compare/0.10.0...0.10.1
 [0.10.0]: https://github.com/rak200/sql-builder/compare/0.9.0...0.10.0
 [0.9.0]: https://github.com/rak200/sql-builder/compare/0.8.0...0.9.0
 [0.8.0]: https://github.com/rak200/sql-builder/compare/0.7.0...0.8.0

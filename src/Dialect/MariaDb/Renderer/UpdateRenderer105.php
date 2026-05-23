@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Dialect\MariaDb\Renderer;
 
 use Rak200\SqlBuilder\Dml\Update;
+use Rak200\Utils\Str;
 
 /**
  * MariaDB 10.5+ UPDATE renderer.
@@ -22,6 +23,6 @@ class UpdateRenderer105 extends UpdateRenderer {
             fn($expression) => $this->dialect->renderExpression($expression),
             $component->returning
         );
-        return \Rak200\SqlBuilder\Utils\Str::join($rendered, ', ', ' RETURNING ');
+        return Str::join($rendered, ', ', ' RETURNING ');
     }
 }

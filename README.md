@@ -339,7 +339,7 @@ Use `Expr::col()` for SELECT projections (supports an alias), `Expr::ref()` for 
 
 ## Status & Roadmap
 
-Current version: **0.9.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
+Current version: **0.10.1** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
 
 ### What works today
 
@@ -351,6 +351,16 @@ Current version: **0.9.0** — early development, **unstable**. The API may stil
 - **UUID columns:** `DataType::Uuid` for DDL plus `Expr::uuid(value)` / `Expr::uuidColumn(name)` for DML. PostgreSQL gets the native `UUID` type with `::uuid` casts on literals/parameters where the type can't be inferred; MariaDB stores as `BINARY(16)` with transparent `UUID_TO_BIN(...)` / `BIN_TO_UUID(...)` wrapping at value and projection boundaries — same pattern as the schema simulation.
 - **Dialects:** abstract `Dialect` base with a permissive `DefaultDialect`, vendor dialects (`MariaDbDialect` / `MariaDb105Dialect`, `PostgresDialect` / `Postgres15Dialect`), one renderer class per component, runtime selection via `Dialect::fromDsn()`, opt-in per-call rendering via `toSql(Dialect)`. Vendor-specific feature gates (e.g. PostgreSQL rejects `ON DUPLICATE KEY UPDATE`, MariaDB <10.5 rejects `RETURNING`) raise `UnsupportedFeatureException`.
 - **Tests:** PHPUnit 13 unit suite under `tests/Unit/`; run with `composer test`.
+
+### Planned
+
+Not yet implemented — contributions welcome:
+
+- **`MERGE` statement** (SQL:2003). First-class support on `Postgres15Dialect`; fall back to dialect-native equivalents elsewhere (`INSERT ... ON CONFLICT` on Postgres <15, `INSERT ... ON DUPLICATE KEY UPDATE` on MariaDB).
+- **`INSERT ... ON CONFLICT`** for PostgreSQL — a portable `Insert::onConflict(...)` API that the dialect layer renders as `ON CONFLICT (...) DO UPDATE` on Postgres and as `ON DUPLICATE KEY UPDATE` on MariaDB/MySQL.
+- **`NULLS [NOT] DISTINCT`** on `UniqueKey` — Postgres 15+ constraint modifier, rejected on older Postgres and on MariaDB.
+- **`LATERAL` joins** — Postgres and MariaDB 10.2+, exposed via a new `lateralJoin()` / `leftLateralJoin()` family on `Select`.
+- **`GROUPING SETS` / `ROLLUP` / `CUBE`** in `Select::groupBy()` — grouping extensions from SQL:1999, supported on all major engines.
 
 ## Versioning
 

@@ -37,6 +37,25 @@ final class MariaDbDialectTest extends TestCase {
         $this->assertStringContainsString('RETURNING', $sql);
     }
 
+    public function testUpdateWithReturningAcceptedOnMariaDb105(): void {
+        $sql = Update::create()
+            ->table('users')
+            ->set('name', 'x')
+            ->returning('id')
+            ->toSql(new MariaDb105Dialect());
+
+        $this->assertStringContainsString('RETURNING', $sql);
+    }
+
+    public function testDeleteWithReturningAcceptedOnMariaDb105(): void {
+        $sql = Delete::create()
+            ->from('users')
+            ->returning('id')
+            ->toSql(new MariaDb105Dialect());
+
+        $this->assertStringContainsString('RETURNING', $sql);
+    }
+
     public function testUpdateFromRejected(): void {
         $update = Update::create()
             ->table('users', 'u')
