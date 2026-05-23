@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Tests\Unit\Common;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\Enum\NullsPlacement;
-use Rak200\SqlBuilder\Common\Enum\SortDirection;
+use Rak200\SqlBuilder\Common\Enum\Sort\Nulls as NullsPlacement;
+use Rak200\SqlBuilder\Common\Enum\Sort\Direction as SortDirection;
 use Rak200\SqlBuilder\Common\Order;
 
 final class OrderTest extends TestCase {

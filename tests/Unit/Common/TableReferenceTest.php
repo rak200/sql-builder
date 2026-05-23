@@ -6,7 +6,7 @@ namespace Rak200\SqlBuilder\Tests\Unit\Common;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\TableReference;
+use Rak200\SqlBuilder\Common\Reference\Table as TableReference;
 use Rak200\SqlBuilder\Dml\Select;
 
 final class TableReferenceTest extends TestCase {

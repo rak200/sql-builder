@@ -14,24 +14,24 @@ composer require rak200/sql-builder
 |-------|---------|---------|
 | **DML** | `Select`, `Set` | Query building (SELECT, set operations) |
 | **DDL** | `Table`, `Column`, `View`, `Sequence`, `Index`, constraints | Schema definition |
-| **Common** | `Expression`, expressions, `Join`, `Order` | Shared building blocks |
-| **Enums** | `BinaryOperator`, `JoinType`, `SortDirection`, … | Type-safe SQL keywords |
+| **Common** | `Expr` (factory), `Expression\*`, `Reference\*`, `Join`, `Order`, `Window` | Shared building blocks |
+| **Enums** | `Operator\Binary`, `Operator\Math`, `Sort\Direction`, … | Type-safe SQL keywords |
 
 ## DML — Queries
 
 ### SELECT
 
 ```php
-use Rak200\SqlBuilder\Common\Expression;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
-use Rak200\SqlBuilder\Common\Enum\SortDirection;
+use Rak200\SqlBuilder\Common\Expr;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary;
+use Rak200\SqlBuilder\Common\Enum\Sort\Direction;
 use Rak200\SqlBuilder\Dml\Select;
 
 $query = Select::create()
     ->select('id', 'name', 'email')
     ->from('users', 'u')
-    ->where(Expression::binary('u.active', BinaryOperator::Eq, 1))
-    ->orderBy('u.name', SortDirection::ASC)
+    ->where(Expr::binary('u.active', Binary::Eq, 1))
+    ->orderBy('u.name', Direction::ASC)
     ->limit(20)
     ->offset(0);
 
@@ -43,8 +43,8 @@ echo $query; // SELECT `id`, `name`, `email` FROM `users` AS `u` WHERE ...
 `Select` exposes a dedicated method per join type — `join()` (INNER), `leftJoin()`, `rightJoin()`, `fullJoin()`, `crossJoin()`, plus `naturalJoin()` / `naturalLeftJoin()` / … and `joinUsing()` / `leftJoinUsing()` / … variants for `USING (...)` joins.
 
 ```php
-use Rak200\SqlBuilder\Common\Expression;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
+use Rak200\SqlBuilder\Common\Expr;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary;
 use Rak200\SqlBuilder\Dml\Select;
 
 $query = Select::create()
@@ -53,7 +53,7 @@ $query = Select::create()
     ->join(
         'roles',
         'r',
-        Expression::binary('u.role_id', BinaryOperator::Eq, Expression::ref('r.id'))
+        Expr::binary('u.role_id', Binary::Eq, Expr::ref('r.id'))
     );
 ```
 
@@ -64,7 +64,7 @@ use Rak200\SqlBuilder\Dml\Select;
 use Rak200\SqlBuilder\Dml\Set;
 
 $totals = Select::create()
-    ->select('user_id', Expression::count('*'))
+    ->select('user_id', Expr::count('*'))
     ->from('orders')
     ->groupBy('user_id');
 
@@ -74,11 +74,11 @@ $query = Select::create()
     ->from('order_totals');
 
 // Recursive
-$base = Select::create()->select(Expression::value(1));
+$base = Select::create()->select(Expr::val(1));
 $step = Select::create()
-    ->select(Expression::raw('n + 1'))
+    ->select(Expr::raw('n + 1'))
     ->from('numbers')
-    ->where(Expression::binary('n', BinaryOperator::Lt, 10));
+    ->where(Expr::binary('n', Binary::Lt, 10));
 
 $recursive = Select::create()
     ->withRecursive('numbers', Set::create($base)->union($step, all: true), ['n'])
@@ -91,8 +91,8 @@ $recursive = Select::create()
 ```php
 use Rak200\SqlBuilder\Common\Window;
 
-$running = Expression::over(
-    Expression::sum('amount'),
+$running = Expr::over(
+    Expr::sum('amount'),
     Window::create()
         ->partitionBy('user_id')
         ->orderBy('paid_at')
@@ -108,14 +108,14 @@ $query = Select::create()->select('user_id', $running)->from('payments');
 
 ```php
 // Searched CASE
-Expression::case()
-    ->when(Expression::binary('amount', BinaryOperator::Gt, 100), Expression::value('high'))
-    ->when(Expression::binary('amount', BinaryOperator::Gt, 10),  Expression::value('medium'))
-    ->else(Expression::value('low'))
+Expr::case()
+    ->when(Expr::binary('amount', Binary::Gt, 100), Expr::val('high'))
+    ->when(Expr::binary('amount', Binary::Gt, 10),  Expr::val('medium'))
+    ->else(Expr::val('low'))
     ->as('bucket');
 
 // Simple CASE
-Expression::case('status')
+Expr::case('status')
     ->when('active', 1)
     ->when('inactive', 0)
     ->else(-1);
@@ -140,15 +140,15 @@ $union = Set::create($selectA)
 ### INSERT
 
 ```php
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Expr;
 use Rak200\SqlBuilder\Dml\Insert;
 
 // Multi-row literal values
 $insert = Insert::create()
     ->into('users')
     ->columns('name', 'email', 'created_at')
-    ->values('Alice', 'alice@example.com', Expression::raw('NOW()'))
-    ->values('Bob',   'bob@example.com',   Expression::raw('NOW()'));
+    ->values('Alice', 'alice@example.com', Expr::raw('NOW()'))
+    ->values('Bob',   'bob@example.com',   Expr::raw('NOW()'));
 
 // INSERT ... SELECT
 $archive = Insert::create()
@@ -161,33 +161,33 @@ $upsert = Insert::create()
     ->into('users')
     ->columns('id', 'email')
     ->values(1, 'a@example.com')
-    ->onDuplicateKeyUpdate('email', Expression::raw('VALUES(email)'))
+    ->onDuplicateKeyUpdate('email', Expr::raw('VALUES(email)'))
     ->returning('id');
 ```
 
-Scalar values are quoted automatically; `ExpressionInterface` arguments (e.g. `Expression::raw('NOW()')`, sequences) pass through unchanged.
+Scalar values are quoted automatically; `ExpressionInterface` arguments (e.g. `Expr::raw('NOW()')`, sequences) pass through unchanged.
 
 ### UPDATE
 
 ```php
-use Rak200\SqlBuilder\Common\Expression;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
-use Rak200\SqlBuilder\Common\Enum\SortDirection;
+use Rak200\SqlBuilder\Common\Expr;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary;
+use Rak200\SqlBuilder\Common\Enum\Sort\Direction;
 use Rak200\SqlBuilder\Dml\Update;
 
 $update = Update::create()
     ->table('users', 'u')
     ->set('name', 'New Name')
-    ->set('updated_at', Expression::raw('NOW()'))
-    ->where(Expression::binary('id', BinaryOperator::Eq, 1));
+    ->set('updated_at', Expr::raw('NOW()'))
+    ->where(Expr::binary('id', Binary::Eq, 1));
 
 // Multi-table (PostgreSQL FROM), ORDER BY / LIMIT (MySQL), RETURNING
 $bulk = Update::create()
     ->table('users', 'u')
-    ->set('name', Expression::ref('a.new_name'))
+    ->set('name', Expr::ref('a.new_name'))
     ->from('audit', 'a')
-    ->where(Expression::binary('u.id', BinaryOperator::Eq, Expression::ref('a.user_id')))
-    ->orderBy('u.id', SortDirection::DESC)
+    ->where(Expr::binary('u.id', Binary::Eq, Expr::ref('a.user_id')))
+    ->orderBy('u.id', Direction::DESC)
     ->limit(100)
     ->returning('u.id');
 ```
@@ -197,21 +197,21 @@ WHERE conditions can be incrementally composed with `andWhere()` and `orWhere()`
 ### DELETE
 
 ```php
-use Rak200\SqlBuilder\Common\Expression;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
-use Rak200\SqlBuilder\Common\Enum\SortDirection;
+use Rak200\SqlBuilder\Common\Expr;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary;
+use Rak200\SqlBuilder\Common\Enum\Sort\Direction;
 use Rak200\SqlBuilder\Dml\Delete;
 
 $delete = Delete::create()
     ->from('users')
-    ->where(Expression::binary('active', BinaryOperator::Eq, 0));
+    ->where(Expr::binary('active', Binary::Eq, 0));
 
 // Multi-table (PostgreSQL USING), ORDER BY / LIMIT (MySQL), RETURNING
 $bulk = Delete::create()
     ->from('users', 'u')
     ->using('audit', 'a')
-    ->where(Expression::binary('u.id', BinaryOperator::Eq, Expression::ref('a.user_id')))
-    ->orderBy('u.id', SortDirection::DESC)
+    ->where(Expr::binary('u.id', Binary::Eq, Expr::ref('a.user_id')))
+    ->orderBy('u.id', Direction::DESC)
     ->limit(100)
     ->returning('u.id');
 ```
@@ -322,24 +322,24 @@ MariaDB rejects PostgreSQL-only TRUNCATE modifiers (`RESTART IDENTITY`, `CONTINU
 ## Expressions
 
 ```php
-use Rak200\SqlBuilder\Common\Expression;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
+use Rak200\SqlBuilder\Common\Expr;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary;
 
-Expression::binary('age', BinaryOperator::Ge, 18); // `age` >= 18
-Expression::and($expr1, $expr2, $expr3);                           // (a AND b AND c)
-Expression::or($expr1, $expr2);                                    // (a OR b)
-Expression::not($expr);                                            // NOT (...)
-Expression::exists($subquery);                                     // EXISTS (SELECT ...)
-Expression::count('*');                                            // COUNT(*)
-Expression::func('COALESCE', Expression::ref('nickname'), 'guest');// COALESCE(`nickname`, 'guest')
-Expression::raw('NOW()');                                          // NOW()
+Expr::binary('age', Binary::Ge, 18); // `age` >= 18
+Expr::and($expr1, $expr2, $expr3);                           // (a AND b AND c)
+Expr::or($expr1, $expr2);                                    // (a OR b)
+Expr::not($expr);                                            // NOT (...)
+Expr::exists($subquery);                                     // EXISTS (SELECT ...)
+Expr::count('*');                                            // COUNT(*)
+Expr::func('COALESCE', Expr::ref('nickname'), 'guest');// COALESCE(`nickname`, 'guest')
+Expr::raw('NOW()');                                          // NOW()
 ```
 
-Use `Expression::column()` for SELECT projections (supports an alias), `Expression::ref()` for column references inside conditions/`ORDER BY`/`GROUP BY`, and `Expression::identifier()` for bare names in `USING (...)`.
+Use `Expr::col()` for SELECT projections (supports an alias), `Expr::ref()` for column references inside conditions/`ORDER BY`/`GROUP BY`, and `Expr::identifier()` for bare names in `USING (...)`.
 
 ## Status & Roadmap
 
-Current version: **0.8.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
+Current version: **0.9.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
 
 ### What works today
 
@@ -347,8 +347,8 @@ Current version: **0.8.0** — early development, **unstable**. The API may stil
 - **DDL:** `Table` (CREATE, ALTER, DROP, TRUNCATE — with IF EXISTS / CASCADE / RESTRICT / RESTART IDENTITY / CONTINUE IDENTITY modifiers and ADD/DROP/MODIFY/RENAME column, ADD/DROP CONSTRAINT, ADD INDEX, RENAME TO in ALTER mode), `Column`, `View` (CREATE with OR REPLACE / TEMPORARY / IF NOT EXISTS / WITH CHECK OPTION, plus DROP), `Sequence` (CREATE, ALTER incl. RESTART / NEXTVAL, and DROP), `Index` (CREATE and DROP), `Schema` (CREATE / DROP / ALTER ... RENAME TO; on MariaDB simulated as table-name prefixing), and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators (compact mnemonics `Eq`/`Ne`/`Gt`/`Lt`/`Ge`/`Le`, plus null-safe `NullSafeEq`/`NullSafeNe` that emit `IS [NOT] DISTINCT FROM` on the default/Postgres dialect and `<=>` / `NOT (<=>)` on MariaDB), AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), `CASE WHEN` (searched and simple forms), window functions (`OVER (PARTITION BY ... ORDER BY ... ROWS/RANGE/GROUPS ...)`), raw SQL escape hatch, identifier and value quoting.
 - **SELECT extensions:** Common Table Expressions (`WITH name [(cols)] AS (...)`) with `Select::with()` / `withRecursive()`, including multi-CTE and recursive bodies via `Set` unions.
-- **Parameter binding:** opt-in `prepare(Dialect): PreparedStatement` on every DML builder. `Expression::param(int|string, mixed)` declares positional (`?` / `$N`) or named (`:name`) placeholders; existing `ValueExpression` values auto-convert in bind mode. Postgres reuses `$N` natively for repeated keys; MariaDB/MySQL duplicates values per `?` occurrence; named placeholders are reusable on both via PDO emulation.
-- **UUID columns:** `DataType::Uuid` for DDL plus `Expression::uuid(value)` / `Expression::uuidColumn(name)` for DML. PostgreSQL gets the native `UUID` type with `::uuid` casts on literals/parameters where the type can't be inferred; MariaDB stores as `BINARY(16)` with transparent `UUID_TO_BIN(...)` / `BIN_TO_UUID(...)` wrapping at value and projection boundaries — same pattern as the schema simulation.
+- **Parameter binding:** opt-in `prepare(Dialect): PreparedStatement` on every DML builder. `Expr::param(int|string, mixed)` declares positional (`?` / `$N`) or named (`:name`) placeholders; existing `Expression\Value` instances auto-convert in bind mode. Postgres reuses `$N` natively for repeated keys; MariaDB/MySQL duplicates values per `?` occurrence; named placeholders are reusable on both via PDO emulation.
+- **UUID columns:** `DataType::Uuid` for DDL plus `Expr::uuid(value)` / `Expr::uuidColumn(name)` for DML. PostgreSQL gets the native `UUID` type with `::uuid` casts on literals/parameters where the type can't be inferred; MariaDB stores as `BINARY(16)` with transparent `UUID_TO_BIN(...)` / `BIN_TO_UUID(...)` wrapping at value and projection boundaries — same pattern as the schema simulation.
 - **Dialects:** abstract `Dialect` base with a permissive `DefaultDialect`, vendor dialects (`MariaDbDialect` / `MariaDb105Dialect`, `PostgresDialect` / `Postgres15Dialect`), one renderer class per component, runtime selection via `Dialect::fromDsn()`, opt-in per-call rendering via `toSql(Dialect)`. Vendor-specific feature gates (e.g. PostgreSQL rejects `ON DUPLICATE KEY UPDATE`, MariaDB <10.5 rejects `RETURNING`) raise `UnsupportedFeatureException`.
 - **Tests:** PHPUnit 13 unit suite under `tests/Unit/`; run with `composer test`.
 

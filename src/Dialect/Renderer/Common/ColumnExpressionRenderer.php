@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Dialect\Renderer\Common;
 
-use Rak200\SqlBuilder\Common\ColumnExpression;
+use Rak200\SqlBuilder\Common\Expression\Column as ColumnExpression;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 

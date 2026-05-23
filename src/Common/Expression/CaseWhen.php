@@ -2,26 +2,30 @@
 
 declare(strict_types=1);
 
-namespace Rak200\SqlBuilder\Common;
+namespace Rak200\SqlBuilder\Common\Expression;
 
 use InvalidArgumentException;
+use Rak200\SqlBuilder\Common\Expr;
+use Rak200\SqlBuilder\Common\ExpressionInterface;
 
 /**
  * SQL `CASE ... WHEN ... THEN ... [ELSE ...] END` expression.
  *
  * Supports both forms:
  * - **Searched CASE**: `CASE WHEN <condition> THEN <result> ... END`.
- *   Build with `Expression::case()` (no subject); each `when()` requires an
+ *   Build with `Expr::case()` (no subject); each `when()` requires an
  *   {@see ExpressionInterface} condition (typically a binary expression).
  * - **Simple CASE**: `CASE <subject> WHEN <value> THEN <result> ... END`.
- *   Build with `Expression::case($subject)`. Bare scalar `when()` arguments
- *   are wrapped as {@see ValueExpression}; pass an {@see ExpressionInterface}
- *   to compare against another column / expression.
+ *   Build with `Expr::case($subject)`. Bare scalar `when()` arguments are
+ *   wrapped as {@see Value}; pass an {@see ExpressionInterface} to compare
+ *   against another column / expression.
  *
- * @package Rak200\SqlBuilder\Common
+ * Class name `CaseWhen` instead of `Case` because PHP reserves the latter.
+ *
+ * @package Rak200\SqlBuilder\Common\Expression
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-final class CaseExpression extends Expression {
+final class CaseWhen extends Expr {
 
     /** @var ExpressionInterface|null Optional subject for simple-form CASE. */
     public private(set) ?ExpressionInterface $subject;
@@ -38,12 +42,6 @@ final class CaseExpression extends Expression {
 
     /**
      * Append a `WHEN condition THEN result` branch.
-     *
-     * In **searched** form the condition must be an {@see ExpressionInterface}.
-     * In **simple** form, scalar values are wrapped as
-     * {@see ValueExpression} (so `when('active', 1)` becomes
-     * `WHEN 'active' THEN 1`); pass an {@see ExpressionInterface} explicitly
-     * when comparing against another column.
      *
      * @throws InvalidArgumentException When a non-expression condition is used in searched form.
      */
@@ -72,10 +70,10 @@ final class CaseExpression extends Expression {
                 'Searched CASE WHEN requires an ExpressionInterface condition; got ' . get_debug_type($value) . '.'
             );
         }
-        return new ValueExpression($value);
+        return new Value($value);
     }
 
     private function normalizeResult(mixed $value): ExpressionInterface {
-        return $value instanceof ExpressionInterface ? $value : new ValueExpression($value);
+        return $value instanceof ExpressionInterface ? $value : new Value($value);
     }
 }

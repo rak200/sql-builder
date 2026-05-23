@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Dialect\MariaDb\Renderer;
 
-use Rak200\SqlBuilder\Common\BinaryExpression;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
+use Rak200\SqlBuilder\Common\Expression\Binary as BinaryExpression;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary as BinaryOperator;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\BinaryExpressionRenderer as BaseBinaryExpressionRenderer;
 
 /**

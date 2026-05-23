@@ -6,7 +6,7 @@ namespace Rak200\SqlBuilder\Tests\Unit\Common;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\SimpleIdentifier;
+use Rak200\SqlBuilder\Common\Reference\Identifier as SimpleIdentifier;
 
 final class SimpleIdentifierTest extends TestCase {
 

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Tests\Unit\Common;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\ExistsExpression;
-use Rak200\SqlBuilder\Common\SubqueryExpression;
+use Rak200\SqlBuilder\Common\Expression\Exists as ExistsExpression;
+use Rak200\SqlBuilder\Common\Expression\Subquery as SubqueryExpression;
 use Rak200\SqlBuilder\Dml\Select;
 
 final class ExistsExpressionTest extends TestCase {

@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Rak200\SqlBuilder\Common;
+namespace Rak200\SqlBuilder\Common\Expression;
+
+use Rak200\SqlBuilder\Common\Expr;
 
 /**
  * Declarative placeholder for a prepared-statement parameter.
@@ -17,15 +19,11 @@ namespace Rak200\SqlBuilder\Common;
  * can override values per run via the resulting
  * {@see \Rak200\SqlBuilder\Prepared\PreparedStatement::$parameters} array.
  *
- * @package Rak200\SqlBuilder\Common
+ * @package Rak200\SqlBuilder\Common\Expression
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-final class ParameterExpression extends Expression {
+final class Param extends Expr {
 
-    /**
-     * @param int|string $key Positional index (int) or parameter name (string).
-     * @param mixed $value Default value associated with this placeholder.
-     */
     public function __construct(
         public readonly int|string $key,
         public readonly mixed $value = null

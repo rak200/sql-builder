@@ -2,18 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Rak200\SqlBuilder\Common;
+namespace Rak200\SqlBuilder\Common\Expression;
+
+use Rak200\SqlBuilder\Common\Expr;
 
 /**
  * SQL literal value expression with proper quoting.
  *
- * @package Rak200\SqlBuilder\Common
+ * @package Rak200\SqlBuilder\Common\Expression
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-final class ValueExpression extends Expression {
+final class Value extends Expr {
 
-    /**
-     * @param mixed $value The PHP value to quote as a SQL literal.
-     */
     public function __construct(public readonly mixed $value) {}
 }

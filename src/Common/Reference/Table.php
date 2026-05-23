@@ -2,19 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Rak200\SqlBuilder\Common;
+namespace Rak200\SqlBuilder\Common\Reference;
 
 use InvalidArgumentException;
+use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dml\Select;
 
 /**
  * SQL table or subquery reference with optional alias for use in FROM and JOIN clauses.
  *
- * @package Rak200\SqlBuilder\Common
+ * @package Rak200\SqlBuilder\Common\Reference
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-final class TableReference implements ExpressionInterface {
+final class Table implements ExpressionInterface {
 
     /**
      * @param string|Select $source Table name or SELECT subquery.
@@ -35,9 +36,6 @@ final class TableReference implements ExpressionInterface {
         return Dialect::default()->renderTableReference($this);
     }
 
-    /**
-     * Render this reference with a specific dialect.
-     */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderTableReference($this);
     }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Rak200\SqlBuilder\Common\Enum;
+namespace Rak200\SqlBuilder\Common\Enum\Sort;
 
 /**
  * NULL placement options for ORDER BY clauses.
@@ -10,10 +10,10 @@ namespace Rak200\SqlBuilder\Common\Enum;
  * Controls whether NULL values appear before or after non-NULL values
  * when used as the optional third argument to {@see \Rak200\SqlBuilder\Common\Order}.
  *
- * @package Rak200\SqlBuilder\Common\Enum
+ * @package Rak200\SqlBuilder\Common\Enum\Sort
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-enum NullsPlacement: string {
+enum Nulls: string {
     /** Place NULL values before non-NULL values. */
     case FIRST = 'NULLS FIRST';
 

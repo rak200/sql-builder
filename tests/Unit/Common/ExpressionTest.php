@@ -7,17 +7,17 @@ namespace Rak200\SqlBuilder\Tests\Unit\Common;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\ColumnExpression;
-use Rak200\SqlBuilder\Common\ColumnReference;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
-use Rak200\SqlBuilder\Common\Enum\UnaryOperator;
-use Rak200\SqlBuilder\Common\ExistsExpression;
-use Rak200\SqlBuilder\Common\Expression;
-use Rak200\SqlBuilder\Common\FunctionExpression;
-use Rak200\SqlBuilder\Common\RawExpression;
-use Rak200\SqlBuilder\Common\SimpleIdentifier;
-use Rak200\SqlBuilder\Common\SubqueryExpression;
-use Rak200\SqlBuilder\Common\ValueExpression;
+use Rak200\SqlBuilder\Common\Expression\Column as ColumnExpression;
+use Rak200\SqlBuilder\Common\Reference\Column as ColumnReference;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary as BinaryOperator;
+use Rak200\SqlBuilder\Common\Enum\Operator\Unary as UnaryOperator;
+use Rak200\SqlBuilder\Common\Expression\Exists as ExistsExpression;
+use Rak200\SqlBuilder\Common\Expr as Expression;
+use Rak200\SqlBuilder\Common\Expression\Func as FunctionExpression;
+use Rak200\SqlBuilder\Common\Expression\Raw as RawExpression;
+use Rak200\SqlBuilder\Common\Reference\Identifier as SimpleIdentifier;
+use Rak200\SqlBuilder\Common\Expression\Subquery as SubqueryExpression;
+use Rak200\SqlBuilder\Common\Expression\Value as ValueExpression;
 use Rak200\SqlBuilder\Dml\Select;
 
 final class ExpressionTest extends TestCase {
@@ -63,7 +63,7 @@ final class ExpressionTest extends TestCase {
     }
 
     public function testColumnReturnsColumnExpressionWithAlias(): void {
-        $col = Expression::column('users.id', 'uid');
+        $col = Expression::col('users.id', 'uid');
 
         $this->assertInstanceOf(ColumnExpression::class, $col);
         $this->assertSame('`users`.`id` AS `uid`', (string) $col);
@@ -90,7 +90,7 @@ final class ExpressionTest extends TestCase {
     }
 
     public function testValueReturnsValueExpression(): void {
-        $value = Expression::value('foo');
+        $value = Expression::val('foo');
 
         $this->assertInstanceOf(ValueExpression::class, $value);
         $this->assertSame("'foo'", (string) $value);
@@ -200,7 +200,7 @@ final class ExpressionTest extends TestCase {
     }
 
     public function testArithmeticFactoriesNormalizeMixedOperands(): void {
-        $expr = Expression::add('subtotal', Expression::value(2.5), Expression::mul('qty', 'unit_price'));
+        $expr = Expression::add('subtotal', Expression::val(2.5), Expression::mul('qty', 'unit_price'));
 
         $this->assertSame('((`subtotal` + 2.5) + (`qty` * `unit_price`))', (string) $expr);
     }

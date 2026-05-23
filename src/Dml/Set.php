@@ -6,8 +6,8 @@ namespace Rak200\SqlBuilder\Dml;
 
 use InvalidArgumentException;
 use Rak200\Collections\Vector;
-use Rak200\SqlBuilder\Common\Enum\NullsPlacement;
-use Rak200\SqlBuilder\Common\Enum\SortDirection;
+use Rak200\SqlBuilder\Common\Enum\Sort\Nulls as NullsPlacement;
+use Rak200\SqlBuilder\Common\Enum\Sort\Direction as SortDirection;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Common\Order;
 use Rak200\SqlBuilder\Dialect\Dialect;

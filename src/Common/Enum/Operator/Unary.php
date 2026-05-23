@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Rak200\SqlBuilder\Common\Enum;
+namespace Rak200\SqlBuilder\Common\Enum\Operator;
 
 /**
- * Enum UnaryOperator
- * Defines SQL prefix unary operators for use in query expressions.
- * @package Rak200\SqlBuilder\Common\Enum
+ * SQL prefix unary operators for use in query expressions.
+ *
+ * @package Rak200\SqlBuilder\Common\Enum\Operator
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-enum UnaryOperator: string {
+enum Unary: string {
 
     // --- Logical ---
     case Not    = 'NOT';

@@ -6,7 +6,7 @@ namespace Rak200\SqlBuilder\Tests\Unit\Dml;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Expr as Expression;
 use Rak200\SqlBuilder\Dml\Insert;
 use Rak200\SqlBuilder\Dml\Select;
 

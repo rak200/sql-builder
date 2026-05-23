@@ -7,13 +7,13 @@ namespace Rak200\SqlBuilder\Dml;
 use InvalidArgumentException;
 use Rak200\Collections\Vector;
 use Rak200\SqlBuilder\Common\Enum\JoinType;
-use Rak200\SqlBuilder\Common\Enum\NullsPlacement;
-use Rak200\SqlBuilder\Common\Enum\SortDirection;
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Enum\Sort\Nulls as NullsPlacement;
+use Rak200\SqlBuilder\Common\Enum\Sort\Direction as SortDirection;
+use Rak200\SqlBuilder\Common\Expr as Expression;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Common\Join;
 use Rak200\SqlBuilder\Common\Order;
-use Rak200\SqlBuilder\Common\TableReference;
+use Rak200\SqlBuilder\Common\Reference\Table as TableReference;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Prepared\PreparedStatement;
 // Cte lives in this namespace; explicit use omitted to avoid self-import.
@@ -118,7 +118,7 @@ final class Select implements ExpressionInterface {
         foreach ($expressions as $expression) {
             $this->columns[] = $expression instanceof ExpressionInterface
                 ? $expression
-                : Expression::column((string) $expression);
+                : Expression::col((string) $expression);
         }
         return $this;
     }

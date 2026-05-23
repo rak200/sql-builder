@@ -18,21 +18,25 @@ Dev dependencies:
 ```
 sql-builder/
 ├── src/
-│   ├── Common/           # Shared expression building blocks
-│   │   ├── Enum/         # BinaryOperator, UnaryOperator, JoinType, SortDirection, NullsPlacement, ForeignKeyAction, CheckOption
+│   ├── Common/
+│   │   ├── Expr.php                  # abstract factory base
 │   │   ├── ExpressionInterface.php   # extends Rak200\Caster\Contracts\ToString
-│   │   ├── Expression.php            # abstract base with factory methods
-│   │   ├── Join.php, Order.php       # JOIN and ORDER BY value objects
-│   │   └── *Expression.php           # concrete expression types
-│   ├── Dml/              # Select, Set (UNION/EXCEPT/INTERSECT), Insert, Update, Delete
-│   ├── Ddl/
-│   │   ├── Enum/DataType.php         # SQL column type enum
-│   │   ├── Column.php, Table.php, View.php, Sequence.php, Index.php
-│   │   └── Constraint.php, PrimaryKey.php, UniqueKey.php, ForeignKey.php, Check.php
-│   └── Utils/            # Internal: StringUtils (not part of public API)
+│   │   ├── Expression/*.php          # Binary, Unary, Column, Value, Raw, Func, CaseWhen, Exists,
+│   │   │                             # Subquery, Param, UuidInput, UuidOutput, Window
+│   │   ├── Reference/*.php           # Column, Table, Identifier
+│   │   ├── Enum/
+│   │   │   ├── Operator/*.php        # Binary, Math, Unary
+│   │   │   ├── Sort/*.php            # Direction, Nulls
+│   │   │   └── *.php                 # JoinType, ForeignKeyAction, CheckOption, DataType
+│   │   ├── Join.php, Order.php, Window.php   # value objects
+│   ├── Dml/                          # Select, Set, Insert, Update, Delete, Cte
+│   ├── Ddl/                          # Column, Table, View, Sequence, Index, Schema + constraints
+│   ├── Dialect/                      # see "Dialect Architecture" below
+│   ├── Prepared/                     # PreparedStatement, Binder
+│   └── Utils/                        # StringUtils (internal)
 └── tests/
-    ├── Unit/             # Fast, isolated tests against single classes
-    └── Integration/      # End-to-end SQL generation tests across multiple builders
+    ├── Unit/                         # mirrors src/ layout
+    └── Integration/
 ```
 
 Production classes live under `Rak200\SqlBuilder\` (PSR-4 from `src/`); test classes live under `Rak200\SqlBuilder\Tests\` (PSR-4 from `tests/`, dev-only).
@@ -41,15 +45,25 @@ Production classes live under `Rak200\SqlBuilder\` (PSR-4 from `src/`); test cla
 
 **`ExpressionInterface`** — everything that renders to SQL string implements this (extends `ToString` → `__toString()`).
 
-**`Expression`** (abstract) — base class with static factory methods used everywhere:
-- `Expression::binary($left, BinaryOperator, $right)` — comparison/logical
-- `Expression::and(...$exprs)` / `Expression::or(...$exprs)` — logical groups
-- `Expression::column($ref)` — column reference
-- `Expression::raw($sql)` — escape hatch for raw SQL
-- `Expression::count/sum/avg/max/min($col)` — aggregate functions
-- `Expression::exists($subquery)` — EXISTS clause
+**`Expr`** (abstract) — factory base with the static methods used everywhere:
+- `Expr::col($name, ?$alias)` — SELECT-projection column (returns `Expression\Column`)
+- `Expr::val($value)` — literal value (returns `Expression\Value`)
+- `Expr::ref($name)` — column reference for conditions/ORDER BY (returns `Reference\Column`)
+- `Expr::binary($l, Operator\Binary|Operator\Math, $r)` — predicate or arithmetic
+- `Expr::and(...)` / `Expr::or(...)` / `Expr::not($x)` — logical groups
+- `Expr::add/sub/mul/div/mod(...)` — arithmetic chains
+- `Expr::case($subject?)` — `CASE WHEN`
+- `Expr::count/sum/avg/max/min($expr)` — aggregates
+- `Expr::func($name, ...$args)` — generic function call
+- `Expr::raw($sql)` — escape hatch
+- `Expr::exists($select)` — `EXISTS (...)`
+- `Expr::subquery($select, ?$alias)` — subquery expression
+- `Expr::param(int|string $key, $value?)` — prepared-statement placeholder
+- `Expr::uuid($value)` / `Expr::uuidColumn($name, ?$alias)` — UUID wrappers
+- `Expr::over($func, Window $window)` — windowed function
+- `Expr::identifier($name)` — bare identifier for `USING (...)`
 
-**`Select`** — main DML builder; fluent chain: `->select()->from()->join()->where()->groupBy()->having()->orderBy()->limit()->offset()`.
+**`Select`** — main DML builder; fluent chain: `->select()->from()->join()->where()->groupBy()->having()->orderBy()->limit()->offset()`. Plus `->with()` / `->withRecursive()` for CTEs.
 
 **`Set`** — wraps multiple `Select` with set operators: `Set::union()`, `Set::unionAll()`, `Set::except()`, `Set::intersect()`.
 
@@ -57,13 +71,13 @@ Production classes live under `Rak200\SqlBuilder\` (PSR-4 from `src/`); test cla
 
 ## Identifier & Value Quoting
 
-`Expression` quotes identifiers with backticks and values depending on type:
-- Strings → `'value'` (single-quoted, backslash-escaped)
+`Dialect::quoteIdentifier()` produces backticks on the default dialect and double quotes on Postgres. `Dialect::quoteValue()` handles inline values by type:
+- Strings → `'value'` (single-quoted, backslash-escaped on default; standard-conforming on Postgres)
 - Numbers → unquoted
 - `null` → `NULL`
-- Arrays → `(v1, v2, v3)` (for `IN`)
+- `true`/`false` → `TRUE`/`FALSE`
 
-**Known limitation:** uses string concatenation with quoting helpers — no prepared statement parameters yet. SQL injection risk if user input reaches value positions.
+For prepared-statement parameter binding (no inline values), use `->prepare(Dialect)` which returns a `PreparedStatement` with `sql` + `parameters`. See the Prepared/ folder.
 
 ## Dialect Architecture
 
@@ -79,64 +93,29 @@ Landed in 0.2.0. The dialect layer makes SQL rendering portable across databases
 6. **`__toString()` uses the default dialect**; passing a specific dialect is opt-in via `toSql(Dialect $dialect)` on every component.
 7. The dialect is selected at runtime via `Dialect::fromDsn(string $dsn)`, mirroring how PDO DSNs identify the driver.
 
-### Class layout (as built)
+### Class layout
 
 ```
 src/Dialect/
-├── Dialect.php                         # abstract base
-├── DefaultDialect.php                  # permissive baseline; composes default renderers
+├── Dialect.php                  # abstract base + polymorphic renderExpression() dispatch
+├── DefaultDialect.php           # permissive baseline; composes default renderers
 ├── UnsupportedFeatureException.php
-├── Dsn/
-│   └── DsnParser.php                   # parses DSN → Dialect instance
-├── Renderer/
-│   ├── ComponentRenderer.php           # marker interface
-│   ├── Dml/
-│   │   ├── SelectRenderer.php
-│   │   ├── InsertRenderer.php
-│   │   ├── UpdateRenderer.php
-│   │   ├── DeleteRenderer.php
-│   │   └── SetRenderer.php
-│   ├── Ddl/
-│   │   ├── TableRenderer.php
-│   │   ├── ColumnRenderer.php
-│   │   ├── ViewRenderer.php
-│   │   ├── SequenceRenderer.php
-│   │   ├── IndexRenderer.php
-│   │   ├── PrimaryKeyRenderer.php
-│   │   ├── UniqueKeyRenderer.php
-│   │   ├── ForeignKeyRenderer.php
-│   │   └── CheckRenderer.php
-│   └── Common/
-│       ├── BinaryExpressionRenderer.php
-│       ├── UnaryExpressionRenderer.php
-│       ├── ColumnExpressionRenderer.php
-│       ├── ColumnReferenceRenderer.php
-│       ├── ValueExpressionRenderer.php
-│       ├── RawExpressionRenderer.php
-│       ├── FunctionExpressionRenderer.php
-│       ├── ExistsExpressionRenderer.php
-│       ├── SubqueryExpressionRenderer.php
-│       ├── SimpleIdentifierRenderer.php
-│       ├── TableReferenceRenderer.php
-│       ├── OrderRenderer.php
-│       └── JoinRenderer.php
+├── Dsn/DsnParser.php            # DSN scheme → Dialect instance
+├── Renderer/                    # one renderer class per renderable component
+│   ├── Common/                  # expression-level renderers (Binary, Column, Value, …)
+│   ├── Dml/                     # statement renderers (Select, Insert, Update, Delete, Set, Cte)
+│   └── Ddl/                     # schema renderers (Table, Column, View, Sequence, Index, constraints, Schema)
 ├── MariaDb/
-│   ├── MariaDbDialect.php              # rejects Postgres-only FROM/USING and RETURNING on writes
-│   ├── MariaDb105Dialect.php           # re-enables RETURNING (single-table only for DELETE)
-│   └── Renderer/
-│       ├── InsertRenderer.php          # throws on RETURNING
-│       ├── UpdateRenderer.php          # throws on FROM and on RETURNING
-│       ├── DeleteRenderer.php          # throws on USING and on RETURNING
-│       ├── UpdateRenderer105.php       # inherits FROM rejection, allows RETURNING
-│       └── DeleteRenderer105.php       # inherits USING rejection, allows RETURNING
+│   ├── MariaDbDialect.php       # rejects Postgres-only FROM/USING and RETURNING on writes
+│   ├── MariaDb105Dialect.php    # re-enables RETURNING
+│   └── Renderer/                # vendor overrides (Insert/Update/Delete gating, schema flattening, UUID wrappers, null-safe rewrite, …)
 └── Postgres/
-    ├── PostgresDialect.php             # double-quoted identifiers, standard-conforming strings
-    ├── Postgres15Dialect.php           # placeholder for MERGE / NULLS NOT DISTINCT
-    └── Renderer/
-        └── InsertRenderer.php          # throws on ON DUPLICATE KEY UPDATE
+    ├── PostgresDialect.php      # double-quoted identifiers, standard-conforming strings, $N binder
+    ├── Postgres15Dialect.php    # placeholder for MERGE / NULLS NOT DISTINCT
+    └── Renderer/                # Insert (rejects ON DUPLICATE KEY UPDATE), UuidInput (::uuid cast)
 ```
 
-Postgres-only multi-table forms (`UPDATE ... FROM`, `DELETE ... USING`) and `RETURNING` are inherited from the permissive default — `PostgresDialect` only needs the quoting / string-escape overrides on the dialect itself plus the one Insert renderer override.
+Postgres-only multi-table forms (`UPDATE ... FROM`, `DELETE ... USING`) and `RETURNING` are inherited from the permissive default — `PostgresDialect` only needs the quoting / string-escape overrides on the dialect itself plus a couple of renderer overrides.
 
 ### The `Dialect` contract
 
@@ -229,18 +208,18 @@ Run:
 - `vendor/bin/phpunit --testsuite Unit` — only the unit suite
 - `vendor/bin/phpunit tests/Unit/SomeTest.php` — single file
 
-Test classes mirror the source namespace (e.g. `Rak200\SqlBuilder\Common\Expression` → `Rak200\SqlBuilder\Tests\Unit\Common\ExpressionTest`). Test methods follow PSR-12 camelCase (e.g. `testRendersQualifiedIdentifier`), **not** snake_case. Since the library only produces SQL strings, tests assert on the exact string output of expressions/builders — no database connection is required.
+Test classes mirror the source namespace (e.g. `Rak200\SqlBuilder\Common\Expr` → `Rak200\SqlBuilder\Tests\Unit\Common\ExprTest`). Test methods follow PSR-12 camelCase (e.g. `testRendersQualifiedIdentifier`), **not** snake_case. Since the library only produces SQL strings, tests assert on the exact string output of expressions/builders — no database connection is required.
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.5.0** — unstable while the API stabilises.
+Follows [Semantic Versioning](https://semver.org). The `0.x` line is **unstable** while the API stabilises; the current version lives in `composer.json` and the README.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`
 2. Update `CHANGELOG.md`: add a new `## [x.y.z] - YYYY-MM-DD` section with `### Added / Changed / Fixed / Removed` entries and a comparison link at the bottom
 3. Update the version reference in `README.md`
-4. Commit and push
-5. Create and push a git tag matching the version: `git tag x.y.z && git push origin x.y.z`
+4. Sweep `CLAUDE.md`: remove finished `## Planned: …` sections and refresh `## Structure` / `## Key Abstractions` if class names, folder layout or method names changed. Keep the file concise — prune rather than append.
+5. Commit, then `git tag x.y.z` and `git push origin master && git push origin x.y.z`.
 
 Consumers using `"type": "vcs"` in their `composer.json` resolve versions from git tags.
 

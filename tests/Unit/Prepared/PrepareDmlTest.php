@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Tests\Unit\Prepared;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\Enum\ArithmeticOperator;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Enum\Operator\Math as ArithmeticOperator;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary as BinaryOperator;
+use Rak200\SqlBuilder\Common\Expr as Expression;
 use Rak200\SqlBuilder\Dialect\DefaultDialect;
 use Rak200\SqlBuilder\Dialect\Postgres\PostgresDialect;
 use Rak200\SqlBuilder\Dml\Delete;
@@ -204,12 +204,12 @@ final class PrepareDmlTest extends TestCase {
             ->from('users', 'u')
             ->join('orders', 'o', Expression::binary('u.id', BinaryOperator::Eq, 'o.user_id'))
             ->where(Expression::and(
-                Expression::binary('u.active',  BinaryOperator::Eq, Expression::value(true)),
-                Expression::binary('u.country', BinaryOperator::Eq, Expression::value('BR')),
-                Expression::binary('o.total',   BinaryOperator::Gt, Expression::value(100)),
-                Expression::binary('o.status',  BinaryOperator::Ne, Expression::value('cancelled')),
-                Expression::binary('o.created', BinaryOperator::Ge, Expression::value('2024-01-01')),
-                Expression::binary('o.region',  BinaryOperator::Eq, Expression::value('south')),
+                Expression::binary('u.active',  BinaryOperator::Eq, Expression::val(true)),
+                Expression::binary('u.country', BinaryOperator::Eq, Expression::val('BR')),
+                Expression::binary('o.total',   BinaryOperator::Gt, Expression::val(100)),
+                Expression::binary('o.status',  BinaryOperator::Ne, Expression::val('cancelled')),
+                Expression::binary('o.created', BinaryOperator::Ge, Expression::val('2024-01-01')),
+                Expression::binary('o.region',  BinaryOperator::Eq, Expression::val('south')),
             ))
             ->prepare(new PostgresDialect());
 

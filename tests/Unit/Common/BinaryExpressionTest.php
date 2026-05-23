@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Tests\Unit\Common;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\BinaryExpression;
-use Rak200\SqlBuilder\Common\ColumnReference;
-use Rak200\SqlBuilder\Common\Enum\ArithmeticOperator;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
-use Rak200\SqlBuilder\Common\Expression;
-use Rak200\SqlBuilder\Common\ValueExpression;
+use Rak200\SqlBuilder\Common\Expression\Binary as BinaryExpression;
+use Rak200\SqlBuilder\Common\Reference\Column as ColumnReference;
+use Rak200\SqlBuilder\Common\Enum\Operator\Math as ArithmeticOperator;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary as BinaryOperator;
+use Rak200\SqlBuilder\Common\Expr as Expression;
+use Rak200\SqlBuilder\Common\Expression\Value as ValueExpression;
 
 final class BinaryExpressionTest extends TestCase {
 
@@ -49,7 +49,7 @@ final class BinaryExpressionTest extends TestCase {
     }
 
     public function testSupportsLikeWithLiteralPattern(): void {
-        $expr = Expression::binary('name', BinaryOperator::Like, Expression::value('A%'));
+        $expr = Expression::binary('name', BinaryOperator::Like, Expression::val('A%'));
 
         $this->assertSame("(`name` LIKE 'A%')", (string) $expr);
     }

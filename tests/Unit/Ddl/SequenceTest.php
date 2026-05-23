@@ -6,7 +6,7 @@ namespace Rak200\SqlBuilder\Tests\Unit\Ddl;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\RawExpression;
+use Rak200\SqlBuilder\Common\Expression\Raw as RawExpression;
 use Rak200\SqlBuilder\Ddl\Sequence;
 
 final class SequenceTest extends TestCase {

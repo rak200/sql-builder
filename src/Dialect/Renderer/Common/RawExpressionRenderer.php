@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Dialect\Renderer\Common;
 
-use Rak200\SqlBuilder\Common\RawExpression;
+use Rak200\SqlBuilder\Common\Expression\Raw as RawExpression;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 

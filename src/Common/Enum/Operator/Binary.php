@@ -2,22 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Rak200\SqlBuilder\Common\Enum;
+namespace Rak200\SqlBuilder\Common\Enum\Operator;
 
 /**
- * Enum BinaryOperator
+ * SQL binary operators used in query expressions.
  *
- * SQL binary operators used in query expressions. Comparison cases use the
- * compact two-letter mnemonics (Eq/Ne/Gt/Lt/Ge/Le) to keep call sites short.
+ * Comparison cases use the compact two-letter mnemonics (Eq/Ne/Gt/Lt/Ge/Le)
+ * to keep call sites short. Null-safe comparisons (`NullSafeEq` /
+ * `NullSafeNe`) default to the SQL standard `IS [NOT] DISTINCT FROM` form
+ * (PostgreSQL); the MariaDB dialect rewrites them to `<=>` / `NOT (<=>)`.
  *
- * Null-safe comparisons (`NullSafeEq` / `NullSafeNe`) default to the SQL
- * standard `IS [NOT] DISTINCT FROM` form (PostgreSQL); the MariaDB dialect
- * rewrites them to `<=>` / `NOT (<=>)`.
- *
- * @package Rak200\SqlBuilder\Common\Enum
+ * @package Rak200\SqlBuilder\Common\Enum\Operator
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-enum BinaryOperator: string {
+enum Binary: string {
 
     // --- Comparison ---
     case Eq = '=';

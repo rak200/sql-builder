@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Dialect\Renderer\Common;
 
-use Rak200\SqlBuilder\Common\ColumnReference;
+use Rak200\SqlBuilder\Common\Reference\Column as ColumnReference;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 

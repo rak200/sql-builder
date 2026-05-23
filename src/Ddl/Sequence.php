@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Ddl;
 
 use InvalidArgumentException;
-use Rak200\SqlBuilder\Common\Expression;
-use Rak200\SqlBuilder\Common\RawExpression;
+use Rak200\SqlBuilder\Common\Expr as Expression;
+use Rak200\SqlBuilder\Common\Expression\Raw as RawExpression;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Dialect\Dialect;
 

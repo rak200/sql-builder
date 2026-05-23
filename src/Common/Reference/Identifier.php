@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Rak200\SqlBuilder\Common;
+namespace Rak200\SqlBuilder\Common\Reference;
 
 use InvalidArgumentException;
+use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Dialect\Dialect;
 
 /**
@@ -12,13 +13,13 @@ use Rak200\SqlBuilder\Dialect\Dialect;
  *
  * Only accepts plain column names without a table qualifier (no dots).
  * Use in JOIN ... USING (...) where SQL requires bare column names.
- * For table-qualified references use {@see ColumnReference};
- * for projection columns with aliases use {@see ColumnExpression}.
+ * For table-qualified references use {@see Column}; for projection columns
+ * with aliases use {@see \Rak200\SqlBuilder\Common\Expression\Column}.
  *
- * @package Rak200\SqlBuilder\Common
+ * @package Rak200\SqlBuilder\Common\Reference
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-final class SimpleIdentifier implements ExpressionInterface {
+final class Identifier implements ExpressionInterface {
 
     /**
      * @param string $name Unqualified column name.
@@ -35,9 +36,6 @@ final class SimpleIdentifier implements ExpressionInterface {
         return Dialect::default()->renderSimpleIdentifier($this);
     }
 
-    /**
-     * Render this identifier with a specific dialect.
-     */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderSimpleIdentifier($this);
     }

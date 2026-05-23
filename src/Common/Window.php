@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Common;
 
-use Rak200\SqlBuilder\Common\Enum\NullsPlacement;
-use Rak200\SqlBuilder\Common\Enum\SortDirection;
+use Rak200\SqlBuilder\Common\Enum\Sort\Nulls as NullsPlacement;
+use Rak200\SqlBuilder\Common\Enum\Sort\Direction as SortDirection;
+use Rak200\SqlBuilder\Common\Reference\Column as ColumnReference;
 use Rak200\SqlBuilder\Dialect\Dialect;
 
 /**

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Ddl;
 
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Expr as Expression;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Ddl\Enum\DataType;
 use Rak200\SqlBuilder\Dialect\Dialect;
@@ -66,7 +66,7 @@ class Column implements ExpressionInterface {
     public function default(mixed $default): static {
         $this->default = $default instanceof ExpressionInterface
             ? $default
-            : Expression::value($default);
+            : Expression::val($default);
         return $this;
     }
 

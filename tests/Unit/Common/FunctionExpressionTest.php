@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Tests\Unit\Common;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\FunctionExpression;
+use Rak200\SqlBuilder\Common\Expression\Func as FunctionExpression;
 
 final class FunctionExpressionTest extends TestCase {
 

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Tests\Unit\Dialect;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary as BinaryOperator;
+use Rak200\SqlBuilder\Common\Expr as Expression;
 use Rak200\SqlBuilder\Common\Window;
 use Rak200\SqlBuilder\Dialect\MariaDb\MariaDbDialect;
 use Rak200\SqlBuilder\Dialect\Postgres\PostgresDialect;
@@ -35,7 +35,7 @@ final class SelectExtensionsDialectTest extends TestCase {
     }
 
     public function testRecursiveCteSetBodyRendersWithDialect(): void {
-        $base = Select::create()->select(Expression::value(1));
+        $base = Select::create()->select(Expression::val(1));
         $step = Select::create()->select(Expression::raw('n + 1'))->from('numbers')->where(
             Expression::binary('n', BinaryOperator::Lt, 5)
         );

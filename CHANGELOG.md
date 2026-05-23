@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-05-23
+
+### Changed
+- **BREAKING (0.x) API density refactor**. Class and namespace renames to lighten verbose expression-building code. One-shot break — no `class_alias()` shim; downstream consumers must update their `use` statements. Tests assert on rendered SQL strings (not class names) so the suite passed without test-body changes — only imports moved.
+- **Factory class**: `Rak200\SqlBuilder\Common\Expression` → `Rak200\SqlBuilder\Common\Expr`.
+- **Expression subtypes** drop the `Expression` suffix and move under `Common\Expression\`:
+  - `BinaryExpression` → `Expression\Binary`
+  - `UnaryExpression` → `Expression\Unary`
+  - `ColumnExpression` → `Expression\Column`
+  - `ValueExpression` → `Expression\Value`
+  - `RawExpression` → `Expression\Raw`
+  - `ExistsExpression` → `Expression\Exists`
+  - `SubqueryExpression` → `Expression\Subquery`
+  - `ParameterExpression` → `Expression\Param`
+  - `UuidInputExpression` → `Expression\UuidInput`
+  - `UuidOutputExpression` → `Expression\UuidOutput`
+  - `WindowExpression` → `Expression\Window`
+  - `CaseExpression` → `Expression\CaseWhen` (`Case` is a PHP reserved word)
+  - `FunctionExpression` → `Expression\Func` (`Function` is a PHP reserved word)
+- **References** move under `Common\Reference\`:
+  - `ColumnReference` → `Reference\Column`
+  - `TableReference` → `Reference\Table`
+  - `SimpleIdentifier` → `Reference\Identifier`
+- **Operator enums** move under `Common\Enum\Operator\` with arithmetic adopting the domain name `Math`:
+  - `BinaryOperator` → `Enum\Operator\Binary`
+  - `ArithmeticOperator` → `Enum\Operator\Math` (so `Math::Mul`, `Math::Add`)
+  - `UnaryOperator` → `Enum\Operator\Unary`
+- **Sort enums** move under `Common\Enum\Sort\`:
+  - `SortDirection` → `Enum\Sort\Direction`
+  - `NullsPlacement` → `Enum\Sort\Nulls` (so `Nulls::FIRST` / `Nulls::LAST`, matching the SQL it produces)
+- **Factory methods** on `Expr`: `column()` → `col()`, `value()` → `val()`. Every other method (`ref`, `param`, `raw`, `func`, `case`, `exists`, `subquery`, `identifier`, `uuid`, `uuidColumn`, `binary`, `not`, `and`, `or`, `sum/avg/count/min/max`, `add/sub/mul/div/mod`, `over`) kept its current name — they were already short enough or had unavoidable collisions (`uuid()` was already the input-side factory).
+- README examples rewritten to use the new names (`use Common\Expr;`, `use Common\Enum\Operator\Binary;`, `Expr::col(...)`, `Binary::Eq`, `Direction::ASC`).
+- `Dialect/` is unchanged externally — only `use` statements moved (internal renderers alias the new FQNs to the old short names, so renderer signatures stay readable).
+
+### Removed
+- All old class files at the top of `Common/` and `Common/Enum/` (22 files): the original `Expression.php`, `*Expression.php`, `*Reference.php`, `SimpleIdentifier.php`, `BinaryOperator.php`, `ArithmeticOperator.php`, `UnaryOperator.php`, `SortDirection.php`, `NullsPlacement.php`.
+
 ## [0.8.0] - 2026-05-23
 
 ### Changed
@@ -147,7 +184,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.8.0...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.9.0...HEAD
+[0.9.0]: https://github.com/rak200/sql-builder/compare/0.8.0...0.9.0
 [0.8.0]: https://github.com/rak200/sql-builder/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/rak200/sql-builder/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/rak200/sql-builder/compare/0.5.0...0.6.0

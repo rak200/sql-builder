@@ -6,16 +6,16 @@ namespace Rak200\SqlBuilder\Tests\Unit\Common;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary as BinaryOperator;
+use Rak200\SqlBuilder\Common\Expr as Expression;
 
 final class CaseExpressionTest extends TestCase {
 
     public function testSearchedCaseRendersWhenThenElseEnd(): void {
         $expr = Expression::case()
-            ->when(Expression::binary('amount', BinaryOperator::Gt, 100), Expression::value('high'))
-            ->when(Expression::binary('amount', BinaryOperator::Gt, 10), Expression::value('medium'))
-            ->else(Expression::value('low'));
+            ->when(Expression::binary('amount', BinaryOperator::Gt, 100), Expression::val('high'))
+            ->when(Expression::binary('amount', BinaryOperator::Gt, 10), Expression::val('medium'))
+            ->else(Expression::val('low'));
 
         $this->assertSame(
             "CASE WHEN (`amount` > 100) THEN 'high' WHEN (`amount` > 10) THEN 'medium' ELSE 'low' END",
@@ -48,8 +48,8 @@ final class CaseExpressionTest extends TestCase {
 
     public function testCaseAcceptsAlias(): void {
         $expr = Expression::case()
-            ->when(Expression::binary('active', BinaryOperator::Eq, 1), Expression::value('Y'))
-            ->else(Expression::value('N'))
+            ->when(Expression::binary('active', BinaryOperator::Eq, 1), Expression::val('Y'))
+            ->else(Expression::val('N'))
             ->as('label');
 
         $this->assertSame(

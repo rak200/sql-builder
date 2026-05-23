@@ -2,15 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Rak200\SqlBuilder\Common;
+namespace Rak200\SqlBuilder\Common\Expression;
+
+use Rak200\SqlBuilder\Common\Expr;
 
 /**
  * SQL column reference expression with optional alias.
  *
- * @package Rak200\SqlBuilder\Common
+ * @package Rak200\SqlBuilder\Common\Expression
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-final class ColumnExpression extends Expression {
+final class Column extends Expr {
 
     /**
      * @param string $name Column or qualified identifier (e.g. `table.column`).
@@ -21,18 +23,10 @@ final class ColumnExpression extends Expression {
     }
 
     /**
-     * Create an array of ColumnExpression from an associative map.
+     * Create an array of Column expressions from an associative map.
      *
      * Integer keys produce a column without alias.
-     * String keys are paired with the value according to $aliasIsKey:
-     *
-     * ```php
-     * // key = column, value = alias (default)
-     * ColumnExpression::fromArray(['u.name' => 'user_name', 'u.id' => 'user_id']);
-     *
-     * // key = alias, value = column
-     * ColumnExpression::fromArray(['user_name' => 'u.name'], aliasIsKey: true);
-     * ```
+     * String keys are paired with the value according to $aliasIsKey.
      *
      * @param array<int|string, string> $columns
      * @param bool $aliasIsKey When false (default): key = column name, value = alias.

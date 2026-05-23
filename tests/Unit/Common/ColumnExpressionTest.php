@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Tests\Unit\Common;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\ColumnExpression;
+use Rak200\SqlBuilder\Common\Expression\Column as ColumnExpression;
 
 final class ColumnExpressionTest extends TestCase {
 

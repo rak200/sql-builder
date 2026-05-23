@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Dialect\Renderer\Common;
 
 use InvalidArgumentException;
-use Rak200\SqlBuilder\Common\CaseExpression;
+use Rak200\SqlBuilder\Common\Expression\CaseWhen as CaseExpression;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 

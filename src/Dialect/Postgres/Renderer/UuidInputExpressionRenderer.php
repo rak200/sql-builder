@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Dialect\Postgres\Renderer;
 
-use Rak200\SqlBuilder\Common\ParameterExpression;
-use Rak200\SqlBuilder\Common\UuidInputExpression;
-use Rak200\SqlBuilder\Common\ValueExpression;
+use Rak200\SqlBuilder\Common\Expression\Param as ParameterExpression;
+use Rak200\SqlBuilder\Common\Expression\UuidInput as UuidInputExpression;
+use Rak200\SqlBuilder\Common\Expression\Value as ValueExpression;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\UuidInputExpressionRenderer as BaseUuidInputExpressionRenderer;
 
 /**

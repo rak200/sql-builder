@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Tests\Unit\Dialect;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary as BinaryOperator;
 use Rak200\SqlBuilder\Common\Enum\ForeignKeyAction;
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Expr as Expression;
 use Rak200\SqlBuilder\Ddl\Column;
 use Rak200\SqlBuilder\Ddl\Enum\DataType;
 use Rak200\SqlBuilder\Ddl\ForeignKey;

@@ -6,7 +6,7 @@ namespace Rak200\SqlBuilder\Tests\Unit\Dml;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\Enum\SortDirection;
+use Rak200\SqlBuilder\Common\Enum\Sort\Direction as SortDirection;
 use Rak200\SqlBuilder\Dml\Select;
 use Rak200\SqlBuilder\Dml\Set;
 

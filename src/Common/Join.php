@@ -6,6 +6,8 @@ namespace Rak200\SqlBuilder\Common;
 
 use InvalidArgumentException;
 use Rak200\SqlBuilder\Common\Enum\JoinType;
+use Rak200\SqlBuilder\Common\Expr as Expression;
+use Rak200\SqlBuilder\Common\Reference\Table as TableReference;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dml\Select;
 

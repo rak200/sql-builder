@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Tests\Unit\Common;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\ColumnReference;
-use Rak200\SqlBuilder\Common\Enum\UnaryOperator;
-use Rak200\SqlBuilder\Common\UnaryExpression;
+use Rak200\SqlBuilder\Common\Reference\Column as ColumnReference;
+use Rak200\SqlBuilder\Common\Enum\Operator\Unary as UnaryOperator;
+use Rak200\SqlBuilder\Common\Expression\Unary as UnaryExpression;
 
 final class UnaryExpressionTest extends TestCase {
 

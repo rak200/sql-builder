@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Tests\Unit\Dialect;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\Expression;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
+use Rak200\SqlBuilder\Common\Expr as Expression;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary as BinaryOperator;
 use Rak200\SqlBuilder\Dialect\DefaultDialect;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dml\Insert;

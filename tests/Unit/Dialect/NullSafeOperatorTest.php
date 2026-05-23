@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Tests\Unit\Dialect;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary as BinaryOperator;
+use Rak200\SqlBuilder\Common\Expr as Expression;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\MariaDb\MariaDbDialect;
 use Rak200\SqlBuilder\Dialect\Postgres\PostgresDialect;
@@ -32,7 +32,7 @@ final class NullSafeOperatorTest extends TestCase {
     }
 
     public function testNullLiteralRoundtrips(): void {
-        $expr = Expression::binary('a', BinaryOperator::NullSafeEq, Expression::value(null));
+        $expr = Expression::binary('a', BinaryOperator::NullSafeEq, Expression::val(null));
         $this->assertSame('(`a` IS NOT DISTINCT FROM NULL)', (string) $expr);
     }
 
@@ -52,7 +52,7 @@ final class NullSafeOperatorTest extends TestCase {
     }
 
     public function testMariaDbNullSafeAgainstNullLiteral(): void {
-        $expr = Expression::binary('email', BinaryOperator::NullSafeEq, Expression::value(null));
+        $expr = Expression::binary('email', BinaryOperator::NullSafeEq, Expression::val(null));
         $this->assertSame('(`email` <=> NULL)', $expr->toSql(new MariaDbDialect()));
     }
 

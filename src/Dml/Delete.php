@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Dml;
 
 use InvalidArgumentException;
-use Rak200\SqlBuilder\Common\Enum\NullsPlacement;
-use Rak200\SqlBuilder\Common\Enum\SortDirection;
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Enum\Sort\Nulls as NullsPlacement;
+use Rak200\SqlBuilder\Common\Enum\Sort\Direction as SortDirection;
+use Rak200\SqlBuilder\Common\Expr as Expression;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Common\Order;
-use Rak200\SqlBuilder\Common\TableReference;
+use Rak200\SqlBuilder\Common\Reference\Table as TableReference;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Prepared\PreparedStatement;
 
@@ -95,7 +95,7 @@ final class Delete implements ExpressionInterface {
         foreach ($expressions as $expression) {
             $this->returning[] = $expression instanceof ExpressionInterface
                 ? $expression
-                : Expression::column($expression);
+                : Expression::col($expression);
         }
         return $this;
     }

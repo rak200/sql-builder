@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Tests\Unit\Common;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\ColumnExpression;
-use Rak200\SqlBuilder\Common\Expression;
-use Rak200\SqlBuilder\Common\ParameterExpression;
-use Rak200\SqlBuilder\Common\UuidInputExpression;
-use Rak200\SqlBuilder\Common\UuidOutputExpression;
-use Rak200\SqlBuilder\Common\ValueExpression;
+use Rak200\SqlBuilder\Common\Expression\Column as ColumnExpression;
+use Rak200\SqlBuilder\Common\Expr as Expression;
+use Rak200\SqlBuilder\Common\Expression\Param as ParameterExpression;
+use Rak200\SqlBuilder\Common\Expression\UuidInput as UuidInputExpression;
+use Rak200\SqlBuilder\Common\Expression\UuidOutput as UuidOutputExpression;
+use Rak200\SqlBuilder\Common\Expression\Value as ValueExpression;
 
 final class UuidExpressionTest extends TestCase {
 

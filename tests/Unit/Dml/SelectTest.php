@@ -6,10 +6,10 @@ namespace Rak200\SqlBuilder\Tests\Unit\Dml;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
-use Rak200\SqlBuilder\Common\Enum\NullsPlacement;
-use Rak200\SqlBuilder\Common\Enum\SortDirection;
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary as BinaryOperator;
+use Rak200\SqlBuilder\Common\Enum\Sort\Nulls as NullsPlacement;
+use Rak200\SqlBuilder\Common\Enum\Sort\Direction as SortDirection;
+use Rak200\SqlBuilder\Common\Expr as Expression;
 use Rak200\SqlBuilder\Dml\Select;
 
 final class SelectTest extends TestCase {
@@ -117,7 +117,7 @@ final class SelectTest extends TestCase {
             ->select('country', Expression::count())
             ->from('users')
             ->groupBy('country')
-            ->having(Expression::binary(Expression::count(), BinaryOperator::Gt, Expression::value(10)));
+            ->having(Expression::binary(Expression::count(), BinaryOperator::Gt, Expression::val(10)));
 
         $this->assertSame(
             'SELECT `country`, COUNT(*) AS `COUNT` FROM `users` GROUP BY `country` HAVING (COUNT(*) AS `COUNT` > 10)',

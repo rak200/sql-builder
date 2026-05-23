@@ -6,7 +6,7 @@ namespace Rak200\SqlBuilder\Tests\Unit\Common;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\ValueExpression;
+use Rak200\SqlBuilder\Common\Expression\Value as ValueExpression;
 
 final class ValueExpressionTest extends TestCase {
 

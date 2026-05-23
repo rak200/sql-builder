@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Dialect\MariaDb\Renderer;
 
-use Rak200\SqlBuilder\Common\ColumnExpression;
-use Rak200\SqlBuilder\Common\UuidOutputExpression;
+use Rak200\SqlBuilder\Common\Expression\Column as ColumnExpression;
+use Rak200\SqlBuilder\Common\Expression\UuidOutput as UuidOutputExpression;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\UuidOutputExpressionRenderer as BaseUuidOutputExpressionRenderer;
 
 /**

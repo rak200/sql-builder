@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Dialect\Renderer\Common;
 
 use LogicException;
-use Rak200\SqlBuilder\Common\ParameterExpression;
+use Rak200\SqlBuilder\Common\Expression\Param as ParameterExpression;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 
@@ -29,7 +29,7 @@ class ParameterExpressionRenderer implements ComponentRenderer {
         if ($binder === null) {
             throw new LogicException(
                 'ParameterExpression can only be rendered through prepare(); '
-                . 'use Expression::value() or inline scalars for __toString().'
+                . 'use Expression::val() or inline scalars for __toString().'
             );
         }
 

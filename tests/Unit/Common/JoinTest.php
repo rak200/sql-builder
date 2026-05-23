@@ -6,9 +6,9 @@ namespace Rak200\SqlBuilder\Tests\Unit\Common;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Rak200\SqlBuilder\Common\Enum\BinaryOperator;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary as BinaryOperator;
 use Rak200\SqlBuilder\Common\Enum\JoinType;
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Expr as Expression;
 use Rak200\SqlBuilder\Common\Join;
 
 final class JoinTest extends TestCase {

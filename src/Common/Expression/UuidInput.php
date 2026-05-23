@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Rak200\SqlBuilder\Common;
+namespace Rak200\SqlBuilder\Common\Expression;
+
+use Rak200\SqlBuilder\Common\Expr;
+use Rak200\SqlBuilder\Common\ExpressionInterface;
 
 /**
  * Marker wrapping an expression destined for a UUID column.
@@ -15,15 +18,12 @@ namespace Rak200\SqlBuilder\Common;
  * - MariaDB / MySQL wraps in `UUID_TO_BIN(<inner>)` because UUIDs are
  *   simulated as `BINARY(16)` on those engines.
  *
- * Use {@see Expression::uuid()} to construct.
+ * Use {@see Expr::uuid()} to construct.
  *
- * @package Rak200\SqlBuilder\Common
+ * @package Rak200\SqlBuilder\Common\Expression
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-final class UuidInputExpression extends Expression {
+final class UuidInput extends Expr {
 
-    /**
-     * @param ExpressionInterface $inner The value expression to wrap.
-     */
     public function __construct(public readonly ExpressionInterface $inner) {}
 }

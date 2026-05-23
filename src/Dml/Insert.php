@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Dml;
 
 use InvalidArgumentException;
-use Rak200\SqlBuilder\Common\Expression;
+use Rak200\SqlBuilder\Common\Expr as Expression;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Prepared\PreparedStatement;
@@ -74,7 +74,7 @@ final class Insert implements ExpressionInterface {
 
         $this->rows[] = array_map(
             static fn(mixed $value): ExpressionInterface
-                => $value instanceof ExpressionInterface ? $value : Expression::value($value),
+                => $value instanceof ExpressionInterface ? $value : Expression::val($value),
             $row
         );
 
@@ -93,7 +93,7 @@ final class Insert implements ExpressionInterface {
     public function onDuplicateKeyUpdate(string $column, mixed $value): static {
         $this->onDuplicateKey[$column] = $value instanceof ExpressionInterface
             ? $value
-            : Expression::value($value);
+            : Expression::val($value);
         return $this;
     }
 
@@ -101,7 +101,7 @@ final class Insert implements ExpressionInterface {
         foreach ($expressions as $expression) {
             $this->returning[] = $expression instanceof ExpressionInterface
                 ? $expression
-                : Expression::column($expression);
+                : Expression::col($expression);
         }
         return $this;
     }
