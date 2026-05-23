@@ -22,6 +22,6 @@ class UpdateRenderer105 extends UpdateRenderer {
             fn($expression) => $this->dialect->renderExpression($expression),
             $component->returning
         );
-        return \Rak200\SqlBuilder\Utils\StringUtils::join($rendered, ', ', ' RETURNING ');
+        return \Rak200\SqlBuilder\Utils\Str::join($rendered, ', ', ' RETURNING ');
     }
 }

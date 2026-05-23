@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 use Rak200\SqlBuilder\Dml\Update;
-use Rak200\SqlBuilder\Utils\StringUtils;
+use Rak200\Utils\Str;
 
 /**
  * Renders an {@see Update} statement: UPDATE, SET, FROM, WHERE, ORDER BY,
@@ -37,7 +37,7 @@ class UpdateRenderer implements ComponentRenderer {
         $sql .= $this->renderFrom($component);
         $sql .= $this->renderWhere($component);
         $sql .= $this->renderOrderBy($component);
-        $sql .= StringUtils::wrap((string) $component->limit, ' LIMIT ');
+        $sql .= Str::wrap((string) $component->limit, ' LIMIT ');
         $sql .= $this->renderReturning($component);
 
         return $sql;
@@ -60,7 +60,7 @@ class UpdateRenderer implements ComponentRenderer {
             fn($table) => $this->dialect->renderTableReference($table),
             $component->from
         );
-        return StringUtils::join($rendered, ', ', ' FROM ');
+        return Str::join($rendered, ', ', ' FROM ');
     }
 
     protected function renderWhere(Update $component): string {
@@ -75,7 +75,7 @@ class UpdateRenderer implements ComponentRenderer {
             fn($order) => $this->dialect->renderOrder($order),
             $component->orderBy
         );
-        return StringUtils::join($rendered, ', ', ' ORDER BY ');
+        return Str::join($rendered, ', ', ' ORDER BY ');
     }
 
     protected function renderReturning(Update $component): string {
@@ -83,6 +83,6 @@ class UpdateRenderer implements ComponentRenderer {
             fn($expression) => $this->dialect->renderExpression($expression),
             $component->returning
         );
-        return StringUtils::join($rendered, ', ', ' RETURNING ');
+        return Str::join($rendered, ', ', ' RETURNING ');
     }
 }

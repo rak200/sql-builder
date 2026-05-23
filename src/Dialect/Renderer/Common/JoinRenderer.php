@@ -7,7 +7,7 @@ namespace Rak200\SqlBuilder\Dialect\Renderer\Common;
 use Rak200\SqlBuilder\Common\Join;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
-use Rak200\SqlBuilder\Utils\StringUtils;
+use Rak200\Utils\Str;
 
 /**
  * Renders a {@see Join} clause (INNER/LEFT/RIGHT/FULL/CROSS/NATURAL with ON or USING).
@@ -38,6 +38,6 @@ class JoinRenderer implements ComponentRenderer {
             $component->using
         );
 
-        return StringUtils::join($rendered, ', ', "$sql USING (", ')');
+        return Str::join($rendered, ', ', "$sql USING (", ')');
     }
 }

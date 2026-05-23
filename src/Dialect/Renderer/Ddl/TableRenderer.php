@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Rak200\SqlBuilder\Ddl\Table;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
-use Rak200\SqlBuilder\Utils\StringUtils;
+use Rak200\Utils\Str;
 
 /**
  * Renders a {@see Table} as `CREATE TABLE`, `ALTER TABLE`, `DROP TABLE`
@@ -54,7 +54,7 @@ class TableRenderer implements ComponentRenderer {
         foreach ($component->indexes as $index) {
             $indexes[] = $this->dialect->renderIndex($index);
         }
-        $sql .= StringUtils::join($indexes, ' ', ' ');
+        $sql .= Str::join($indexes, ' ', ' ');
 
         return $sql;
     }

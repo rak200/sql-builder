@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Rak200\SqlBuilder\Ddl\View;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
-use Rak200\SqlBuilder\Utils\StringUtils;
+use Rak200\Utils\Str;
 
 /**
  * Renders a {@see View} as `CREATE VIEW` or `DROP VIEW` based on mode.
@@ -76,7 +76,7 @@ class ViewRenderer implements ComponentRenderer {
     }
 
     protected function renderColumnList(View $component): string {
-        return StringUtils::join(
+        return Str::join(
             array_map(fn(string $column) => $this->dialect->quoteIdentifier($column), $component->columns),
             ', ',
             ' (',

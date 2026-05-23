@@ -7,7 +7,7 @@ namespace Rak200\SqlBuilder\Dialect\Renderer\Ddl;
 use Rak200\SqlBuilder\Ddl\ForeignKey;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
-use Rak200\SqlBuilder\Utils\StringUtils;
+use Rak200\Utils\Str;
 
 /**
  * Renders a {@see ForeignKey} as
@@ -27,7 +27,7 @@ class ForeignKeyRenderer implements ComponentRenderer {
             $sql = sprintf('CONSTRAINT %s FOREIGN KEY', $this->dialect->quoteIdentifier($component->name));
         }
 
-        $sql .= StringUtils::join(
+        $sql .= Str::join(
             array_map(fn(string $column) => $this->dialect->quoteIdentifier($column), $component->columns),
             ', ',
             ' (',
@@ -35,7 +35,7 @@ class ForeignKeyRenderer implements ComponentRenderer {
         );
 
         if ($component->referenceTable !== '') {
-            $sql .= StringUtils::join(
+            $sql .= Str::join(
                 array_map(fn(string $column) => $this->dialect->quoteIdentifier($column), $component->referenceColumns),
                 ', ',
                 sprintf(

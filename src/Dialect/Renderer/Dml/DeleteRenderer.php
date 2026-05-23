@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 use Rak200\SqlBuilder\Dml\Delete;
-use Rak200\SqlBuilder\Utils\StringUtils;
+use Rak200\Utils\Str;
 
 /**
  * Renders a {@see Delete} statement: DELETE FROM, USING, WHERE, ORDER BY,
@@ -30,7 +30,7 @@ class DeleteRenderer implements ComponentRenderer {
         $sql .= $this->renderUsing($component);
         $sql .= $this->renderWhere($component);
         $sql .= $this->renderOrderBy($component);
-        $sql .= StringUtils::wrap((string) $component->limit, ' LIMIT ');
+        $sql .= Str::wrap((string) $component->limit, ' LIMIT ');
         $sql .= $this->renderReturning($component);
 
         return $sql;
@@ -41,7 +41,7 @@ class DeleteRenderer implements ComponentRenderer {
             fn($table) => $this->dialect->renderTableReference($table),
             $component->using
         );
-        return StringUtils::join($rendered, ', ', ' USING ');
+        return Str::join($rendered, ', ', ' USING ');
     }
 
     protected function renderWhere(Delete $component): string {
@@ -56,7 +56,7 @@ class DeleteRenderer implements ComponentRenderer {
             fn($order) => $this->dialect->renderOrder($order),
             $component->orderBy
         );
-        return StringUtils::join($rendered, ', ', ' ORDER BY ');
+        return Str::join($rendered, ', ', ' ORDER BY ');
     }
 
     protected function renderReturning(Delete $component): string {
@@ -64,6 +64,6 @@ class DeleteRenderer implements ComponentRenderer {
             fn($expression) => $this->dialect->renderExpression($expression),
             $component->returning
         );
-        return StringUtils::join($rendered, ', ', ' RETURNING ');
+        return Str::join($rendered, ', ', ' RETURNING ');
     }
 }

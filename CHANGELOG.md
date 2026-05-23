@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-05-23
+
+### Changed
+- **Extracted `Utils\StringUtils` into the standalone `rak200/utils` package**. Internal helpers like blank checks, `join` (with `lastSeparator` and empty-element filtering) and `wrap` are now provided by `Rak200\Utils\Str`. The sql-builder gains `rak200/utils ^0.1.0` as a runtime dependency; renderers and DDL builders use `Str::join` / `Str::wrap` in place of the old `StringUtils::join` / `StringUtils::wrap`. No behavioural change — the new `Str` methods are direct ports of the old ones, with identical signatures and semantics.
+
+### Removed
+- `Rak200\SqlBuilder\Utils\StringUtils` and `src/Utils/`. Replace `use Rak200\SqlBuilder\Utils\StringUtils;` with `use Rak200\Utils\Str;`.
+
 ## [0.9.0] - 2026-05-23
 
 ### Changed
@@ -184,7 +192,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.9.0...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.10.0...HEAD
+[0.10.0]: https://github.com/rak200/sql-builder/compare/0.9.0...0.10.0
 [0.9.0]: https://github.com/rak200/sql-builder/compare/0.8.0...0.9.0
 [0.8.0]: https://github.com/rak200/sql-builder/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/rak200/sql-builder/compare/0.6.0...0.7.0

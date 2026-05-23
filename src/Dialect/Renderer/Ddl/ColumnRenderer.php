@@ -7,7 +7,7 @@ namespace Rak200\SqlBuilder\Dialect\Renderer\Ddl;
 use Rak200\SqlBuilder\Ddl\Column;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
-use Rak200\SqlBuilder\Utils\StringUtils;
+use Rak200\Utils\Str;
 
 /**
  * Renders a {@see Column} definition: `"name" TYPE[(length)] NULL|NOT NULL
@@ -52,6 +52,6 @@ class ColumnRenderer implements ComponentRenderer {
      * @return string The type clause without surrounding whitespace.
      */
     protected function renderType(Column $component): string {
-        return $component->type->value . StringUtils::wrap((string) $component->length, '(', ')');
+        return $component->type->value . Str::wrap((string) $component->length, '(', ')');
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Rak200\SqlBuilder\Dialect\MariaDb\Renderer;
 
 use Rak200\SqlBuilder\Dml\Delete;
-use Rak200\SqlBuilder\Utils\StringUtils;
+use Rak200\Utils\Str;
 
 /**
  * MariaDB 10.5+ DELETE renderer.
@@ -23,6 +23,6 @@ class DeleteRenderer105 extends DeleteRenderer {
             fn($expression) => $this->dialect->renderExpression($expression),
             $component->returning
         );
-        return StringUtils::join($rendered, ', ', ' RETURNING ');
+        return Str::join($rendered, ', ', ' RETURNING ');
     }
 }

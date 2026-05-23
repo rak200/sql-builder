@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Depends on:
 - `rak200/caster ^1.0.0` for the `ToString` contract used by `ExpressionInterface`
 - `rak200/collections ^0.0.1` for the typed `Collection` container used internally
+- `rak200/utils ^0.1.0` for `Rak200\Utils\Str` (blank checks, `join` with `lastSeparator`, `wrap`) used by renderers
 
 Dev dependencies:
 - `phpunit/phpunit ^13.1` for the test suite
@@ -32,8 +33,7 @@ sql-builder/
 │   ├── Dml/                          # Select, Set, Insert, Update, Delete, Cte
 │   ├── Ddl/                          # Column, Table, View, Sequence, Index, Schema + constraints
 │   ├── Dialect/                      # see "Dialect Architecture" below
-│   ├── Prepared/                     # PreparedStatement, Binder
-│   └── Utils/                        # StringUtils (internal)
+│   └── Prepared/                     # PreparedStatement, Binder
 └── tests/
     ├── Unit/                         # mirrors src/ layout
     └── Integration/
@@ -198,42 +198,6 @@ The migration that landed 0.2.0 (introduce the contract → decompose into rende
 3. For each component whose rendering deviates, create a renderer in `src/Dialect/<Vendor>/Renderer/` extending the matching default renderer, and override the protected `xxxRenderer()` factory on the dialect to wire it in.
 4. Add unit tests under `tests/Unit/Dialect/` — both vendor-specific assertions and a dialect-propagation case to make sure nested expressions inherit the dialect.
 5. Register the scheme in `Dsn\DsnParser` if you want DSN-based selection.
-
-## Planned: rak200/utils extraction
-
-Move `src/Utils/StringUtils.php` into a standalone `rak200/utils` package — generic helpers don't belong in a SQL builder. After the package exists, sql-builder will `require` it and delete `src/Utils/`.
-
-### Package shape
-
-- Namespace `Rak200\Utils\`, PHP 8.4+, zero runtime deps
-- Each class `final`, private constructor, only `public static` methods — pure functions, no state
-- Laravel-style short class names; `mb_*` family for string ops by default
-- "Not found" convention: bare method throws `RuntimeException`; `*OrNull` variant returns `?T`
-
-**Tier 1 — scalars and core structures**
-
-- `Str` — `isBlank/isNotBlank/isEmpty`, `length`, `capitalize/uncapitalize`, `upper/lower`, `contains/startsWith/endsWith`, `trim/trimStart/trimEnd`, `replace`, `split`, `join` (current `StringUtils::join` behaviour: empty-filter + `lastSeparator`), `wrap`, `padStart/padEnd`, `repeat`, `reverse`, `toCamelCase/toPascalCase/toSnakeCase/toKebabCase`
-- `Arr` — `isEmpty/isNotEmpty`, `first/firstOrNull/last/lastOrNull`, `find/findOrNull`, `filter/map/reduce`, `flatten`, `groupBy`, `partition`, `chunk`, `unique`, `has`, `keys/values`, `zip`, `range`
-- `Num` — `isInteger/isFloat/isNumeric`, `parseInt/parseIntOrNull`, `parseFloat/parseFloatOrNull`, `clamp`, `inRange`, `round`, `format`, `sum/avg/min/max`, `abs/sign`
-- `Rand` — pure static randomness, no builder/state: `int(min, max)`, `float(min, max)`, `bytes(length)`, `string(length, alphabet = Rand::ALNUM)`, `masked(pattern, alphabet)` (single-call replacement for the `#`/`*` format from the legacy `UidGenerator`), `uuid()` (v4), `uuidV7()` (time-ordered), `ulid()` (Crockford base32, reimplement per spec — bit-stream encoding, not byte-by-byte), `nanoid(length = 21)`. Alphabet constants on the class: `Rand::NUM`, `Rand::HEX`, `Rand::ALPHA`, `Rand::ALNUM`. Casing belongs to `Str::upper/lower`, not `Rand`
-
-**Tier 2 — contextual**
-
-- `Regex` — `matches`, `match/matchAll`, `replace/replaceCallback`, `split`, `quote`
-- `Hash` — `md5/sha1/sha256/sha512`, `crc32`, `hmac`, `equals` (constant-time), `password/verifyPassword`
-- `Bit` — `set/unset/toggle`, `has`, `count` (popcount), `leadingZeros/trailingZeros`
-- `File` — `read/write/append`, `exists/delete`, `extension/basename/dirname`, `mimeType`, `size`, `lines` (generator), `tempFile`, `copy/move`
-- `Json` — `encode/decode` with implicit `JSON_THROW_ON_ERROR`, `isValid`
-- `Base64` — `encode/decode`, `encodeUrl/decodeUrl` (URL-safe, no padding)
-- `Dt` — date/time helpers around `DateTimeImmutable` (no mutable `DateTime`, no wrapper object — static functions taking and returning `DateTimeImmutable`). Construction: `now(?DateTimeZone)`, `today(?DateTimeZone)` (midnight), `of(year, month, day, hour = 0, minute = 0, second = 0, ?DateTimeZone)`, `parse(string, ?format)` / `parseOrNull`, `fromEpoch(int $seconds, ?DateTimeZone)`, `fromEpochMs(int, ?DateTimeZone)`. Formatting: `format(dt, pattern)`, `iso(dt)` (ATOM/ISO-8601), `sql(dt)` (`'Y-m-d H:i:s'` — handy for the sql-builder consumer), `date(dt)` (`'Y-m-d'`), `time(dt)` (`'H:i:s'`). Arithmetic returning a new immutable: `addDays/addHours/addMinutes/addSeconds/addMonths/addYears(dt, int)` (negative values subtract). Comparison: `isBefore/isAfter/isEqual(a, b)`, `min/max(dt ...)`. Boundaries: `startOfDay/startOfWeek/startOfMonth/startOfYear(dt)` and matching `endOf*`. Diff: `diffInDays/diffInHours/diffInMinutes/diffInSeconds(a, b): int`
-
-### Integration into sql-builder
-
-After `rak200/utils` is published:
-1. Add `"rak200/utils": "^0.x"` to `composer.json`
-2. Replace `Rak200\SqlBuilder\Utils\StringUtils::isBlank/isNotBlank/join/wrap` (and any other call sites) with the matching `Rak200\Utils\Str` method across renderers and DDL builders
-3. Delete `src/Utils/` and its tests; drop the `Utils/` line from the Structure tree above
-4. Bump sql-builder to the next minor version
 
 ## Testing
 

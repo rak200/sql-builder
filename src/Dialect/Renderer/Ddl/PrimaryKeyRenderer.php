@@ -7,7 +7,7 @@ namespace Rak200\SqlBuilder\Dialect\Renderer\Ddl;
 use Rak200\SqlBuilder\Ddl\PrimaryKey;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
-use Rak200\SqlBuilder\Utils\StringUtils;
+use Rak200\Utils\Str;
 
 /**
  * Renders a {@see PrimaryKey} as `[CONSTRAINT "name"] PRIMARY KEY (cols)`.
@@ -26,7 +26,7 @@ class PrimaryKeyRenderer implements ComponentRenderer {
             $sql = sprintf('CONSTRAINT %s PRIMARY KEY', $this->dialect->quoteIdentifier($component->name));
         }
 
-        $sql .= StringUtils::join(
+        $sql .= Str::join(
             array_map(fn(string $column) => $this->dialect->quoteIdentifier($column), $component->columns),
             ', ',
             ' (',

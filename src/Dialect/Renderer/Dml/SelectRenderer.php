@@ -7,7 +7,7 @@ namespace Rak200\SqlBuilder\Dialect\Renderer\Dml;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 use Rak200\SqlBuilder\Dml\Select;
-use Rak200\SqlBuilder\Utils\StringUtils;
+use Rak200\Utils\Str;
 
 /**
  * Renders a {@see Select} statement: SELECT, FROM, JOIN, WHERE, GROUP BY,
@@ -66,7 +66,7 @@ class SelectRenderer implements ComponentRenderer {
         foreach ($component->joins as $join) {
             $rendered[] = $this->dialect->renderJoin($join);
         }
-        return StringUtils::join($rendered, ' ', ' ');
+        return Str::join($rendered, ' ', ' ');
     }
 
     protected function renderWhere(Select $component): string {
@@ -81,7 +81,7 @@ class SelectRenderer implements ComponentRenderer {
         foreach ($component->groupBy as $expression) {
             $rendered[] = $this->dialect->renderExpression($expression);
         }
-        return StringUtils::join($rendered, ', ', ' GROUP BY ');
+        return Str::join($rendered, ', ', ' GROUP BY ');
     }
 
     protected function renderHaving(Select $component): string {
@@ -96,12 +96,12 @@ class SelectRenderer implements ComponentRenderer {
         foreach ($component->orderBy as $order) {
             $rendered[] = $this->dialect->renderOrder($order);
         }
-        return StringUtils::join($rendered, ', ', ' ORDER BY ');
+        return Str::join($rendered, ', ', ' ORDER BY ');
     }
 
     protected function renderLimitOffset(Select $component): string {
-        return StringUtils::wrap((string) $component->limit,  ' LIMIT ')
-             . StringUtils::wrap((string) $component->offset, ' OFFSET ');
+        return Str::wrap((string) $component->limit,  ' LIMIT ')
+             . Str::wrap((string) $component->offset, ' OFFSET ');
     }
 
     /**

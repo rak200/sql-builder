@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 use Rak200\SqlBuilder\Dml\Insert;
-use Rak200\SqlBuilder\Utils\StringUtils;
+use Rak200\Utils\Str;
 
 /**
  * Renders an {@see Insert} statement: INSERT INTO, columns, VALUES or SELECT,
@@ -44,7 +44,7 @@ class InsertRenderer implements ComponentRenderer {
     }
 
     protected function renderColumnList(Insert $component): string {
-        return StringUtils::join(
+        return Str::join(
             array_map(
                 fn(string $name) => $this->dialect->quoteIdentifier($name),
                 $component->columns
@@ -89,6 +89,6 @@ class InsertRenderer implements ComponentRenderer {
             fn($expression) => $this->dialect->renderExpression($expression),
             $component->returning
         );
-        return StringUtils::join($rendered, ', ', ' RETURNING ');
+        return Str::join($rendered, ', ', ' RETURNING ');
     }
 }

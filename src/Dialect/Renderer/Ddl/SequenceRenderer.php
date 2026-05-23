@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Rak200\SqlBuilder\Ddl\Sequence;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
-use Rak200\SqlBuilder\Utils\StringUtils;
+use Rak200\Utils\Str;
 
 /**
  * Renders a {@see Sequence} as `CREATE`, `ALTER` or `DROP SEQUENCE`.
@@ -103,7 +103,7 @@ class SequenceRenderer implements ComponentRenderer {
             $parts[] = $component->cycle ? 'CYCLE' : 'NO CYCLE';
         }
 
-        return StringUtils::join($parts, ' ', ' ');
+        return Str::join($parts, ' ', ' ');
     }
 
     protected function renderRestart(Sequence $component): string {
