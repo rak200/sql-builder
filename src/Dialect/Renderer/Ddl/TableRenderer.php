@@ -45,7 +45,7 @@ class TableRenderer implements ComponentRenderer {
         }
 
         $sql = sprintf(
-            'CREATE TABLE "%s" (%s)',
+            'CREATE TABLE %s (%s)',
             $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name)),
             implode(', ', $parts)
         );
@@ -65,7 +65,7 @@ class TableRenderer implements ComponentRenderer {
         }
 
         $sql = sprintf(
-            'ALTER TABLE "%s"',
+            'ALTER TABLE %s',
             $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name))
         );
         $operations = array_map(
@@ -79,10 +79,10 @@ class TableRenderer implements ComponentRenderer {
     protected function renderAlterOperation(array $operation): string {
         return match ($operation['type']) {
             'ADD COLUMN'      => sprintf('ADD COLUMN %s', $this->dialect->renderColumn($operation['definition'])),
-            'DROP COLUMN'     => sprintf('DROP COLUMN "%s"', $this->dialect->quoteIdentifier($operation['name'])),
+            'DROP COLUMN'     => sprintf('DROP COLUMN %s', $this->dialect->quoteIdentifier($operation['name'])),
             'MODIFY COLUMN'   => sprintf('MODIFY COLUMN %s', $this->dialect->renderColumn($operation['definition'])),
             'RENAME COLUMN'   => sprintf(
-                'RENAME COLUMN "%s" TO "%s"',
+                'RENAME COLUMN %s TO %s',
                 $this->dialect->quoteIdentifier($operation['old']),
                 $this->dialect->quoteIdentifier($operation['new'])
             ),
@@ -91,7 +91,7 @@ class TableRenderer implements ComponentRenderer {
                 $this->dialect->quoteIdentifier($this->dialect->resolveTableName($operation['name']))
             ),
             'ADD CONSTRAINT'  => sprintf('ADD %s', $this->dialect->renderExpression($operation['definition'])),
-            'DROP CONSTRAINT' => sprintf('DROP CONSTRAINT "%s"', $this->dialect->quoteIdentifier($operation['name'])),
+            'DROP CONSTRAINT' => sprintf('DROP CONSTRAINT %s', $this->dialect->quoteIdentifier($operation['name'])),
             'ADD INDEX'       => sprintf('ADD %s', $this->dialect->renderIndex($operation['definition'])),
             default           => throw new InvalidArgumentException('Unsupported ALTER TABLE operation: ' . $operation['type']),
         };

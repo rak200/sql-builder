@@ -23,11 +23,11 @@ class UniqueKeyRenderer implements ComponentRenderer {
         $sql = 'UNIQUE';
 
         if ($component->name !== '') {
-            $sql = sprintf('CONSTRAINT "%s" UNIQUE', $component->name);
+            $sql = sprintf('CONSTRAINT %s UNIQUE', $this->dialect->quoteIdentifier($component->name));
         }
 
         $sql .= StringUtils::join(
-            array_map(fn(string $column) => sprintf('"%s"', $column), $component->columns),
+            array_map(fn(string $column) => $this->dialect->quoteIdentifier($column), $component->columns),
             ', ',
             ' (',
             ')'

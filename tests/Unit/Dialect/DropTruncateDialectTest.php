@@ -39,7 +39,7 @@ final class DropTruncateDialectTest extends TestCase {
 
     public function testPostgresDropSequenceCascade(): void {
         $sql = Sequence::drop('order_id_seq')->ifExists()->cascade()->toSql(new PostgresDialect());
-        $this->assertSame('DROP SEQUENCE IF EXISTS ""order_id_seq"" CASCADE', $sql);
+        $this->assertSame('DROP SEQUENCE IF EXISTS "order_id_seq" CASCADE', $sql);
     }
 
     public function testPostgresDropView(): void {
@@ -78,12 +78,12 @@ final class DropTruncateDialectTest extends TestCase {
 
     public function testMariaDbDropIndexEmitsOnTable(): void {
         $sql = Index::drop('idx_users_email')->table('users')->toSql(new MariaDbDialect());
-        $this->assertSame('DROP INDEX "idx_users_email" ON "users"', $sql);
+        $this->assertSame('DROP INDEX `idx_users_email` ON `users`', $sql);
     }
 
     public function testMariaDbDropIndexIfExists(): void {
         $sql = Index::drop('idx_users_email')->table('users')->ifExists()->toSql(new MariaDbDialect());
-        $this->assertSame('DROP INDEX IF EXISTS "idx_users_email" ON "users"', $sql);
+        $this->assertSame('DROP INDEX IF EXISTS `idx_users_email` ON `users`', $sql);
     }
 
     public function testMariaDbDropIndexRejectsCascade(): void {
@@ -93,7 +93,7 @@ final class DropTruncateDialectTest extends TestCase {
 
     public function testMariaDbDropIndexFlattensTablePrefix(): void {
         $sql = Index::drop('idx')->table('reporting.events')->toSql(new MariaDbDialect());
-        $this->assertSame('DROP INDEX "idx" ON "reporting_events"', $sql);
+        $this->assertSame('DROP INDEX `idx` ON `reporting_events`', $sql);
     }
 
     // -------------------------------------------------------------------

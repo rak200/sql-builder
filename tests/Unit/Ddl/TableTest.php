@@ -45,7 +45,7 @@ final class TableTest extends TestCase {
             ->column(Column::create('id', DataType::Int))
             ->constraint(PrimaryKey::create()->columns(['id']));
 
-        $this->assertStringContainsString('PRIMARY KEY ("id")', $sql);
+        $this->assertStringContainsString('PRIMARY KEY (`id`)', $sql);
     }
 
     public function testAlterAddColumn(): void {

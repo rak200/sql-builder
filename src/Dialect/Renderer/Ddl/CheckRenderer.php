@@ -23,7 +23,7 @@ class CheckRenderer implements ComponentRenderer {
         $sql = 'CHECK';
 
         if ($component->name !== '') {
-            $sql = sprintf('CONSTRAINT "%s" CHECK', $component->name);
+            $sql = sprintf('CONSTRAINT %s CHECK', $this->dialect->quoteIdentifier($component->name));
         }
 
         $condition = $component->condition;

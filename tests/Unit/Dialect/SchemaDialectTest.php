@@ -150,13 +150,13 @@ final class SchemaDialectTest extends TestCase {
         $sql = Table::create('reporting.events')
             ->column(Column::create('id', DataType::Int)->nullable(false))
             ->toSql(new MariaDbDialect());
-        $this->assertStringContainsString('CREATE TABLE "`reporting_events`"', $sql);
+        $this->assertStringContainsString('CREATE TABLE `reporting_events`', $sql);
     }
 
     public function testMariaDbFlattensAlterTableAndRename(): void {
         $sql = Table::alter('reporting.events')->renameTo('reporting.activities')->toSql(new MariaDbDialect());
         $this->assertSame(
-            'ALTER TABLE "`reporting_events`" RENAME TO `reporting_activities`',
+            'ALTER TABLE `reporting_events` RENAME TO `reporting_activities`',
             $sql
         );
     }
@@ -188,7 +188,7 @@ final class SchemaDialectTest extends TestCase {
 
     public function testMariaDbFlattensIndexTarget(): void {
         $sql = Index::create('idx_user')->table('auth.users')->columns(['user_id'])->toSql(new MariaDbDialect());
-        $this->assertStringContainsString('ON "auth_users"', $sql);
+        $this->assertStringContainsString('ON `auth_users`', $sql);
     }
 
     public function testMariaDbFlattensForeignKeyReference(): void {
@@ -196,18 +196,18 @@ final class SchemaDialectTest extends TestCase {
             ->columns(['user_id'])
             ->references('auth.users', ['id'])
             ->onDelete(ForeignKeyAction::CASCADE);
-        $this->assertStringContainsString('REFERENCES "auth_users"', $fk->toSql(new MariaDbDialect()));
+        $this->assertStringContainsString('REFERENCES `auth_users`', $fk->toSql(new MariaDbDialect()));
     }
 
     public function testMariaDbFlattensViewName(): void {
         $sql = View::create('reporting.active_users')
             ->query(Select::create()->select('id')->from('users'))
             ->toSql(new MariaDbDialect());
-        $this->assertStringContainsString('VIEW "`reporting_active_users`"', $sql);
+        $this->assertStringContainsString('VIEW `reporting_active_users`', $sql);
     }
 
     public function testMariaDbFlattensSequenceName(): void {
         $sql = Sequence::create('reporting.id_seq')->toSql(new MariaDbDialect());
-        $this->assertSame('CREATE SEQUENCE "`reporting_id_seq`"', $sql);
+        $this->assertSame('CREATE SEQUENCE `reporting_id_seq`', $sql);
     }
 }

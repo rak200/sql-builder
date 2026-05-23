@@ -37,22 +37,22 @@ class IndexRenderer implements ComponentRenderer {
     protected function renderCreate(Index $component): string {
         $unique  = $component->unique ? 'UNIQUE ' : '';
         $columns = implode(', ', array_map(
-            fn(string $column) => sprintf('"%s"', $column),
+            fn(string $column) => $this->dialect->quoteIdentifier($column),
             $component->columns
         ));
 
         return sprintf(
-            'CREATE %sINDEX "%s" ON "%s" (%s)',
+            'CREATE %sINDEX %s ON %s (%s)',
             $unique,
-            $component->name,
-            $this->dialect->resolveTableName($component->table),
+            $this->dialect->quoteIdentifier($component->name),
+            $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->table)),
             $columns
         );
     }
 
     protected function renderDrop(Index $component): string {
         $ifExists = $component->ifExists ? ' IF EXISTS' : '';
-        $sql = sprintf('DROP INDEX%s "%s"', $ifExists, $component->name);
+        $sql = sprintf('DROP INDEX%s %s', $ifExists, $this->dialect->quoteIdentifier($component->name));
 
         if ($component->cascade) {
             $sql .= ' CASCADE';

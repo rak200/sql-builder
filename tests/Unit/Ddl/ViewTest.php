@@ -56,7 +56,7 @@ final class ViewTest extends TestCase {
     public function testExplicitColumnList(): void {
         $sql = (string) View::create('v')->columns('id', 'name')->query($this->someSelect());
 
-        $this->assertStringContainsString('("id", "name")', $sql);
+        $this->assertStringContainsString('(`id`, `name`)', $sql);
     }
 
     public function testWithCheckOptionDefault(): void {

@@ -126,12 +126,12 @@ final class DropTruncateTest extends TestCase {
     // -------------------------------------------------------------------
 
     public function testDropIndex(): void {
-        $this->assertSame('DROP INDEX "idx_users_email"', (string) Index::drop('idx_users_email'));
+        $this->assertSame('DROP INDEX `idx_users_email`', (string) Index::drop('idx_users_email'));
     }
 
     public function testDropIndexIfExistsCascade(): void {
         $this->assertSame(
-            'DROP INDEX IF EXISTS "idx_users_email" CASCADE',
+            'DROP INDEX IF EXISTS `idx_users_email` CASCADE',
             (string) Index::drop('idx_users_email')->ifExists()->cascade()
         );
     }
@@ -140,7 +140,7 @@ final class DropTruncateTest extends TestCase {
         // On the default (Postgres-style) dialect, the parent table is not
         // emitted on DROP INDEX even when set on the builder.
         $this->assertSame(
-            'DROP INDEX "idx"',
+            'DROP INDEX `idx`',
             (string) Index::drop('idx')->table('users')
         );
     }
@@ -150,19 +150,19 @@ final class DropTruncateTest extends TestCase {
     // -------------------------------------------------------------------
 
     public function testDropSequence(): void {
-        $this->assertSame('DROP SEQUENCE "`order_id_seq`"', (string) Sequence::drop('order_id_seq'));
+        $this->assertSame('DROP SEQUENCE `order_id_seq`', (string) Sequence::drop('order_id_seq'));
     }
 
     public function testDropSequenceIfExistsCascade(): void {
         $this->assertSame(
-            'DROP SEQUENCE IF EXISTS "`order_id_seq`" CASCADE',
+            'DROP SEQUENCE IF EXISTS `order_id_seq` CASCADE',
             (string) Sequence::drop('order_id_seq')->ifExists()->cascade()
         );
     }
 
     public function testDropSequenceRestrict(): void {
         $this->assertSame(
-            'DROP SEQUENCE "`order_id_seq`" RESTRICT',
+            'DROP SEQUENCE `order_id_seq` RESTRICT',
             (string) Sequence::drop('order_id_seq')->restrict()
         );
     }

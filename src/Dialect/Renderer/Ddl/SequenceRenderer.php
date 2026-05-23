@@ -35,7 +35,7 @@ class SequenceRenderer implements ComponentRenderer {
         $ifNotExists = $component->ifNotExists ? ' IF NOT EXISTS' : '';
 
         return sprintf(
-            'CREATE SEQUENCE%s "%s"%s',
+            'CREATE SEQUENCE%s %s%s',
             $ifNotExists,
             $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name)),
             $this->renderOptions($component)
@@ -51,7 +51,7 @@ class SequenceRenderer implements ComponentRenderer {
         }
 
         return sprintf(
-            'ALTER SEQUENCE "%s"%s%s',
+            'ALTER SEQUENCE %s%s%s',
             $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name)),
             $options,
             $restart
@@ -61,7 +61,7 @@ class SequenceRenderer implements ComponentRenderer {
     protected function renderDrop(Sequence $component): string {
         $ifExists = $component->ifExists ? ' IF EXISTS' : '';
         $sql = sprintf(
-            'DROP SEQUENCE%s "%s"',
+            'DROP SEQUENCE%s %s',
             $ifExists,
             $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->name))
         );

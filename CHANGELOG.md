@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-05-23
+
+### Changed
+- **BREAKING (0.x) DDL output change — consistent identifier quoting**. Every DDL renderer now routes identifiers through `Dialect::quoteIdentifier()` instead of wrapping them in literal double quotes or skipping the dialect entirely. Emitted SQL is semantically equivalent and parses identically, but the surface form changes for every DDL statement on every dialect:
+  - **Default dialect** — no more double-wrapped output: `CREATE TABLE \`users\` (...)` instead of `CREATE TABLE "\`users\`" (...)`, `CONSTRAINT \`pk_users\` PRIMARY KEY (\`id\`)` instead of `CONSTRAINT "pk_users" PRIMARY KEY ("id")`, and the same shape applies to `ALTER TABLE`, `DROP COLUMN`, `RENAME COLUMN ... TO ...`, `DROP CONSTRAINT`, `CREATE/DROP VIEW`, the view's explicit column list, `CREATE/DROP INDEX`, `CREATE/ALTER/DROP SEQUENCE`, `UNIQUE`, `FOREIGN KEY`, `REFERENCES`, and `CHECK` constraints.
+  - **Postgres** — single-layer quoting: `DROP SEQUENCE IF EXISTS "order_id_seq" CASCADE` instead of `DROP SEQUENCE IF EXISTS ""order_id_seq"" CASCADE`.
+  - **MariaDB** — `DROP INDEX` (and the rest of the constraint / index / sequence DDL surface) finally uses backticks instead of hard-coded double quotes: `` DROP INDEX `idx_users_email` ON `users` `` instead of `DROP INDEX "idx_users_email" ON "users"`. The same applies to the schema-prefix-flattening tests in `SchemaDialectTest` — flattened names like `reporting_events` are now emitted with the dialect's native quoting.
+- Eight DDL renderer files swept: `TableRenderer`, `ViewRenderer`, `IndexRenderer` (default + `MariaDb/Renderer/IndexRenderer` override), `SequenceRenderer`, `PrimaryKeyRenderer`, `UniqueKeyRenderer`, `ForeignKeyRenderer`, `CheckRenderer`. `SchemaRenderer` was already correct. 31 test assertions updated across `tests/Unit/Ddl/{Check,DropTruncate,ForeignKey,Index,PrimaryKey,Table,UniqueKey,View}Test.php` and `tests/Unit/Dialect/{SchemaDialect,DropTruncateDialect}Test.php` to match the cleaned output.
+- README "DDL drop / truncate" example comments updated to reflect the new emitted SQL on the default dialect.
+
+### Removed
+- The "Not yet implemented" subsection in the README is empty as of this release — `Consistent identifier quoting` was the last item on it.
+
 ## [0.7.0] - 2026-05-23
 
 ### Added
@@ -134,7 +147,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.8.0...HEAD
+[0.8.0]: https://github.com/rak200/sql-builder/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/rak200/sql-builder/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/rak200/sql-builder/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/rak200/sql-builder/compare/0.4.0...0.5.0

@@ -10,17 +10,17 @@ use Rak200\SqlBuilder\Ddl\PrimaryKey;
 final class PrimaryKeyTest extends TestCase {
 
     public function testUnnamedPrimaryKey(): void {
-        $this->assertSame('PRIMARY KEY ("id")', (string) PrimaryKey::create()->columns(['id']));
+        $this->assertSame('PRIMARY KEY (`id`)', (string) PrimaryKey::create()->columns(['id']));
     }
 
     public function testNamedPrimaryKey(): void {
         $sql = (string) PrimaryKey::create('pk_users')->columns(['id']);
 
-        $this->assertSame('CONSTRAINT "pk_users" PRIMARY KEY ("id")', $sql);
+        $this->assertSame('CONSTRAINT `pk_users` PRIMARY KEY (`id`)', $sql);
     }
 
     public function testCompositePrimaryKey(): void {
-        $this->assertSame('PRIMARY KEY ("a", "b")', (string) PrimaryKey::create()->columns(['a', 'b']));
+        $this->assertSame('PRIMARY KEY (`a`, `b`)', (string) PrimaryKey::create()->columns(['a', 'b']));
     }
 
     public function testNoColumnsOmitsParenthesis(): void {

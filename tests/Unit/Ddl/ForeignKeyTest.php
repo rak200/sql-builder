@@ -16,7 +16,7 @@ final class ForeignKeyTest extends TestCase {
             ->references('roles', ['id']);
 
         $this->assertSame(
-            'CONSTRAINT "fk_users_role" FOREIGN KEY ("role_id") REFERENCES "roles" ("id")',
+            'CONSTRAINT `fk_users_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)',
             $sql
         );
     }
@@ -55,7 +55,7 @@ final class ForeignKeyTest extends TestCase {
             ->columns(['a_id', 'b_id'])
             ->references('parents', ['a', 'b']);
 
-        $this->assertStringContainsString('("a_id", "b_id")', $sql);
-        $this->assertStringContainsString('REFERENCES "parents" ("a", "b")', $sql);
+        $this->assertStringContainsString('(`a_id`, `b_id`)', $sql);
+        $this->assertStringContainsString('REFERENCES `parents` (`a`, `b`)', $sql);
     }
 }

@@ -38,10 +38,10 @@ class IndexRenderer extends BaseIndexRenderer {
         $ifExists = $component->ifExists ? ' IF EXISTS' : '';
 
         return sprintf(
-            'DROP INDEX%s "%s" ON "%s"',
+            'DROP INDEX%s %s ON %s',
             $ifExists,
-            $component->name,
-            $this->dialect->resolveTableName($component->table)
+            $this->dialect->quoteIdentifier($component->name),
+            $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->table))
         );
     }
 }

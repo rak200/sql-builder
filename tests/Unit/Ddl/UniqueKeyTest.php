@@ -10,16 +10,16 @@ use Rak200\SqlBuilder\Ddl\UniqueKey;
 final class UniqueKeyTest extends TestCase {
 
     public function testUnnamedUnique(): void {
-        $this->assertSame('UNIQUE ("email")', (string) UniqueKey::create()->columns(['email']));
+        $this->assertSame('UNIQUE (`email`)', (string) UniqueKey::create()->columns(['email']));
     }
 
     public function testNamedUnique(): void {
         $sql = (string) UniqueKey::create('uq_email')->columns(['email']);
 
-        $this->assertSame('CONSTRAINT "uq_email" UNIQUE ("email")', $sql);
+        $this->assertSame('CONSTRAINT `uq_email` UNIQUE (`email`)', $sql);
     }
 
     public function testCompositeUnique(): void {
-        $this->assertSame('UNIQUE ("a", "b")', (string) UniqueKey::create()->columns(['a', 'b']));
+        $this->assertSame('UNIQUE (`a`, `b`)', (string) UniqueKey::create()->columns(['a', 'b']));
     }
 }

@@ -24,11 +24,11 @@ class ForeignKeyRenderer implements ComponentRenderer {
         $sql = 'FOREIGN KEY';
 
         if ($component->name !== '') {
-            $sql = sprintf('CONSTRAINT "%s" FOREIGN KEY', $component->name);
+            $sql = sprintf('CONSTRAINT %s FOREIGN KEY', $this->dialect->quoteIdentifier($component->name));
         }
 
         $sql .= StringUtils::join(
-            array_map(fn(string $column) => sprintf('"%s"', $column), $component->columns),
+            array_map(fn(string $column) => $this->dialect->quoteIdentifier($column), $component->columns),
             ', ',
             ' (',
             ')'
@@ -36,9 +36,12 @@ class ForeignKeyRenderer implements ComponentRenderer {
 
         if ($component->referenceTable !== '') {
             $sql .= StringUtils::join(
-                array_map(fn(string $column) => sprintf('"%s"', $column), $component->referenceColumns),
+                array_map(fn(string $column) => $this->dialect->quoteIdentifier($column), $component->referenceColumns),
                 ', ',
-                sprintf(' REFERENCES "%s" (', $this->dialect->resolveTableName($component->referenceTable)),
+                sprintf(
+                    ' REFERENCES %s (',
+                    $this->dialect->quoteIdentifier($this->dialect->resolveTableName($component->referenceTable))
+                ),
                 ')'
             );
         }

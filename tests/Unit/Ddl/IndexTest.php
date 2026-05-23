@@ -12,18 +12,18 @@ final class IndexTest extends TestCase {
     public function testBasicIndex(): void {
         $sql = (string) Index::create('idx_users_email')->table('users')->columns(['email']);
 
-        $this->assertSame('CREATE INDEX "idx_users_email" ON "users" ("email")', $sql);
+        $this->assertSame('CREATE INDEX `idx_users_email` ON `users` (`email`)', $sql);
     }
 
     public function testUniqueIndex(): void {
         $sql = (string) Index::create('idx_users_email')->table('users')->columns(['email'])->unique();
 
-        $this->assertSame('CREATE UNIQUE INDEX "idx_users_email" ON "users" ("email")', $sql);
+        $this->assertSame('CREATE UNIQUE INDEX `idx_users_email` ON `users` (`email`)', $sql);
     }
 
     public function testCompositeIndex(): void {
         $sql = (string) Index::create('idx_x')->table('t')->columns(['a', 'b']);
 
-        $this->assertStringContainsString('("a", "b")', $sql);
+        $this->assertStringContainsString('(`a`, `b`)', $sql);
     }
 }

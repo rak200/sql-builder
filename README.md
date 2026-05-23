@@ -309,12 +309,12 @@ echo View::drop('active_users')->ifExists();
 // DROP VIEW IF EXISTS `active_users`
 
 echo Index::drop('idx_users_email')->ifExists()->cascade();
-// DROP INDEX IF EXISTS "idx_users_email" CASCADE
+// DROP INDEX IF EXISTS `idx_users_email` CASCADE
 // (MariaDB requires the parent table; call ->table('users') and the dialect
-//  will emit `DROP INDEX "idx_users_email" ON "users"`.)
+//  will emit `DROP INDEX `idx_users_email` ON `users``.)
 
 echo Sequence::drop('order_id_seq')->ifExists()->cascade();
-// DROP SEQUENCE IF EXISTS "`order_id_seq`" CASCADE
+// DROP SEQUENCE IF EXISTS `order_id_seq` CASCADE
 ```
 
 MariaDB rejects PostgreSQL-only TRUNCATE modifiers (`RESTART IDENTITY`, `CONTINUE IDENTITY`, `CASCADE`, `RESTRICT`) with `UnsupportedFeatureException`. `DROP INDEX` on MariaDB requires the parent table — see {@see MariaDbDialect}.
@@ -339,7 +339,7 @@ Use `Expression::column()` for SELECT projections (supports an alias), `Expressi
 
 ## Status & Roadmap
 
-Current version: **0.7.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
+Current version: **0.8.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
 
 ### What works today
 
@@ -351,11 +351,6 @@ Current version: **0.7.0** — early development, **unstable**. The API may stil
 - **UUID columns:** `DataType::Uuid` for DDL plus `Expression::uuid(value)` / `Expression::uuidColumn(name)` for DML. PostgreSQL gets the native `UUID` type with `::uuid` casts on literals/parameters where the type can't be inferred; MariaDB stores as `BINARY(16)` with transparent `UUID_TO_BIN(...)` / `BIN_TO_UUID(...)` wrapping at value and projection boundaries — same pattern as the schema simulation.
 - **Dialects:** abstract `Dialect` base with a permissive `DefaultDialect`, vendor dialects (`MariaDbDialect` / `MariaDb105Dialect`, `PostgresDialect` / `Postgres15Dialect`), one renderer class per component, runtime selection via `Dialect::fromDsn()`, opt-in per-call rendering via `toSql(Dialect)`. Vendor-specific feature gates (e.g. PostgreSQL rejects `ON DUPLICATE KEY UPDATE`, MariaDB <10.5 rejects `RETURNING`) raise `UnsupportedFeatureException`.
 - **Tests:** PHPUnit 13 unit suite under `tests/Unit/`; run with `composer test`.
-
-### Not yet implemented
-
-Safety & quality
-- [ ] Consistent identifier quoting across all builders (`Expression::quoteIdentifier()` uses backticks, while `Table`/`View`/`Index`/`Sequence`/constraint builders emit `"..."`).
 
 ## Versioning
 

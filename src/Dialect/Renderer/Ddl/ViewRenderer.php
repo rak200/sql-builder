@@ -44,7 +44,7 @@ class ViewRenderer implements ComponentRenderer {
         $ifNotExists = $component->ifNotExists ? ' IF NOT EXISTS' : '';
 
         $sql = sprintf(
-            'CREATE%s%s VIEW%s "%s"',
+            'CREATE%s%s VIEW%s %s',
             $orReplace,
             $temporary,
             $ifNotExists,
@@ -77,7 +77,7 @@ class ViewRenderer implements ComponentRenderer {
 
     protected function renderColumnList(View $component): string {
         return StringUtils::join(
-            array_map(fn(string $column) => sprintf('"%s"', $column), $component->columns),
+            array_map(fn(string $column) => $this->dialect->quoteIdentifier($column), $component->columns),
             ', ',
             ' (',
             ')'
