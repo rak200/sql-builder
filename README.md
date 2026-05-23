@@ -12,7 +12,7 @@ composer require rak200/sql-builder
 
 | Layer | Classes | Purpose |
 |-------|---------|---------|
-| **DML** | `Select`, `Set` | Query building (SELECT, set operations) |
+| **DML** | `Select`, `Set`, `Insert`, `Update`, `Delete`, `Merge` | Query building (SELECT, set operations, DML, SQL:2003 MERGE) |
 | **DDL** | `Table`, `Column`, `View`, `Sequence`, `Index`, constraints | Schema definition |
 | **Common** | `Expr` (factory), `Expression\*`, `Reference\*`, `Join`, `Order`, `Window` | Shared building blocks |
 | **Enums** | `Operator\Binary`, `Operator\Math`, `Sort\Direction`, … | Type-safe SQL keywords |
@@ -123,6 +123,45 @@ Expr::case('status')
 
 In simple form, scalar `when()` values are auto-wrapped as literals. In searched form, the condition must be an `ExpressionInterface` (typically a binary expression).
 
+### `GROUP BY` extensions — `ROLLUP`, `CUBE`, `GROUPING SETS`
+
+```php
+use Rak200\SqlBuilder\Common\Expr;
+
+Select::create()
+    ->select('region', 'product', Expr::sum('amount'))
+    ->from('sales')
+    ->groupBy(Expr::rollup('region', 'product'));
+
+Select::create()
+    ->select('region', 'product', Expr::sum('amount'))
+    ->from('sales')
+    ->groupBy(Expr::groupingSets(['region', 'product'], ['region'], []));
+```
+
+Pass arrays to `groupingSets()` to declare tuples; `[]` emits the SQL grand-total grouping `()`.
+
+### `LATERAL` joins
+
+```php
+use Rak200\SqlBuilder\Common\Expr;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary;
+
+$recent = Select::create()
+    ->select('order_id')
+    ->from('orders')
+    ->where(Expr::binary('orders.user_id', Binary::Eq, Expr::ref('u.id')))
+    ->limit(5);
+
+Select::create()
+    ->select('u.id', 'recent.order_id')
+    ->from('users', 'u')
+    ->lateralJoin($recent, 'recent', Expr::raw('TRUE'));
+// SELECT ... FROM `users` AS `u` INNER JOIN LATERAL (SELECT ...) AS `recent` ON TRUE
+```
+
+`Select` also exposes `leftLateralJoin()` and `crossLateralJoin()`. The subquery on the right of a `LATERAL` join may reference columns from earlier `FROM` items.
+
 ### Set operations (UNION, EXCEPT, INTERSECT)
 
 ```php
@@ -166,6 +205,30 @@ $upsert = Insert::create()
 ```
 
 Scalar values are quoted automatically; `ExpressionInterface` arguments (e.g. `Expr::raw('NOW()')`, sequences) pass through unchanged.
+
+#### Portable upsert — `onConflict()`
+
+`onConflict()` is the cross-dialect upsert API. On the default and Postgres dialects it renders the SQL-standard `ON CONFLICT (cols) DO UPDATE SET ...`; on MariaDB / MySQL it is automatically translated to `ON DUPLICATE KEY UPDATE`.
+
+```php
+use Rak200\SqlBuilder\Common\Expr;
+use Rak200\SqlBuilder\Dml\Insert;
+
+Insert::create()
+    ->into('users')
+    ->columns('id', 'email')
+    ->values(1, 'a@example.com')
+    ->onConflict('id')
+    ->doUpdate(['email' => Expr::raw('EXCLUDED.email')]);
+// Default/Postgres: ... ON CONFLICT (`id`) DO UPDATE SET `email` = EXCLUDED.email
+// MariaDB:          ... ON DUPLICATE KEY UPDATE `email` = EXCLUDED.email
+
+Insert::create()
+    ->into('users')->columns('id')->values(1)
+    ->onConflict('id')->doNothing();          // Postgres only; MariaDB rejects
+```
+
+`onConflictWhere(predicate)` adds a `WHERE` filter to the `DO UPDATE` action (Postgres only). For raw MariaDB-flavoured statements the legacy `onDuplicateKeyUpdate()` is still available; mixing the two on the same statement throws.
 
 ### UPDATE
 
@@ -216,6 +279,23 @@ $bulk = Delete::create()
     ->returning('u.id');
 ```
 
+### MERGE (SQL:2003)
+
+```php
+use Rak200\SqlBuilder\Common\Expr;
+use Rak200\SqlBuilder\Common\Enum\Operator\Binary;
+use Rak200\SqlBuilder\Dml\Merge;
+
+$merge = Merge::create()
+    ->into('target', 't')
+    ->using('source', 's')
+    ->on(Expr::binary('t.id', Binary::Eq, Expr::ref('s.id')))
+    ->whenMatchedUpdate(['name' => Expr::ref('s.name')])
+    ->whenNotMatchedInsert(['id', 'name'], [Expr::ref('s.id'), Expr::ref('s.name')]);
+```
+
+Branch helpers: `whenMatchedUpdate(assignments, predicate?)`, `whenMatchedDelete(predicate?)`, `whenNotMatchedInsert(columns, values, predicate?)`, `whenDoNothing(matched, predicate?)`. Branches are emitted in declaration order. `MERGE` is accepted on the default dialect and on `Postgres15Dialect`; older Postgres and MariaDB / MySQL throw `UnsupportedFeatureException` (use `Insert::onConflict()` or `Insert::onDuplicateKeyUpdate()` there).
+
 ## DDL — Schema
 
 ### Table
@@ -244,6 +324,20 @@ $alter = Table::alter('users')
     ->dropColumn('legacy_flag')
     ->renameColumn('email', 'email_address');
 ```
+
+### Unique constraint
+
+```php
+use Rak200\SqlBuilder\Ddl\UniqueKey;
+
+UniqueKey::create('uq_users_email')->columns(['email']);
+// CONSTRAINT `uq_users_email` UNIQUE (`email`)
+
+UniqueKey::create('uq_users_email')->columns(['email'])->nullsNotDistinct();
+// CONSTRAINT `uq_users_email` UNIQUE NULLS NOT DISTINCT (`email`)   (Postgres 15+)
+```
+
+`NULLS [NOT] DISTINCT` is accepted on the default dialect and on `Postgres15Dialect`; older Postgres and MariaDB / MySQL throw `UnsupportedFeatureException` since neither engine has an equivalent.
 
 ### Foreign key
 
@@ -339,28 +433,18 @@ Use `Expr::col()` for SELECT projections (supports an alias), `Expr::ref()` for 
 
 ## Status & Roadmap
 
-Current version: **0.10.1** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
+Current version: **0.11.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
 
 ### What works today
 
-- **DML:** `Select` (DISTINCT, JOINs incl. NATURAL/USING, WHERE/AND/OR, GROUP BY, HAVING, ORDER BY with NULL placement, LIMIT/OFFSET, subqueries), `Set` (UNION, UNION ALL, EXCEPT, INTERSECT) with ORDER BY/LIMIT/OFFSET on the combined result, `Insert` (single/multi-row VALUES, INSERT ... SELECT, ON DUPLICATE KEY UPDATE, RETURNING), `Update` (SET, multi-table FROM, WHERE, ORDER BY/LIMIT, RETURNING), `Delete` (multi-table USING, WHERE, ORDER BY/LIMIT, RETURNING).
-- **DDL:** `Table` (CREATE, ALTER, DROP, TRUNCATE — with IF EXISTS / CASCADE / RESTRICT / RESTART IDENTITY / CONTINUE IDENTITY modifiers and ADD/DROP/MODIFY/RENAME column, ADD/DROP CONSTRAINT, ADD INDEX, RENAME TO in ALTER mode), `Column`, `View` (CREATE with OR REPLACE / TEMPORARY / IF NOT EXISTS / WITH CHECK OPTION, plus DROP), `Sequence` (CREATE, ALTER incl. RESTART / NEXTVAL, and DROP), `Index` (CREATE and DROP), `Schema` (CREATE / DROP / ALTER ... RENAME TO; on MariaDB simulated as table-name prefixing), and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
-- **Expressions:** binary/unary operators (compact mnemonics `Eq`/`Ne`/`Gt`/`Lt`/`Ge`/`Le`, plus null-safe `NullSafeEq`/`NullSafeNe` that emit `IS [NOT] DISTINCT FROM` on the default/Postgres dialect and `<=>` / `NOT (<=>)` on MariaDB), AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), `CASE WHEN` (searched and simple forms), window functions (`OVER (PARTITION BY ... ORDER BY ... ROWS/RANGE/GROUPS ...)`), raw SQL escape hatch, identifier and value quoting.
+- **DML:** `Select` (DISTINCT, JOINs incl. NATURAL/USING/LATERAL, WHERE/AND/OR, GROUP BY with `ROLLUP` / `CUBE` / `GROUPING SETS`, HAVING, ORDER BY with NULL placement, LIMIT/OFFSET, subqueries), `Set` (UNION, UNION ALL, EXCEPT, INTERSECT) with ORDER BY/LIMIT/OFFSET on the combined result, `Insert` (single/multi-row VALUES, INSERT ... SELECT, portable `onConflict()->doUpdate()` / `->doNothing()`, legacy `onDuplicateKeyUpdate()`, RETURNING), `Update` (SET, multi-table FROM, WHERE, ORDER BY/LIMIT, RETURNING), `Delete` (multi-table USING, WHERE, ORDER BY/LIMIT, RETURNING), `Merge` (SQL:2003 — `WHEN MATCHED THEN UPDATE/DELETE/DO NOTHING`, `WHEN NOT MATCHED THEN INSERT/DO NOTHING`, optional branch predicates, RETURNING).
+- **DDL:** `Table` (CREATE, ALTER, DROP, TRUNCATE — with IF EXISTS / CASCADE / RESTRICT / RESTART IDENTITY / CONTINUE IDENTITY modifiers and ADD/DROP/MODIFY/RENAME column, ADD/DROP CONSTRAINT, ADD INDEX, RENAME TO in ALTER mode), `Column`, `View` (CREATE with OR REPLACE / TEMPORARY / IF NOT EXISTS / WITH CHECK OPTION, plus DROP), `Sequence` (CREATE, ALTER incl. RESTART / NEXTVAL, and DROP), `Index` (CREATE and DROP), `Schema` (CREATE / DROP / ALTER ... RENAME TO; on MariaDB simulated as table-name prefixing), and constraints (`PrimaryKey`, `UniqueKey` with optional `NULLS [NOT] DISTINCT`, `ForeignKey`, `Check`).
+- **Expressions:** binary/unary operators (compact mnemonics `Eq`/`Ne`/`Gt`/`Lt`/`Ge`/`Le`, plus null-safe `NullSafeEq`/`NullSafeNe` that emit `IS [NOT] DISTINCT FROM` on the default/Postgres dialect and `<=>` / `NOT (<=>)` on MariaDB), AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), `CASE WHEN` (searched and simple forms), window functions (`OVER (PARTITION BY ... ORDER BY ... ROWS/RANGE/GROUPS ...)`), `GROUP BY` grouping extensions (`ROLLUP`, `CUBE`, `GROUPING SETS`), raw SQL escape hatch, identifier and value quoting.
 - **SELECT extensions:** Common Table Expressions (`WITH name [(cols)] AS (...)`) with `Select::with()` / `withRecursive()`, including multi-CTE and recursive bodies via `Set` unions.
 - **Parameter binding:** opt-in `prepare(Dialect): PreparedStatement` on every DML builder. `Expr::param(int|string, mixed)` declares positional (`?` / `$N`) or named (`:name`) placeholders; existing `Expression\Value` instances auto-convert in bind mode. Postgres reuses `$N` natively for repeated keys; MariaDB/MySQL duplicates values per `?` occurrence; named placeholders are reusable on both via PDO emulation.
 - **UUID columns:** `DataType::Uuid` for DDL plus `Expr::uuid(value)` / `Expr::uuidColumn(name)` for DML. PostgreSQL gets the native `UUID` type with `::uuid` casts on literals/parameters where the type can't be inferred; MariaDB stores as `BINARY(16)` with transparent `UUID_TO_BIN(...)` / `BIN_TO_UUID(...)` wrapping at value and projection boundaries — same pattern as the schema simulation.
 - **Dialects:** abstract `Dialect` base with a permissive `DefaultDialect`, vendor dialects (`MariaDbDialect` / `MariaDb105Dialect`, `PostgresDialect` / `Postgres15Dialect`), one renderer class per component, runtime selection via `Dialect::fromDsn()`, opt-in per-call rendering via `toSql(Dialect)`. Vendor-specific feature gates (e.g. PostgreSQL rejects `ON DUPLICATE KEY UPDATE`, MariaDB <10.5 rejects `RETURNING`) raise `UnsupportedFeatureException`.
 - **Tests:** PHPUnit 13 unit suite under `tests/Unit/`; run with `composer test`.
-
-### Planned
-
-Not yet implemented — contributions welcome:
-
-- **`MERGE` statement** (SQL:2003). First-class support on `Postgres15Dialect`; fall back to dialect-native equivalents elsewhere (`INSERT ... ON CONFLICT` on Postgres <15, `INSERT ... ON DUPLICATE KEY UPDATE` on MariaDB).
-- **`INSERT ... ON CONFLICT`** for PostgreSQL — a portable `Insert::onConflict(...)` API that the dialect layer renders as `ON CONFLICT (...) DO UPDATE` on Postgres and as `ON DUPLICATE KEY UPDATE` on MariaDB/MySQL.
-- **`NULLS [NOT] DISTINCT`** on `UniqueKey` — Postgres 15+ constraint modifier, rejected on older Postgres and on MariaDB.
-- **`LATERAL` joins** — Postgres and MariaDB 10.2+, exposed via a new `lateralJoin()` / `leftLateralJoin()` family on `Select`.
-- **`GROUPING SETS` / `ROLLUP` / `CUBE`** in `Select::groupBy()` — grouping extensions from SQL:1999, supported on all major engines.
 
 ## Versioning
 

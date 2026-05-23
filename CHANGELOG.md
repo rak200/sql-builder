@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-05-23
+
+### Added
+- **`MERGE` statement** (SQL:2003) — new `Rak200\SqlBuilder\Dml\Merge` builder with fluent `into()` / `using()` / `on()` and the four standard branch helpers: `whenMatchedUpdate(assignments, predicate?)`, `whenMatchedDelete(predicate?)`, `whenNotMatchedInsert(columns, values, predicate?)`, `whenDoNothing(matched, predicate?)`. Optional `RETURNING`. Accepted on the default dialect and on `Postgres15Dialect`; rejected with `UnsupportedFeatureException` on the base `PostgresDialect` (pre-15), on `MariaDbDialect`, and on `MariaDb105Dialect` since neither MariaDB nor MySQL implement the statement.
+- **Portable `INSERT ... ON CONFLICT`** — `Insert::onConflict(string|string[])` followed by `doUpdate(assignments)` or `doNothing()`, plus optional `onConflictWhere(predicate)`. Default and Postgres dialects emit the SQL-standard `ON CONFLICT (cols) DO UPDATE SET ... [WHERE ...]` / `DO NOTHING`; MariaDB / MySQL transparently translate `doUpdate(...)` to `ON DUPLICATE KEY UPDATE`, and reject `doNothing()` / `onConflictWhere()` (suggesting `INSERT IGNORE` or `onDuplicateKeyUpdate()`). Mixing `onConflict()` and `onDuplicateKeyUpdate()` on the same statement throws.
+- **`NULLS [NOT] DISTINCT` on `UniqueKey`** — new `UniqueKey::nullsDistinct()` / `nullsNotDistinct()` modifiers. Accepted on the default dialect and on `Postgres15Dialect`; rejected with `UnsupportedFeatureException` on the base `PostgresDialect` (<15) and on every MariaDB dialect (MariaDB and MySQL have no equivalent).
+- **`LATERAL` joins** — new `Select::lateralJoin()`, `leftLateralJoin()`, and `crossLateralJoin()` family, plus a `Join::lateral()` modifier on the value object. Renders the join target prefixed with `LATERAL`, enabling the right-hand subquery to reference columns from earlier `FROM` items. Join validation rejects `LATERAL` combined with `NATURAL` or `USING`.
+- **`GROUP BY` grouping extensions** — `Expr::rollup(...)`, `Expr::cube(...)`, and `Expr::groupingSets(...)` factories backed by a new `Common\Expression\Grouping` expression and `Common\Enum\GroupingMode` enum. Items passed to `groupingSets()` may be strings, expressions, or arrays (rendered as tuples; `[]` emits the grand-total grouping `()`). Plugs into the existing `Select::groupBy()` without a separate API.
+- **`Dialect::renderMerge()` / `renderGroupingExpression()`** plus the matching `MergeRenderer` / `GroupingExpressionRenderer` slots, lazy accessors, and `__clone()` reset entries on `DefaultDialect`. Vendor dialects wire their overrides where needed (`MariaDb\Renderer\MergeRenderer`, `Postgres\Renderer\MergeRenderer`, `MariaDb\Renderer\UniqueKeyRenderer`, `Postgres\Renderer\UniqueKeyRenderer`, `MariaDb\Renderer\InsertRenderer105`).
+- 46 new tests across `tests/Unit/Ddl/UniqueKeyTest.php`, `tests/Unit/Common/GroupingExpressionTest.php`, `tests/Unit/Dml/LateralJoinTest.php`, `tests/Unit/Dml/OnConflictTest.php`, `tests/Unit/Dml/MergeTest.php`, `tests/Unit/Dialect/NullsDistinctDialectTest.php`, and `tests/Unit/Dialect/MergeDialectTest.php`. Suite: 445 → 491 passing.
+
+### Changed
+- `MariaDb105Dialect::insertRenderer()` now wires `MariaDb\Renderer\InsertRenderer105` (a subclass of `MariaDb\Renderer\InsertRenderer` that re-enables RETURNING) instead of the default `InsertRenderer`. This keeps the `ON CONFLICT → ON DUPLICATE KEY UPDATE` translation on MariaDB 10.5+ while preserving `RETURNING` support.
+- README and CLAUDE.md updated to document the new APIs; the README's `### Planned` section is removed (every item it listed shipped in this release).
+
 ## [0.10.1] - 2026-05-23
 
 ### Fixed
@@ -204,7 +219,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.10.1...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.11.0...HEAD
+[0.11.0]: https://github.com/rak200/sql-builder/compare/0.10.1...0.11.0
 [0.10.1]: https://github.com/rak200/sql-builder/compare/0.10.0...0.10.1
 [0.10.0]: https://github.com/rak200/sql-builder/compare/0.9.0...0.10.0
 [0.9.0]: https://github.com/rak200/sql-builder/compare/0.8.0...0.9.0

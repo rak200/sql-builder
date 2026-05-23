@@ -41,6 +41,25 @@ final class Insert implements ExpressionInterface {
     /** @var array<string, ExpressionInterface> ON DUPLICATE KEY UPDATE assignments. */
     public private(set) array $onDuplicateKey = [];
 
+    /**
+     * Portable upsert target columns, or null when no `onConflict()` call was made.
+     *
+     * Empty array means "no conflict target" (Postgres allows it for a
+     * primary-key implicit target; MariaDB ignores the target list entirely).
+     *
+     * @var string[]|null
+     */
+    public private(set) ?array $conflictColumns = null;
+
+    /** @var array<string, ExpressionInterface>|null DO UPDATE SET assignments, or null for DO NOTHING. */
+    public private(set) ?array $conflictUpdates = null;
+
+    /** @var bool Whether onConflict() resolved to DO NOTHING. */
+    public private(set) bool $conflictDoNothing = false;
+
+    /** @var ExpressionInterface|null Optional WHERE predicate on the DO UPDATE action (Postgres-only). */
+    public private(set) ?ExpressionInterface $conflictWhere = null;
+
     /** @var ExpressionInterface[] RETURNING expressions. */
     public private(set) array $returning = [];
 
@@ -94,6 +113,74 @@ final class Insert implements ExpressionInterface {
         $this->onDuplicateKey[$column] = $value instanceof ExpressionInterface
             ? $value
             : Expression::val($value);
+        return $this;
+    }
+
+    /**
+     * Declare the conflict target for a portable upsert.
+     *
+     * Follow with {@see doUpdate()} or {@see doNothing()} to specify the
+     * resolution. Render-time the dialect translates to its native form:
+     * `ON CONFLICT (...) DO UPDATE` on Postgres/default, `ON DUPLICATE KEY
+     * UPDATE` on MariaDB / MySQL.
+     *
+     * @param string|string[] $columns Conflict target column(s); pass `[]` to
+     *                                  omit the target list (Postgres infers a
+     *                                  primary-key conflict).
+     */
+    public function onConflict(string|array $columns = []): static {
+        $this->conflictColumns = is_array($columns) ? array_values($columns) : [$columns];
+        return $this;
+    }
+
+    /**
+     * Resolve a previously-declared `onConflict()` to a SET-based update.
+     *
+     * @param array<string, mixed> $assignments Column-to-value map; scalars
+     *                                          are wrapped in {@see Expression::val()}.
+     * @throws InvalidArgumentException When called before {@see onConflict()}.
+     */
+    public function doUpdate(array $assignments): static {
+        if ($this->conflictColumns === null) {
+            throw new InvalidArgumentException('doUpdate() requires a prior onConflict() call.');
+        }
+        $this->conflictDoNothing = false;
+        $this->conflictUpdates   = [];
+        foreach ($assignments as $column => $value) {
+            $this->conflictUpdates[$column] = $value instanceof ExpressionInterface
+                ? $value
+                : Expression::val($value);
+        }
+        return $this;
+    }
+
+    /**
+     * Resolve a previously-declared `onConflict()` to ignore the conflicting row.
+     *
+     * Translates to `ON CONFLICT ... DO NOTHING` on Postgres; rejected on
+     * MariaDB / MySQL (use the engine-specific `INSERT IGNORE` instead).
+     *
+     * @throws InvalidArgumentException When called before {@see onConflict()}.
+     */
+    public function doNothing(): static {
+        if ($this->conflictColumns === null) {
+            throw new InvalidArgumentException('doNothing() requires a prior onConflict() call.');
+        }
+        $this->conflictDoNothing = true;
+        $this->conflictUpdates   = null;
+        return $this;
+    }
+
+    /**
+     * Filter the `DO UPDATE` action by a predicate (Postgres-only).
+     *
+     * @throws InvalidArgumentException When called outside a `doUpdate()` chain.
+     */
+    public function onConflictWhere(ExpressionInterface $condition): static {
+        if ($this->conflictUpdates === null || $this->conflictDoNothing) {
+            throw new InvalidArgumentException('onConflictWhere() applies only to doUpdate() resolutions.');
+        }
+        $this->conflictWhere = $condition;
         return $this;
     }
 

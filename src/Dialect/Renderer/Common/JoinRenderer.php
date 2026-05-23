@@ -22,8 +22,9 @@ class JoinRenderer implements ComponentRenderer {
     public function render(Join $component): string {
         $component->validate();
 
-        $type = $component->natural ? "NATURAL {$component->type->value}" : $component->type->value;
-        $sql  = $type . ' ' . $this->dialect->renderTableReference($component->table);
+        $type    = $component->natural ? "NATURAL {$component->type->value}" : $component->type->value;
+        $lateral = $component->lateral ? 'LATERAL ' : '';
+        $sql     = $type . ' ' . $lateral . $this->dialect->renderTableReference($component->table);
 
         if ($component->on !== null) {
             return $sql . ' ON ' . $this->dialect->renderExpression($component->on);

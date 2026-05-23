@@ -23,14 +23,14 @@ sql-builder/
 │   │   ├── Expr.php                  # abstract factory base
 │   │   ├── ExpressionInterface.php   # extends Rak200\Caster\Contracts\ToString
 │   │   ├── Expression/*.php          # Binary, Unary, Column, Value, Raw, Func, CaseWhen, Exists,
-│   │   │                             # Subquery, Param, UuidInput, UuidOutput, Window
+│   │   │                             # Subquery, Param, UuidInput, UuidOutput, Window, Grouping
 │   │   ├── Reference/*.php           # Column, Table, Identifier
 │   │   ├── Enum/
 │   │   │   ├── Operator/*.php        # Binary, Math, Unary
 │   │   │   ├── Sort/*.php            # Direction, Nulls
-│   │   │   └── *.php                 # JoinType, ForeignKeyAction, CheckOption, DataType
+│   │   │   └── *.php                 # JoinType, ForeignKeyAction, CheckOption, DataType, GroupingMode
 │   │   ├── Join.php, Order.php, Window.php   # value objects
-│   ├── Dml/                          # Select, Set, Insert, Update, Delete, Cte
+│   ├── Dml/                          # Select, Set, Insert, Update, Delete, Merge, MergeClause, Cte
 │   ├── Ddl/                          # Column, Table, View, Sequence, Index, Schema + constraints
 │   ├── Dialect/                      # see "Dialect Architecture" below
 │   └── Prepared/                     # PreparedStatement, Binder
@@ -61,11 +61,16 @@ Production classes live under `Rak200\SqlBuilder\` (PSR-4 from `src/`); test cla
 - `Expr::param(int|string $key, $value?)` — prepared-statement placeholder
 - `Expr::uuid($value)` / `Expr::uuidColumn($name, ?$alias)` — UUID wrappers
 - `Expr::over($func, Window $window)` — windowed function
+- `Expr::rollup(...)` / `Expr::cube(...)` / `Expr::groupingSets(...)` — GROUP BY extensions (arrays in `groupingSets` become tuples; `[]` emits the grand-total grouping)
 - `Expr::identifier($name)` — bare identifier for `USING (...)`
 
-**`Select`** — main DML builder; fluent chain: `->select()->from()->join()->where()->groupBy()->having()->orderBy()->limit()->offset()`. Plus `->with()` / `->withRecursive()` for CTEs.
+**`Select`** — main DML builder; fluent chain: `->select()->from()->join()->where()->groupBy()->having()->orderBy()->limit()->offset()`. Plus `->with()` / `->withRecursive()` for CTEs and `->lateralJoin()` / `->leftLateralJoin()` / `->crossLateralJoin()` for `LATERAL` joins.
 
 **`Set`** — wraps multiple `Select` with set operators: `Set::union()`, `Set::unionAll()`, `Set::except()`, `Set::intersect()`.
+
+**`Insert`** — exposes both the legacy MariaDB-flavoured `onDuplicateKeyUpdate($col, $val)` and the portable `onConflict($cols)->doUpdate($assignments)` / `->doNothing()` / `->onConflictWhere($predicate)` API. The dialect layer translates `onConflict` to native syntax: standard `ON CONFLICT (...) DO UPDATE` on default/Postgres, `ON DUPLICATE KEY UPDATE` on MariaDB / MySQL. Mixing the two on the same statement throws.
+
+**`Merge`** — SQL:2003 `MERGE INTO target USING source ON cond WHEN [NOT] MATCHED [AND pred] THEN ...`. Branch helpers: `whenMatchedUpdate(assignments, predicate?)`, `whenMatchedDelete(predicate?)`, `whenNotMatchedInsert(columns, values, predicate?)`, `whenDoNothing(matched, predicate?)`. Accepted on the default dialect and on `Postgres15Dialect`; rejected on older Postgres and on every MariaDB dialect.
 
 **`Collection`** (from `rak200/collections`) — typed generic container used internally by `Select`, `Set`, `Table`.
 

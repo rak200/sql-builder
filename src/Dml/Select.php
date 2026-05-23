@@ -193,6 +193,30 @@ final class Select implements ExpressionInterface {
         return $this;
     }
 
+    /**
+     * INNER JOIN LATERAL — the joined relation may reference columns from
+     * earlier FROM items. Typically used with subquery joins.
+     */
+    public function lateralJoin(string|Select $table, ?string $alias = null, ?ExpressionInterface $on = null): static {
+        $this->joins[] = (new Join(JoinType::INNER, $table, $alias, $on))->lateral();
+        return $this;
+    }
+
+    /** LEFT JOIN LATERAL — see {@see lateralJoin()}. */
+    public function leftLateralJoin(string|Select $table, ?string $alias = null, ?ExpressionInterface $on = null): static {
+        $this->joins[] = (new Join(JoinType::LEFT, $table, $alias, $on))->lateral();
+        return $this;
+    }
+
+    /**
+     * CROSS JOIN LATERAL — common with set-returning functions where no `ON`
+     * predicate is needed.
+     */
+    public function crossLateralJoin(string|Select $table, ?string $alias = null): static {
+        $this->joins[] = (new Join(JoinType::CROSS, $table, $alias))->lateral();
+        return $this;
+    }
+
     public function where(ExpressionInterface $condition): static {
         $this->where = $this->where === null ? $condition : Expression::and($this->where, $condition);
         return $this;

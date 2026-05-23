@@ -22,7 +22,7 @@ use Rak200\SqlBuilder\Dialect\Renderer\Dml\UpdateRenderer;
 class MariaDb105Dialect extends MariaDbDialect {
 
     protected function insertRenderer(): InsertRenderer {
-        return $this->insertRenderer ??= new InsertRenderer($this);
+        return $this->insertRenderer ??= new Renderer\InsertRenderer105($this);
     }
 
     protected function updateRenderer(): UpdateRenderer {

@@ -22,4 +22,16 @@ final class UniqueKeyTest extends TestCase {
     public function testCompositeUnique(): void {
         $this->assertSame('UNIQUE (`a`, `b`)', (string) UniqueKey::create()->columns(['a', 'b']));
     }
+
+    public function testNullsDistinct(): void {
+        $sql = (string) UniqueKey::create('uq_email')->columns(['email'])->nullsDistinct();
+
+        $this->assertSame('CONSTRAINT `uq_email` UNIQUE NULLS DISTINCT (`email`)', $sql);
+    }
+
+    public function testNullsNotDistinct(): void {
+        $sql = (string) UniqueKey::create()->columns(['email'])->nullsNotDistinct();
+
+        $this->assertSame('UNIQUE NULLS NOT DISTINCT (`email`)', $sql);
+    }
 }

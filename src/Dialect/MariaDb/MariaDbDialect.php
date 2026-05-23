@@ -10,8 +10,10 @@ use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\ColumnRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\DeleteRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\IndexRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\InsertRenderer;
+use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\MergeRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\SchemaRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\TableRenderer;
+use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\UniqueKeyRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\UpdateRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\UuidInputExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\UuidOutputExpressionRenderer;
@@ -22,8 +24,10 @@ use Rak200\SqlBuilder\Dialect\Renderer\Ddl\ColumnRenderer as DefaultColumnRender
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\IndexRenderer as DefaultIndexRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\SchemaRenderer as DefaultSchemaRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\TableRenderer as DefaultTableRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Ddl\UniqueKeyRenderer as DefaultUniqueKeyRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\DeleteRenderer as DefaultDeleteRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\InsertRenderer as DefaultInsertRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Dml\MergeRenderer as DefaultMergeRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\UpdateRenderer as DefaultUpdateRenderer;
 
 /**
@@ -99,6 +103,14 @@ class MariaDbDialect extends DefaultDialect {
 
     protected function indexRenderer(): DefaultIndexRenderer {
         return $this->indexRenderer ??= new IndexRenderer($this);
+    }
+
+    protected function uniqueKeyRenderer(): DefaultUniqueKeyRenderer {
+        return $this->uniqueKeyRenderer ??= new UniqueKeyRenderer($this);
+    }
+
+    protected function mergeRenderer(): DefaultMergeRenderer {
+        return $this->mergeRenderer ??= new MergeRenderer($this);
     }
 
     protected function binaryExpressionRenderer(): DefaultBinaryExpressionRenderer {

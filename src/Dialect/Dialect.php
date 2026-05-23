@@ -11,6 +11,7 @@ use Rak200\SqlBuilder\Common\Reference\Column as ColumnReference;
 use Rak200\SqlBuilder\Common\Expression\Exists as ExistsExpression;
 use Rak200\SqlBuilder\Common\ExpressionInterface;
 use Rak200\SqlBuilder\Common\Expression\Func as FunctionExpression;
+use Rak200\SqlBuilder\Common\Expression\Grouping as GroupingExpression;
 use Rak200\SqlBuilder\Common\Join;
 use Rak200\SqlBuilder\Common\Order;
 use Rak200\SqlBuilder\Common\Expression\Param as ParameterExpression;
@@ -38,6 +39,7 @@ use Rak200\SqlBuilder\Dialect\Dsn\DsnParser;
 use Rak200\SqlBuilder\Dml\Cte;
 use Rak200\SqlBuilder\Dml\Delete;
 use Rak200\SqlBuilder\Dml\Insert;
+use Rak200\SqlBuilder\Dml\Merge;
 use Rak200\SqlBuilder\Dml\Select;
 use Rak200\SqlBuilder\Dml\Set;
 use Rak200\SqlBuilder\Dml\Update;
@@ -165,6 +167,7 @@ abstract class Dialect {
     abstract public function renderDelete(Delete $component): string;
     abstract public function renderSet(Set $component): string;
     abstract public function renderCte(Cte $component): string;
+    abstract public function renderMerge(Merge $component): string;
 
     // --- DDL ----------------------------------------------------------------
 
@@ -192,6 +195,7 @@ abstract class Dialect {
     abstract public function renderUuidOutputExpression(UuidOutputExpression $component): string;
     abstract public function renderRawExpression(RawExpression $component): string;
     abstract public function renderFunctionExpression(FunctionExpression $component): string;
+    abstract public function renderGroupingExpression(GroupingExpression $component): string;
     abstract public function renderExistsExpression(ExistsExpression $component): string;
     abstract public function renderSubqueryExpression(SubqueryExpression $component): string;
     abstract public function renderSimpleIdentifier(SimpleIdentifier $component): string;
@@ -225,6 +229,7 @@ abstract class Dialect {
             $expression instanceof UuidOutputExpression => $this->renderUuidOutputExpression($expression),
             $expression instanceof RawExpression      => $this->renderRawExpression($expression),
             $expression instanceof FunctionExpression => $this->renderFunctionExpression($expression),
+            $expression instanceof GroupingExpression => $this->renderGroupingExpression($expression),
             $expression instanceof SubqueryExpression => $this->renderSubqueryExpression($expression),
             $expression instanceof SimpleIdentifier   => $this->renderSimpleIdentifier($expression),
             $expression instanceof TableReference     => $this->renderTableReference($expression),
@@ -234,6 +239,7 @@ abstract class Dialect {
             $expression instanceof Insert             => $this->renderInsert($expression),
             $expression instanceof Update             => $this->renderUpdate($expression),
             $expression instanceof Delete             => $this->renderDelete($expression),
+            $expression instanceof Merge              => $this->renderMerge($expression),
             $expression instanceof Table              => $this->renderTable($expression),
             $expression instanceof Column             => $this->renderColumn($expression),
             $expression instanceof View               => $this->renderView($expression),

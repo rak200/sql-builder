@@ -28,6 +28,11 @@ class InsertRenderer implements ComponentRenderer {
         if ($component->rows === [] && $component->select === null) {
             throw new InvalidArgumentException('INSERT requires VALUES or a SELECT source.');
         }
+        if ($component->onDuplicateKey !== [] && $component->conflictColumns !== null) {
+            throw new InvalidArgumentException(
+                'INSERT cannot mix onDuplicateKeyUpdate() and onConflict() on the same statement.'
+            );
+        }
 
         $sql  = sprintf(
             'INSERT INTO %s',
@@ -38,6 +43,7 @@ class InsertRenderer implements ComponentRenderer {
             ? ' ' . $this->dialect->renderSelect($component->select)
             : ' VALUES ' . $this->renderRows($component);
         $sql .= $this->renderOnDuplicateKeyUpdate($component);
+        $sql .= $this->renderOnConflict($component);
         $sql .= $this->renderReturning($component);
 
         return $sql;
@@ -82,6 +88,38 @@ class InsertRenderer implements ComponentRenderer {
         }
 
         return ' ON DUPLICATE KEY UPDATE ' . implode(', ', $parts);
+    }
+
+    protected function renderOnConflict(Insert $component): string {
+        if ($component->conflictColumns === null) {
+            return '';
+        }
+
+        $target = $component->conflictColumns === []
+            ? ''
+            : ' (' . implode(', ', array_map(
+                fn(string $name) => $this->dialect->quoteIdentifier($name),
+                $component->conflictColumns
+            )) . ')';
+
+        if ($component->conflictDoNothing) {
+            return ' ON CONFLICT' . $target . ' DO NOTHING';
+        }
+
+        $assignments = [];
+        foreach ($component->conflictUpdates ?? [] as $column => $value) {
+            $assignments[] = sprintf(
+                '%s = %s',
+                $this->dialect->quoteIdentifier($column),
+                $this->dialect->renderExpression($value)
+            );
+        }
+        $sql = ' ON CONFLICT' . $target . ' DO UPDATE SET ' . implode(', ', $assignments);
+
+        if ($component->conflictWhere !== null) {
+            $sql .= ' WHERE ' . $this->dialect->renderExpression($component->conflictWhere);
+        }
+        return $sql;
     }
 
     protected function renderReturning(Insert $component): string {

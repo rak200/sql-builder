@@ -14,6 +14,9 @@ use Rak200\SqlBuilder\Dialect\Dialect;
  */
 class UniqueKey extends Constraint {
 
+    /** @var bool|null Tri-state NULLS DISTINCT modifier (null = unspecified, true = DISTINCT, false = NOT DISTINCT). */
+    public private(set) ?bool $nullsDistinct = null;
+
     /**
      * @param string $name Name of the unique constraint.
      * @param string[] $columns Column names that must be unique.
@@ -28,6 +31,22 @@ class UniqueKey extends Constraint {
 
     public function columns(array $columns): static {
         $this->columns = $columns;
+        return $this;
+    }
+
+    /**
+     * Emit `NULLS DISTINCT` (Postgres 15+ default — multiple NULLs are distinct).
+     */
+    public function nullsDistinct(): static {
+        $this->nullsDistinct = true;
+        return $this;
+    }
+
+    /**
+     * Emit `NULLS NOT DISTINCT` — Postgres 15+ allows at most one NULL.
+     */
+    public function nullsNotDistinct(): static {
+        $this->nullsDistinct = false;
         return $this;
     }
 

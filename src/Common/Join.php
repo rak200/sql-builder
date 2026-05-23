@@ -25,6 +25,9 @@ final class Join implements ExpressionInterface {
     /** @var bool Whether this is a NATURAL JOIN. */
     public private(set) bool $natural;
 
+    /** @var bool Whether the joined relation is `LATERAL` (may reference earlier FROM items). */
+    public private(set) bool $lateral;
+
     /** @var ExpressionInterface|null Optional ON condition. */
     public private(set) ?ExpressionInterface $on;
 
@@ -38,6 +41,7 @@ final class Join implements ExpressionInterface {
      * @param ExpressionInterface|null $on Optional ON condition.
      * @param bool $natural Whether this is a NATURAL JOIN.
      * @param array<string>|null $using Column list for USING clause.
+     * @param bool $lateral Whether the joined relation is LATERAL.
      */
     public function __construct(
         public readonly JoinType $type,
@@ -45,12 +49,14 @@ final class Join implements ExpressionInterface {
         ?string $alias = null,
         ?ExpressionInterface $on = null,
         bool $natural = false,
-        ?array $using = null
+        ?array $using = null,
+        bool $lateral = false
     ) {
         $this->table   = new TableReference($table, $alias);
         $this->on      = $on;
         $this->natural = $natural;
         $this->using   = $using;
+        $this->lateral = $lateral;
     }
 
     /**
@@ -66,6 +72,15 @@ final class Join implements ExpressionInterface {
      */
     public function natural(): static {
         $this->natural = true;
+        return $this;
+    }
+
+    /**
+     * Mark the joined relation as `LATERAL` so it can reference columns from
+     * earlier FROM items. Typically used with subquery joins.
+     */
+    public function lateral(): static {
+        $this->lateral = true;
         return $this;
     }
 
@@ -124,6 +139,14 @@ final class Join implements ExpressionInterface {
 
         if ($this->using !== null && count($this->using) === 0) {
             throw new InvalidArgumentException('USING must have at least one column.');
+        }
+
+        if ($this->lateral && $this->natural) {
+            throw new InvalidArgumentException('LATERAL is incompatible with NATURAL JOIN.');
+        }
+
+        if ($this->lateral && $this->using !== null) {
+            throw new InvalidArgumentException('LATERAL JOIN cannot use USING.');
         }
     }
 }

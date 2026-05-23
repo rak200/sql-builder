@@ -10,6 +10,7 @@ use Rak200\SqlBuilder\Common\Expression\Column as ColumnExpression;
 use Rak200\SqlBuilder\Common\Reference\Column as ColumnReference;
 use Rak200\SqlBuilder\Common\Expression\Exists as ExistsExpression;
 use Rak200\SqlBuilder\Common\Expression\Func as FunctionExpression;
+use Rak200\SqlBuilder\Common\Expression\Grouping as GroupingExpression;
 use Rak200\SqlBuilder\Common\Join;
 use Rak200\SqlBuilder\Common\Order;
 use Rak200\SqlBuilder\Common\Expression\Raw as RawExpression;
@@ -39,6 +40,7 @@ use Rak200\SqlBuilder\Dialect\Renderer\Common\ColumnExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\ColumnReferenceRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\ExistsExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\FunctionExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Common\GroupingExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\JoinRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\OrderRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\RawExpressionRenderer;
@@ -65,12 +67,14 @@ use Rak200\SqlBuilder\Dialect\Renderer\Ddl\ViewRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\CteRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\DeleteRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\InsertRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Dml\MergeRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\SelectRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\SetRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\UpdateRenderer;
 use Rak200\SqlBuilder\Dml\Cte;
 use Rak200\SqlBuilder\Dml\Delete;
 use Rak200\SqlBuilder\Dml\Insert;
+use Rak200\SqlBuilder\Dml\Merge;
 use Rak200\SqlBuilder\Dml\Select;
 use Rak200\SqlBuilder\Dml\Set;
 use Rak200\SqlBuilder\Dml\Update;
@@ -100,6 +104,7 @@ class DefaultDialect extends Dialect {
     protected ?UuidOutputExpressionRenderer $uuidOutputExpressionRenderer = null;
     protected ?RawExpressionRenderer      $rawExpressionRenderer      = null;
     protected ?FunctionExpressionRenderer $functionExpressionRenderer = null;
+    protected ?GroupingExpressionRenderer $groupingExpressionRenderer = null;
     protected ?ExistsExpressionRenderer   $existsExpressionRenderer   = null;
     protected ?SubqueryExpressionRenderer $subqueryExpressionRenderer = null;
     protected ?SimpleIdentifierRenderer   $simpleIdentifierRenderer   = null;
@@ -116,6 +121,7 @@ class DefaultDialect extends Dialect {
     protected ?DeleteRenderer $deleteRenderer = null;
     protected ?SetRenderer    $setRenderer    = null;
     protected ?CteRenderer    $cteRenderer    = null;
+    protected ?MergeRenderer  $mergeRenderer  = null;
 
     // --- DDL renderers ------------------------------------------------------
     protected ?TableRenderer      $tableRenderer      = null;
@@ -147,6 +153,7 @@ class DefaultDialect extends Dialect {
         $this->uuidOutputExpressionRenderer = null;
         $this->rawExpressionRenderer       = null;
         $this->functionExpressionRenderer  = null;
+        $this->groupingExpressionRenderer  = null;
         $this->existsExpressionRenderer    = null;
         $this->subqueryExpressionRenderer  = null;
         $this->simpleIdentifierRenderer    = null;
@@ -162,6 +169,7 @@ class DefaultDialect extends Dialect {
         $this->deleteRenderer = null;
         $this->setRenderer    = null;
         $this->cteRenderer    = null;
+        $this->mergeRenderer  = null;
         // DDL renderers
         $this->tableRenderer      = null;
         $this->columnRenderer     = null;
@@ -220,6 +228,10 @@ class DefaultDialect extends Dialect {
 
     public function renderCte(Cte $component): string {
         return $this->cteRenderer()->render($component);
+    }
+
+    public function renderMerge(Merge $component): string {
+        return $this->mergeRenderer()->render($component);
     }
 
     // --- DDL --------------------------------------------------------------
@@ -310,6 +322,10 @@ class DefaultDialect extends Dialect {
         return $this->functionExpressionRenderer()->render($component);
     }
 
+    public function renderGroupingExpression(GroupingExpression $component): string {
+        return $this->groupingExpressionRenderer()->render($component);
+    }
+
     public function renderExistsExpression(ExistsExpression $component): string {
         return $this->existsExpressionRenderer()->render($component);
     }
@@ -366,6 +382,10 @@ class DefaultDialect extends Dialect {
 
     protected function cteRenderer(): CteRenderer {
         return $this->cteRenderer ??= new CteRenderer($this);
+    }
+
+    protected function mergeRenderer(): MergeRenderer {
+        return $this->mergeRenderer ??= new MergeRenderer($this);
     }
 
     protected function tableRenderer(): TableRenderer {
@@ -450,6 +470,10 @@ class DefaultDialect extends Dialect {
 
     protected function functionExpressionRenderer(): FunctionExpressionRenderer {
         return $this->functionExpressionRenderer ??= new FunctionExpressionRenderer($this);
+    }
+
+    protected function groupingExpressionRenderer(): GroupingExpressionRenderer {
+        return $this->groupingExpressionRenderer ??= new GroupingExpressionRenderer($this);
     }
 
     protected function existsExpressionRenderer(): ExistsExpressionRenderer {

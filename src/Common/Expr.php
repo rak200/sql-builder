@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\SqlBuilder\Common;
 
+use Rak200\SqlBuilder\Common\Enum\GroupingMode;
 use Rak200\SqlBuilder\Common\Enum\Operator\Binary as BinaryOp;
 use Rak200\SqlBuilder\Common\Enum\Operator\Math;
 use Rak200\SqlBuilder\Common\Enum\Operator\Unary as UnaryOp;
@@ -12,6 +13,7 @@ use Rak200\SqlBuilder\Common\Expression\CaseWhen;
 use Rak200\SqlBuilder\Common\Expression\Column;
 use Rak200\SqlBuilder\Common\Expression\Exists;
 use Rak200\SqlBuilder\Common\Expression\Func;
+use Rak200\SqlBuilder\Common\Expression\Grouping;
 use Rak200\SqlBuilder\Common\Expression\Param;
 use Rak200\SqlBuilder\Common\Expression\Raw;
 use Rak200\SqlBuilder\Common\Expression\Subquery;
@@ -281,5 +283,25 @@ abstract class Expr implements ExpressionInterface {
     /** Create an arithmetic modulo expression (e.g., `((a % b) % c)`). */
     public static function mod(mixed ...$operands): ExpressionInterface {
         return self::combine(Math::Mod, ...$operands);
+    }
+
+    /**
+     * Create a `GROUPING SETS ((...), (...))` expression for `GROUP BY`.
+     *
+     * Each item may be a string column name, an `ExpressionInterface`, or an
+     * array (rendered as a tuple, including `[]` for the grand-total grouping).
+     */
+    public static function groupingSets(mixed ...$sets): Grouping {
+        return new Grouping(GroupingMode::Sets, ...$sets);
+    }
+
+    /** Create a `ROLLUP (a, b, c)` expression for `GROUP BY`. */
+    public static function rollup(mixed ...$expressions): Grouping {
+        return new Grouping(GroupingMode::Rollup, ...$expressions);
+    }
+
+    /** Create a `CUBE (a, b, c)` expression for `GROUP BY`. */
+    public static function cube(mixed ...$expressions): Grouping {
+        return new Grouping(GroupingMode::Cube, ...$expressions);
     }
 }

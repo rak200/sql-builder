@@ -10,7 +10,8 @@ use Rak200\SqlBuilder\Dialect\Renderer\ComponentRenderer;
 use Rak200\Utils\Str;
 
 /**
- * Renders a {@see UniqueKey} as `[CONSTRAINT "name"] UNIQUE (cols)`.
+ * Renders a {@see UniqueKey} as
+ * `[CONSTRAINT "name"] UNIQUE [NULLS [NOT] DISTINCT] (cols)`.
  *
  * @package Rak200\SqlBuilder\Dialect\Renderer\Ddl
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -26,6 +27,8 @@ class UniqueKeyRenderer implements ComponentRenderer {
             $sql = sprintf('CONSTRAINT %s UNIQUE', $this->dialect->quoteIdentifier($component->name));
         }
 
+        $sql .= $this->renderNullsDistinct($component);
+
         $sql .= Str::join(
             array_map(fn(string $column) => $this->dialect->quoteIdentifier($column), $component->columns),
             ', ',
@@ -34,5 +37,13 @@ class UniqueKeyRenderer implements ComponentRenderer {
         );
 
         return $sql;
+    }
+
+    protected function renderNullsDistinct(UniqueKey $component): string {
+        return match ($component->nullsDistinct) {
+            true  => ' NULLS DISTINCT',
+            false => ' NULLS NOT DISTINCT',
+            null  => '',
+        };
     }
 }
