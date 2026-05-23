@@ -19,6 +19,8 @@ use Rak200\SqlBuilder\Common\SimpleIdentifier;
 use Rak200\SqlBuilder\Common\SubqueryExpression;
 use Rak200\SqlBuilder\Common\TableReference;
 use Rak200\SqlBuilder\Common\UnaryExpression;
+use Rak200\SqlBuilder\Common\UuidInputExpression;
+use Rak200\SqlBuilder\Common\UuidOutputExpression;
 use Rak200\SqlBuilder\Common\ValueExpression;
 use Rak200\SqlBuilder\Common\Window;
 use Rak200\SqlBuilder\Common\WindowExpression;
@@ -186,6 +188,8 @@ abstract class Dialect {
     abstract public function renderColumnReference(ColumnReference $component): string;
     abstract public function renderValueExpression(ValueExpression $component): string;
     abstract public function renderParameterExpression(ParameterExpression $component): string;
+    abstract public function renderUuidInputExpression(UuidInputExpression $component): string;
+    abstract public function renderUuidOutputExpression(UuidOutputExpression $component): string;
     abstract public function renderRawExpression(RawExpression $component): string;
     abstract public function renderFunctionExpression(FunctionExpression $component): string;
     abstract public function renderExistsExpression(ExistsExpression $component): string;
@@ -217,6 +221,8 @@ abstract class Dialect {
             $expression instanceof ColumnReference    => $this->renderColumnReference($expression),
             $expression instanceof ValueExpression    => $this->renderValueExpression($expression),
             $expression instanceof ParameterExpression => $this->renderParameterExpression($expression),
+            $expression instanceof UuidInputExpression  => $this->renderUuidInputExpression($expression),
+            $expression instanceof UuidOutputExpression => $this->renderUuidOutputExpression($expression),
             $expression instanceof RawExpression      => $this->renderRawExpression($expression),
             $expression instanceof FunctionExpression => $this->renderFunctionExpression($expression),
             $expression instanceof SubqueryExpression => $this->renderSubqueryExpression($expression),

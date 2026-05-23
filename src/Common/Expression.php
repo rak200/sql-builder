@@ -161,6 +161,41 @@ abstract class Expression implements ExpressionInterface {
     }
 
     /**
+     * Mark a value as destined for a UUID column.
+     *
+     * Wraps the given value (or expression) in a {@see UuidInputExpression}
+     * so the active dialect can apply the appropriate input transform —
+     * `::uuid` cast on PostgreSQL (when the inner is a literal or a
+     * parameter), `UUID_TO_BIN(...)` on MariaDB/MySQL, pass-through on the
+     * default dialect. Strings are normalised to a {@see ValueExpression}.
+     *
+     * @param string|ExpressionInterface $value The UUID value (text) or
+     *                                          a wrapped expression.
+     * @return UuidInputExpression
+     */
+    public static function uuid(string|ExpressionInterface $value): UuidInputExpression {
+        return new UuidInputExpression(
+            $value instanceof ExpressionInterface ? $value : new ValueExpression($value)
+        );
+    }
+
+    /**
+     * Mark a column as carrying UUID-typed data for projection in `SELECT`.
+     *
+     * Wraps a {@see ColumnExpression} in a {@see UuidOutputExpression} so
+     * the active dialect can apply the appropriate output transform —
+     * `BIN_TO_UUID(...)` on MariaDB/MySQL, pass-through on the default
+     * dialect and PostgreSQL.
+     *
+     * @param string $name Column or qualified identifier.
+     * @param string|null $alias Optional projection alias.
+     * @return UuidOutputExpression
+     */
+    public static function uuidColumn(string $name, ?string $alias = null): UuidOutputExpression {
+        return new UuidOutputExpression(new ColumnExpression($name, $alias));
+    }
+
+    /**
      * Create a prepared-statement parameter placeholder.
      *
      * Use `int` keys for positional placeholders (`?` on MariaDB/MySQL, `$N`

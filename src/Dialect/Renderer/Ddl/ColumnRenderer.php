@@ -23,8 +23,7 @@ class ColumnRenderer implements ComponentRenderer {
     public function render(Column $component): string {
         $name = $this->dialect->quoteIdentifier($component->name);
 
-        $sql = "$name {$component->type->value}";
-        $sql .= StringUtils::wrap((string) $component->length, '(', ')');
+        $sql  = "$name {$this->renderType($component)}";
         $sql .= $component->nullable ? ' NULL' : ' NOT NULL';
 
         if ($component->default !== null) {
@@ -40,5 +39,19 @@ class ColumnRenderer implements ComponentRenderer {
         }
 
         return $sql;
+    }
+
+    /**
+     * Render the column type clause (`TYPE[(length)]`).
+     *
+     * Override-point for vendor dialects that need to remap a logical type
+     * to a different physical storage type (e.g. MariaDB maps the logical
+     * `UUID` to `BINARY(16)`).
+     *
+     * @param Column $component The column whose type is being rendered.
+     * @return string The type clause without surrounding whitespace.
+     */
+    protected function renderType(Column $component): string {
+        return $component->type->value . StringUtils::wrap((string) $component->length, '(', ')');
     }
 }

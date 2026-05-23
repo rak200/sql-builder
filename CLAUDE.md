@@ -222,11 +222,11 @@ The migration that landed 0.2.0 (introduce the contract → decompose into rende
 
 ## Planned: Safety & Quality
 
-Two items remain on the `README.md` "Not yet implemented" list. This section is the **specification** the implementation must follow; nothing here is built yet. Both touch the rendering layer — land them in this order to minimise re-test churn.
+One item remains on the `README.md` "Not yet implemented" list. This section is the **specification** the implementation must follow; nothing here is built yet.
 
-### 1. Consistent identifier quoting (do first)
+### Consistent identifier quoting
 
-Smaller, contained refactor. Doing it before parameter binding means the new bind-mode tests compare against the cleaned-up output.
+Smaller, contained refactor of the DDL renderer layer to route every identifier through `Dialect::quoteIdentifier()`.
 
 #### Current inconsistency
 
@@ -256,100 +256,153 @@ Every identifier — table, view, index, sequence, schema, constraint, column in
 5. Update the README's DDL example snippets so the comment-after-`echo` matches the new output (the artefacts appear in several places).
 6. CHANGELOG: list this as a **BREAKING (0.x) output change** — emitted SQL changes for every DDL statement even though it remains semantically equivalent and parses identically.
 
-### 2. Parameter binding (prepared-statement placeholders)
+## Planned: UUID column support
 
-Today values are inlined via `ValueExpression` → `$dialect->quoteValue($value)`. Goal: provide an opt-in path that returns SQL with placeholders alongside the array of bound values, suitable for `PDO::prepare()` / `PDOStatement::execute()`.
+Native first-class UUID handling — column type in DDL, value wrapping in DML, transparent input/output transformation on engines that lack a native UUID type.
 
-#### Goals
+### Background
 
-1. Backward compatible — `__toString()` and `toSql(Dialect)` continue to inline.
-2. The result is a `PreparedStatement` value object exposing `sql` and `parameters` so the caller can hand both straight to PDO.
-3. `parameters` can be replaced/rebound for new runs.
-4. Two options for creating a `PreparedStatement`:
-   - Create the SQL with parameters already declared via `ParameterExpression`; or
-   - Convert/replace existing `ValueExpression` into `ParameterExpression` at render time.
-5. **Both named and positional placeholders are supported.** `Expression::param(int|string)` declares the placeholder; the binder picks the on-wire form per dialect:
-   - **Named key** (`Expression::param('price')`) → `:price` on every dialect. PDO emulates named placeholders for both MariaDB/MySQL and Postgres. The same name reused N times across the SQL yields **one entry** in `parameters` keyed by name.
-   - **Positional key on Postgres** (`Expression::param(1)` + `PostgresDialect`) → `$1`. Postgres supports native placeholder reuse, so `$1` appears N times in the SQL but the value sits **once** in `parameters` at index 0.
-   - **Positional key on MariaDB/MySQL** (`Expression::param(1)` + default/`MariaDbDialect`) → `?`. `?` has no native reuse, so the binder emits a **fresh `?` per occurrence** and pushes the value into `parameters` at each occurrence; the array has the value duplicated at the matching positions. Caller behaviour with `PDOStatement::execute()` is unchanged — they bind a flat list as always.
-6. Only **values** become placeholders. Identifiers and raw SQL never do; `LIMIT` and `OFFSET` integers stay inlined (MariaDB <8.0 rejects placeholders there, and they're not user-strings — no injection risk).
+- **PostgreSQL** has a native `uuid` type. UUID literals in SQL are written as `'aaaa…'::uuid` (or as a plain quoted string in a `uuid`-typed context, with implicit cast). No round-trip transformation is needed.
+- **MariaDB** has no native UUID type (the 10.7 `UUID` alias is just `CHAR(36)`). The standard simulation stores UUIDs as `BINARY(16)`, with the built-in `UUID_TO_BIN(text [, swap_flag])` / `BIN_TO_UUID(bin [, swap_flag])` functions converting between text and binary at the value boundaries.
 
-#### New abstractions
+The plan therefore covers two distinct concerns: the DDL **type declaration** (`UUID` vs `BINARY(16)`) and the DML **value/column wrapping** (`UUID_TO_BIN(...)` on the way in, `BIN_TO_UUID(...)` on the way out).
+
+### Goals
+
+1. **DDL** — `Column::create('id', DataType::Uuid)` renders portably:
+   - Default dialect → `UUID` (passes through to whatever the engine supports; documented as "permissive baseline").
+   - Postgres → `UUID` (native).
+   - MariaDB → `BINARY(16)`.
+2. **DML input** — wrap values addressed to UUID columns so they reach the engine in the right shape:
+   - Default → emit the UUID string verbatim (`'aaaa-…'`).
+   - Postgres → emit `'aaaa-…'::uuid` (or `$N::uuid` in bind mode) **only when the inner is a `ValueExpression` or `ParameterExpression`**. Column references pass through without the cast — `WHERE "id" = "other_id"` stays clean. The cast guarantees correctness in standalone contexts (`SELECT $1 AS id`) where PG can't infer the type from a target column.
+   - MariaDB → wrap as `UUID_TO_BIN('aaaa-…')` (omitting the second `swap_flag` argument; matches MariaDB's default and the byte order produced by `UUID()`). In bind mode the placeholder still goes through the binder (`UUID_TO_BIN(?)` / `UUID_TO_BIN($N)`); the binder records the **text** UUID and the wrap stays on the wire.
+3. **DML output** — when projecting a UUID column in `SELECT`, render the column so the engine yields a text UUID:
+   - Default / Postgres → no wrap; the column reads back as text natively.
+   - MariaDB → `BIN_TO_UUID(\`id\`)` (preserving any alias).
+4. **Comparison / JOIN / WHERE** — `Expression::binary('id', Eq, Expression::uuid('aaaa-…'))` produces `"id" = 'aaaa-…'` on Postgres and `` `id` = UUID_TO_BIN('aaaa-…') `` on MariaDB. The same shape on both sides of a JOIN when both columns are UUID.
+5. **Backward compatible** — every existing DDL/DML test keeps its output; UUID support is purely additive (new enum case + new expression types + opt-in dialect renderers).
+
+### New abstractions
+
+#### DDL
+
+- Add `DataType::Uuid` to `src/Ddl/Enum/DataType.php`. Default `ColumnRenderer` emits the enum's string value (`UUID`), unchanged path.
+- `MariaDb\Renderer\ColumnRenderer` — new file. Overrides only the type-emission step: `DataType::Uuid` → `BINARY(16)`. All other types delegate to the parent. Wired in via a new protected `columnRenderer()` factory on `MariaDbDialect`.
+- Postgres needs no override (the default `UUID` already matches).
+
+#### DML
+
+Two new expression types under `src/Common/`:
 
 ```
-src/Prepared/
-├── PreparedStatement.php           # final value object: ->sql, ->parameters
-└── Binder.php                      # stateful, keyed; default emits `?` (no reuse on MariaDB)
-
-src/Dialect/MariaDb/
-└── (Binder unchanged — default `?` shape, value duplicated per occurrence for repeated keys)
-
-src/Dialect/Postgres/
-└── PostgresBinder.php              # emits `$N`; reuses the same `$N` for repeated keys
+src/Common/
+├── UuidInputExpression.php    # wraps a string|ExpressionInterface destined for a UUID column
+└── UuidOutputExpression.php   # wraps a column reference whose binary value should be decoded to text
 ```
 
-##### Explicit Mode
-
-A `ParameterExpression` is created by `Expression::param(int|string)`. The key (int or string) identifies the **logical** parameter — repeated references to the same key are collapsed by the binder where the dialect supports it.
-
-Positional example, PostgreSQL dialect:
+Both extend `Expression` (so they inherit `as()` for aliases) and carry a single inner `ExpressionInterface`:
 
 ```php
-Select::create()
-    ->select(Expression::column(Expression::param(1), 'price'))
-    ->select(Expression::column(Expression::param(2), 'qtd'))
-    ->select(Expression::column(
-        Expression::binary(Expression::param(1), BinaryOperator::Times, Expression::param(2)),
-        'total'
-    ));
+final class UuidInputExpression extends Expression {
+    public function __construct(public readonly ExpressionInterface $inner) {}
+}
+
+final class UuidOutputExpression extends Expression {
+    public function __construct(public readonly ExpressionInterface $inner) {}
+}
 ```
 
-renders to:
-
-```sql
-SELECT $1 AS "price", $2 AS "qtd", $1 * $2 AS "total"
-```
-
-with `parameters = [<price>, <qtd>]` — `$1`/`$2` each appear twice in the SQL but only once in the array.
-
-The same builder under the default/MariaDB dialect renders:
-
-```sql
-SELECT ? AS `price`, ? AS `qtd`, ? * ? AS `total`
-```
-
-with `parameters = [<price>, <qtd>, <price>, <qtd>]` — one `?` per textual occurrence, value duplicated to match.
-
-Named example (identical shape on both dialects, since PDO emulates named placeholders):
+Factories on `Expression`:
 
 ```php
-Expression::param('price')   // → :price, parameters = ['price' => <value>, …]
+public static function uuid(string|ExpressionInterface $value): UuidInputExpression {
+    return new UuidInputExpression(self::normalize($value));   // strings become ValueExpression
+}
+
+public static function uuidColumn(string $name, ?string $alias = null): UuidOutputExpression {
+    $col = new ColumnExpression($name, $alias);
+    return new UuidOutputExpression($col);
+}
 ```
 
-##### Bind Mode
+The split (input vs output) is intentional: the directions are different SQL functions and live in different positions in the statement, so collapsing them onto one factory would surprise callers. The naming mirrors the existing `Expression::value()` / `Expression::column()` distinction.
 
-Convert/replace existing `ValueExpression` into anonymous placeholders at render time. There is no key, so **no reuse** is possible — each `ValueExpression` becomes one placeholder and one new entry in `parameters`.
+#### Renderers
 
-Every renderer that handles a value already routes through `ValueExpression` (`Insert::values()` wraps scalars, `Update::set()` wraps scalars, `CaseExpression::when()` wraps simple-form scalars, `Expression::binary()` wraps via normalize, …) — so they pick up bind mode for free.
+Two new default renderers (no-op wraps — they just delegate to the inner expression) under `src/Dialect/Renderer/Common/`:
 
-Renderers that explicitly do **not** change:
-- `ColumnExpression`, `ColumnReference`, `SimpleIdentifier`, `TableReference`, `RawExpression` — identifiers and raw SQL never get parameterised.
-- Sub-statements (`Select` inside subquery, `Set`, `Cte`) — recursion already propagates the dialect, which carries the binder.
+```
+UuidInputExpressionRenderer.php    # default: render inner as-is
+UuidOutputExpressionRenderer.php   # default: render inner as-is
+```
 
-##### Binder state
+The default is intentionally a pass-through because the **default dialect** doesn't claim a backend — Postgres-native or MariaDB-simulated behaviour is opt-in per vendor.
 
-The `Binder` is stateful and keyed per render. Responsibilities by key kind:
+MariaDB overrides under `src/Dialect/MariaDb/Renderer/`:
 
-- **Named** (`string` key): map `name → placeholder` and `name → value`. Re-encountering the same name returns the cached placeholder and does **not** append to `parameters`.
-- **Positional on Postgres** (`int` key + `PostgresBinder`): map `index → "$N"` and `index → value`. Re-encountering the same index returns the cached `$N`. `parameters` is a list ordered by first-seen index.
-- **Positional on MariaDB/MySQL** (`int` key + default `Binder`): `?` cannot be reused on the wire, so the binder keeps `index → value` for validation but **emits a fresh `?` and appends the value to `parameters` every time the index is hit**. Repeating a key here is purely an ergonomic affordance on the builder side — the wire format still duplicates.
-- **Anonymous** (Bind Mode, no key): fresh placeholder per occurrence, fresh array entry. No reuse possible.
+```
+UuidInputExpressionRenderer.php    # emits UUID_TO_BIN(<inner>) — no swap_flag
+UuidOutputExpressionRenderer.php   # emits BIN_TO_UUID(<inner>) [AS <alias>] — alias hoisted from the wrapped ColumnExpression, no swap_flag
+```
 
-Special cases
+Postgres override under `src/Dialect/Postgres/Renderer/`:
 
-- **`BinaryOperator::In` with an array right operand**: each array element becomes its own placeholder (one key per element). The SQL shape (`IN (?, ?, ?)`) depends on the array's length — that's expected, and matches how callers use PDO with `IN`.
-- **LIMIT / OFFSET**: rendered as integers, never bound. The integer cast in the builder constructor already guarantees safety.
-- **`DEFAULT` values in INSERT / UPDATE that are `Expression::raw('NOW()')` or a sequence's `nextVal`**: these are `RawExpression` / `FunctionExpression`, not `ValueExpression`, so they pass through verbatim — no placeholder, correct behaviour.
+```
+UuidInputExpressionRenderer.php    # appends ::uuid iff $component->inner is ValueExpression or ParameterExpression
+```
+
+The Postgres override is short — one `if ($inner instanceof ValueExpression || $inner instanceof ParameterExpression)` branch around the rendered inner. Column-reference inputs and any other expression types fall through to the parent (no cast).
+
+#### Dialect contract additions
+
+```php
+abstract class Dialect {
+    abstract public function renderUuidInputExpression(UuidInputExpression $component): string;
+    abstract public function renderUuidOutputExpression(UuidOutputExpression $component): string;
+}
+```
+
+Add the two cases to `Dialect::renderExpression()`'s polymorphic `match`. `DefaultDialect` adds renderer slots, accessor factories, and the two `render*` implementations (one-liner each, like every existing one). `__clone()` resets the two new slots alongside the others (same pattern as `ParameterExpressionRenderer`).
+
+### Migration steps
+
+1. **DDL type**
+   - Add `DataType::Uuid = 'UUID'` to the enum.
+   - Create `src/Dialect/MariaDb/Renderer/ColumnRenderer.php` extending the default; override only the type-emission helper to map `DataType::Uuid` → `BINARY(16)`.
+   - Wire `MariaDbDialect::columnRenderer()` accessor.
+2. **DML expressions**
+   - Add `UuidInputExpression`, `UuidOutputExpression` under `src/Common/`.
+   - Add `Expression::uuid()` and `Expression::uuidColumn()` factories.
+3. **Default renderers**
+   - Add `UuidInputExpressionRenderer` and `UuidOutputExpressionRenderer` under `src/Dialect/Renderer/Common/` (pass-through default behaviour).
+   - Add the abstract `renderUuid*Expression()` methods on `Dialect`, the dispatch cases in `renderExpression()`, and the slots + accessors on `DefaultDialect`. Extend the `__clone()` reset list.
+4. **MariaDB overrides**
+   - Add `UuidInputExpressionRenderer` (emits `UUID_TO_BIN(<inner>)`, no swap_flag) and `UuidOutputExpressionRenderer` (emits `BIN_TO_UUID(<inner>) [AS <alias>]`, no swap_flag) under `src/Dialect/MariaDb/Renderer/`.
+   - Override the protected `uuidInputExpressionRenderer()` and `uuidOutputExpressionRenderer()` factories on `MariaDbDialect`.
+5. **Postgres override**
+   - Add `Postgres\Renderer\UuidInputExpressionRenderer` that appends `::uuid` when the inner is `ValueExpression` or `ParameterExpression`; otherwise delegate to parent.
+   - Override the protected `uuidInputExpressionRenderer()` factory on `PostgresDialect`.
+6. **Tests** under `tests/Unit/`:
+   - `tests/Unit/Ddl/UuidColumnTest.php` — `Column::create('id', DataType::Uuid)` on default/Postgres → `UUID`, on MariaDB → `BINARY(16)`, with NOT NULL / DEFAULT modifiers preserved on both.
+   - `tests/Unit/Common/UuidExpressionTest.php` — factories produce the right inner expressions; default renders are pass-through.
+   - `tests/Unit/Dialect/UuidDialectTest.php`:
+     - **DDL**: Default and Postgres emit `UUID`; MariaDB emits `BINARY(16)`.
+     - **INSERT/UPDATE value wrapping**: literal `Expression::uuid('aaa…')` in `Insert::values()` / `Update::set()` becomes bare on default, `'aaa…'::uuid` on Postgres, `UUID_TO_BIN('aaa…')` on MariaDB.
+     - **Bind mode**: `prepare()` shows placeholder shape per dialect — `?` (bare) on default, `$1::uuid` on Postgres, `UUID_TO_BIN(?)` on MariaDB. `parameters` carries the **text** UUID on all three.
+     - **WHERE comparison**: `WHERE id = Expression::uuid(...)` wraps the right operand; left column reference stays unwrapped.
+     - **JOIN ON across two UUID columns**: both column refs unwrapped on Postgres (no cast needed); on MariaDB the `ON` clause stays bare-column too — the simulation only wraps **values**, not column-to-column comparisons (binary columns already compare as binary).
+     - **SELECT projection**: `Expression::uuidColumn('id', 'id')` renders as `"id" AS "id"` on Postgres, `` `id` AS `id` `` on default, `` BIN_TO_UUID(`id`) AS `id` `` on MariaDB.
+     - **Nested with `Expression::param()`**: `Expression::uuid(Expression::param('uid'))` recurses through the renderer dispatch — `UUID_TO_BIN(:uid)` on MariaDB, `:uid::uuid` on Postgres, `:uid` on default.
+     - **Postgres no-cast on column ref**: `Expression::uuid(Expression::ref('other_id'))` stays as `"other_id"` (no `::uuid` because the inner is a column reference, not a value/param).
+7. **README** — extend the Status & Roadmap with a short "UUID columns" bullet under "What works today" once landed; document the `Expression::uuid()` / `Expression::uuidColumn()` factories and the MariaDB simulation in the same section that already covers schema simulation.
+8. **CHANGELOG** — `### Added: First-class UUID columns. New DataType::Uuid; Expression::uuid() / Expression::uuidColumn() wrappers; MariaDB simulates as BINARY(16) with transparent UUID_TO_BIN / BIN_TO_UUID conversion at value and projection boundaries; PostgreSQL emits ::uuid casts only where ambiguous (literals and parameters), not on column references.`
+
+### Resolved decisions
+
+- **MariaDB `swap_flag`** — **omitted**. `UUID_TO_BIN(x)` / `BIN_TO_UUID(x)` without the optional second argument. Matches MariaDB's default and the byte layout produced by `UUID()`. Can be surfaced as a `MariaDbDialect` knob in a later release if a caller needs the v1 index-locality reordering.
+- **Postgres `::uuid` cast** — **conditional on inner type**. Append `::uuid` iff `$component->inner` is a `ValueExpression` or a `ParameterExpression`. Column references and other expression types fall through without a cast. Keeps `WHERE id = $1::uuid` correct while leaving `WHERE id = other_id` clean.
+- **Nested UUID expressions** — supported by construction. `Expression::uuid(Expression::param('uid'))` recurses through `Dialect::renderExpression()` and produces the right shape per dialect; covered by an explicit test in `UuidDialectTest`.
 
 ## Testing
 

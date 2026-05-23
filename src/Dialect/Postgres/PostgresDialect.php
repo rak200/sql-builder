@@ -6,6 +6,8 @@ namespace Rak200\SqlBuilder\Dialect\Postgres;
 
 use Rak200\SqlBuilder\Dialect\DefaultDialect;
 use Rak200\SqlBuilder\Dialect\Postgres\Renderer\InsertRenderer;
+use Rak200\SqlBuilder\Dialect\Postgres\Renderer\UuidInputExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Common\UuidInputExpressionRenderer as DefaultUuidInputExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Dml\InsertRenderer as DefaultInsertRenderer;
 use Rak200\SqlBuilder\Prepared\Binder;
 
@@ -49,6 +51,10 @@ class PostgresDialect extends DefaultDialect {
 
     protected function insertRenderer(): DefaultInsertRenderer {
         return $this->insertRenderer ??= new InsertRenderer($this);
+    }
+
+    protected function uuidInputExpressionRenderer(): DefaultUuidInputExpressionRenderer {
+        return $this->uuidInputExpressionRenderer ??= new UuidInputExpressionRenderer($this);
     }
 
     /** {@inheritdoc} */

@@ -18,6 +18,8 @@ use Rak200\SqlBuilder\Common\SubqueryExpression;
 use Rak200\SqlBuilder\Common\TableReference;
 use Rak200\SqlBuilder\Common\UnaryExpression;
 use Rak200\SqlBuilder\Common\ParameterExpression;
+use Rak200\SqlBuilder\Common\UuidInputExpression;
+use Rak200\SqlBuilder\Common\UuidOutputExpression;
 use Rak200\SqlBuilder\Common\ValueExpression;
 use Rak200\SqlBuilder\Common\Window;
 use Rak200\SqlBuilder\Common\WindowExpression;
@@ -45,6 +47,8 @@ use Rak200\SqlBuilder\Dialect\Renderer\Common\SubqueryExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\TableReferenceRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\UnaryExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\ParameterExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Common\UuidInputExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Common\UuidOutputExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\ValueExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\WindowExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\WindowRenderer;
@@ -92,6 +96,8 @@ class DefaultDialect extends Dialect {
     protected ?ColumnReferenceRenderer    $columnReferenceRenderer    = null;
     protected ?ValueExpressionRenderer    $valueExpressionRenderer    = null;
     protected ?ParameterExpressionRenderer $parameterExpressionRenderer = null;
+    protected ?UuidInputExpressionRenderer  $uuidInputExpressionRenderer  = null;
+    protected ?UuidOutputExpressionRenderer $uuidOutputExpressionRenderer = null;
     protected ?RawExpressionRenderer      $rawExpressionRenderer      = null;
     protected ?FunctionExpressionRenderer $functionExpressionRenderer = null;
     protected ?ExistsExpressionRenderer   $existsExpressionRenderer   = null;
@@ -137,6 +143,8 @@ class DefaultDialect extends Dialect {
         $this->columnReferenceRenderer     = null;
         $this->valueExpressionRenderer     = null;
         $this->parameterExpressionRenderer = null;
+        $this->uuidInputExpressionRenderer  = null;
+        $this->uuidOutputExpressionRenderer = null;
         $this->rawExpressionRenderer       = null;
         $this->functionExpressionRenderer  = null;
         $this->existsExpressionRenderer    = null;
@@ -286,6 +294,14 @@ class DefaultDialect extends Dialect {
         return $this->parameterExpressionRenderer()->render($component);
     }
 
+    public function renderUuidInputExpression(UuidInputExpression $component): string {
+        return $this->uuidInputExpressionRenderer()->render($component);
+    }
+
+    public function renderUuidOutputExpression(UuidOutputExpression $component): string {
+        return $this->uuidOutputExpressionRenderer()->render($component);
+    }
+
     public function renderRawExpression(RawExpression $component): string {
         return $this->rawExpressionRenderer()->render($component);
     }
@@ -418,6 +434,14 @@ class DefaultDialect extends Dialect {
 
     protected function parameterExpressionRenderer(): ParameterExpressionRenderer {
         return $this->parameterExpressionRenderer ??= new ParameterExpressionRenderer($this);
+    }
+
+    protected function uuidInputExpressionRenderer(): UuidInputExpressionRenderer {
+        return $this->uuidInputExpressionRenderer ??= new UuidInputExpressionRenderer($this);
+    }
+
+    protected function uuidOutputExpressionRenderer(): UuidOutputExpressionRenderer {
+        return $this->uuidOutputExpressionRenderer ??= new UuidOutputExpressionRenderer($this);
     }
 
     protected function rawExpressionRenderer(): RawExpressionRenderer {

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-05-23
+
+### Added
+- **First-class UUID columns** — the long-standing `DataType::Uuid` enum case finally has end-to-end support across DDL and DML, including transparent input/output transformation on engines that lack a native UUID type.
+  - **DDL**: `Column::create('id', DataType::Uuid)` renders as `UUID` on the default dialect and on PostgreSQL (native type), and as `BINARY(16)` on MariaDB / MySQL (the standard 16-byte simulation). All other modifiers (`NOT NULL`, `PRIMARY KEY`, `DEFAULT …`) flow through unchanged.
+  - **DML wrappers**: two new expression types under `src/Common/` — `UuidInputExpression` and `UuidOutputExpression` — paired with `Expression::uuid(string|ExpressionInterface)` and `Expression::uuidColumn(string $name, ?string $alias)` factories.
+    - **Default dialect**: pass-through (renders the inner expression verbatim).
+    - **PostgreSQL**: appends an explicit `::uuid` cast only when the inner is a `ValueExpression` or `ParameterExpression` (`'aaaa-…'::uuid`, `$1::uuid`); column references and other expression types stay clean. The cast disambiguates contexts where PG cannot infer the type from a target column (e.g. `SELECT $1 AS id`).
+    - **MariaDB / MySQL**: wraps values in `UUID_TO_BIN(<inner>)` and SELECT-projected columns in `BIN_TO_UUID(<column>)` (with the column's alias hoisted outside the call so the projected name is preserved). The optional `swap_flag` second argument is intentionally omitted — it changes the byte layout incompatibly with text-UUID ordering and would need a matching flag on the read side.
+  - **Dialect contract**: two new abstract `renderUuidInputExpression()` / `renderUuidOutputExpression()` methods on `Dialect` plus polymorphic dispatch in `renderExpression()`. `DefaultDialect` adds renderer slots, lazy accessors, and `__clone()` resets for both. `MariaDbDialect` and `PostgresDialect` override only the accessors they need.
+  - **`Dialect/Renderer/Ddl/ColumnRenderer`** refactored to expose a protected `renderType(Column)` hook so vendor column renderers (currently MariaDB's) can remap a logical `DataType` to a different physical storage type without rewriting the whole column body.
+  - 28 new tests across `tests/Unit/Common/UuidExpressionTest.php` (7), `tests/Unit/Ddl/UuidColumnTest.php` (5) and `tests/Unit/Dialect/UuidDialectTest.php` (16) covering DDL type rendering, INSERT/UPDATE value wrapping, WHERE comparison, SELECT projection (with and without alias), JOIN-on-two-UUID-columns staying bare on all dialects, `prepare()` placeholder shape per dialect (named and Postgres positional), `Expression::uuid(Expression::param(...))` recursion through the renderer dispatch, and the Postgres no-cast guarantee on column-reference inputs.
+
 ## [0.6.0] - 2026-05-20
 
 ### Added
@@ -121,7 +134,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/rak200/sql-builder/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/rak200/sql-builder/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/rak200/sql-builder/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/rak200/sql-builder/compare/0.3.0...0.4.0

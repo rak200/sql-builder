@@ -6,13 +6,19 @@ namespace Rak200\SqlBuilder\Dialect\MariaDb;
 
 use Rak200\SqlBuilder\Dialect\DefaultDialect;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\BinaryExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\ColumnRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\DeleteRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\IndexRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\InsertRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\SchemaRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\TableRenderer;
 use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\UpdateRenderer;
+use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\UuidInputExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\MariaDb\Renderer\UuidOutputExpressionRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Common\BinaryExpressionRenderer as DefaultBinaryExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Common\UuidInputExpressionRenderer as DefaultUuidInputExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Common\UuidOutputExpressionRenderer as DefaultUuidOutputExpressionRenderer;
+use Rak200\SqlBuilder\Dialect\Renderer\Ddl\ColumnRenderer as DefaultColumnRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\IndexRenderer as DefaultIndexRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\SchemaRenderer as DefaultSchemaRenderer;
 use Rak200\SqlBuilder\Dialect\Renderer\Ddl\TableRenderer as DefaultTableRenderer;
@@ -97,5 +103,17 @@ class MariaDbDialect extends DefaultDialect {
 
     protected function binaryExpressionRenderer(): DefaultBinaryExpressionRenderer {
         return $this->binaryExpressionRenderer ??= new BinaryExpressionRenderer($this);
+    }
+
+    protected function columnRenderer(): DefaultColumnRenderer {
+        return $this->columnRenderer ??= new ColumnRenderer($this);
+    }
+
+    protected function uuidInputExpressionRenderer(): DefaultUuidInputExpressionRenderer {
+        return $this->uuidInputExpressionRenderer ??= new UuidInputExpressionRenderer($this);
+    }
+
+    protected function uuidOutputExpressionRenderer(): DefaultUuidOutputExpressionRenderer {
+        return $this->uuidOutputExpressionRenderer ??= new UuidOutputExpressionRenderer($this);
     }
 }

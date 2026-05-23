@@ -339,7 +339,7 @@ Use `Expression::column()` for SELECT projections (supports an alias), `Expressi
 
 ## Status & Roadmap
 
-Current version: **0.6.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
+Current version: **0.7.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
 
 ### What works today
 
@@ -347,6 +347,8 @@ Current version: **0.6.0** — early development, **unstable**. The API may stil
 - **DDL:** `Table` (CREATE, ALTER, DROP, TRUNCATE — with IF EXISTS / CASCADE / RESTRICT / RESTART IDENTITY / CONTINUE IDENTITY modifiers and ADD/DROP/MODIFY/RENAME column, ADD/DROP CONSTRAINT, ADD INDEX, RENAME TO in ALTER mode), `Column`, `View` (CREATE with OR REPLACE / TEMPORARY / IF NOT EXISTS / WITH CHECK OPTION, plus DROP), `Sequence` (CREATE, ALTER incl. RESTART / NEXTVAL, and DROP), `Index` (CREATE and DROP), `Schema` (CREATE / DROP / ALTER ... RENAME TO; on MariaDB simulated as table-name prefixing), and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators (compact mnemonics `Eq`/`Ne`/`Gt`/`Lt`/`Ge`/`Le`, plus null-safe `NullSafeEq`/`NullSafeNe` that emit `IS [NOT] DISTINCT FROM` on the default/Postgres dialect and `<=>` / `NOT (<=>)` on MariaDB), AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), `CASE WHEN` (searched and simple forms), window functions (`OVER (PARTITION BY ... ORDER BY ... ROWS/RANGE/GROUPS ...)`), raw SQL escape hatch, identifier and value quoting.
 - **SELECT extensions:** Common Table Expressions (`WITH name [(cols)] AS (...)`) with `Select::with()` / `withRecursive()`, including multi-CTE and recursive bodies via `Set` unions.
+- **Parameter binding:** opt-in `prepare(Dialect): PreparedStatement` on every DML builder. `Expression::param(int|string, mixed)` declares positional (`?` / `$N`) or named (`:name`) placeholders; existing `ValueExpression` values auto-convert in bind mode. Postgres reuses `$N` natively for repeated keys; MariaDB/MySQL duplicates values per `?` occurrence; named placeholders are reusable on both via PDO emulation.
+- **UUID columns:** `DataType::Uuid` for DDL plus `Expression::uuid(value)` / `Expression::uuidColumn(name)` for DML. PostgreSQL gets the native `UUID` type with `::uuid` casts on literals/parameters where the type can't be inferred; MariaDB stores as `BINARY(16)` with transparent `UUID_TO_BIN(...)` / `BIN_TO_UUID(...)` wrapping at value and projection boundaries — same pattern as the schema simulation.
 - **Dialects:** abstract `Dialect` base with a permissive `DefaultDialect`, vendor dialects (`MariaDbDialect` / `MariaDb105Dialect`, `PostgresDialect` / `Postgres15Dialect`), one renderer class per component, runtime selection via `Dialect::fromDsn()`, opt-in per-call rendering via `toSql(Dialect)`. Vendor-specific feature gates (e.g. PostgreSQL rejects `ON DUPLICATE KEY UPDATE`, MariaDB <10.5 rejects `RETURNING`) raise `UnsupportedFeatureException`.
 - **Tests:** PHPUnit 13 unit suite under `tests/Unit/`; run with `composer test`.
 
