@@ -433,7 +433,7 @@ Use `Expr::col()` for SELECT projections (supports an alias), `Expr::ref()` for 
 
 ## Status & Roadmap
 
-Current version: **0.11.1** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
+Current version: **0.11.2** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
 
 ### What works today
 

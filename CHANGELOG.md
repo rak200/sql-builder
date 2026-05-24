@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.2] - 2026-05-24
+
+### Added
+- **PDO smoke-test Integration suite** in `tests/Integration/PdoSmokeTest.php` — 13 tests that exercise each top-level builder against an in-memory SQLite database. Uses `DefaultDialect` (backticks for identifiers, `?` for positional placeholders — both natively tolerated by SQLite). Covers `Select` (basic, with JOIN, with CTE), `Insert` (basic, with `onConflict()->doUpdate()`, with `RETURNING`), `Update`, `Delete`, the `prepare(Dialect)` parameter-binding path, `Set` rendering, and DDL (`CREATE TABLE`, `CREATE INDEX`, `CREATE VIEW`). Tests skip cleanly when `pdo_sqlite` is missing. Vendor-specific features (`MERGE`, `LATERAL`, `GROUPING SETS`, `NULLS NOT DISTINCT`, `ON DUPLICATE KEY UPDATE`) are not exercised — their unit-level dialect tests already assert the produced string, and SQLite cannot parse them. Suite: 495 → 508.
+
+### Changed
+- `CLAUDE.md` "Planned: PDO smoke-test Integration suite" section removed (landed in this release). The 1.0.0 readiness checklist now has CI ✅ and Integration smoke tests ✅; remaining blockers are `rak200/collections` / `rak200/utils` reaching 1.0.0 and a stabilisation window without API churn.
+
 ## [0.11.1] - 2026-05-23
 
 ### Added
@@ -227,7 +235,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.11.1...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.11.2...HEAD
+[0.11.2]: https://github.com/rak200/sql-builder/compare/0.11.1...0.11.2
 [0.11.1]: https://github.com/rak200/sql-builder/compare/0.11.0...0.11.1
 [0.11.0]: https://github.com/rak200/sql-builder/compare/0.10.1...0.11.0
 [0.10.1]: https://github.com/rak200/sql-builder/compare/0.10.0...0.10.1
