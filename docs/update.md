@@ -9,6 +9,18 @@ use Rak200\SqlBuilder\Common\Enum\Sort\Direction;
 use Rak200\SqlBuilder\Dml\Update;
 ```
 
+## Contents
+
+- [Basic UPDATE](#basic-update)
+- [Table alias](#table-alias)
+- [WHERE composition](#where-composition)
+- [Multi-table UPDATE (PostgreSQL FROM)](#multi-table-update-postgresql-from)
+- [ORDER BY and LIMIT (MySQL extension)](#order-by-and-limit-mysql-extension)
+- [RETURNING](#returning)
+- [Prepared statements](#prepared-statements)
+
+[↑ Back to top](#)
+
 ## Basic UPDATE
 
 ```php

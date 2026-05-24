@@ -31,6 +31,20 @@ Each DDL builder has factory methods for the statement variant it can emit:
 
 Constraint builders (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`) have only `create()`; the constraint name is optional (omit for unnamed) and they're added to a `Table` via `->constraint()` / `->constraints()`.
 
+## Contents
+
+- [Data types](#data-types)
+- [CREATE TABLE](#create-table)
+- [ALTER TABLE](#alter-table)
+- [DROP / TRUNCATE TABLE](#drop--truncate-table)
+- [Constraints](#constraints)
+- [VIEW](#view)
+- [SEQUENCE](#sequence)
+- [INDEX](#index)
+- [SCHEMA](#schema)
+
+[↑ Back to top](#)
+
 ## Data types
 
 `DataType` enum cases — pass to `Column::create()`:

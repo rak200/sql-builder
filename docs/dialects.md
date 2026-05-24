@@ -21,6 +21,19 @@ $query->toSql(new PostgresDialect());           // double quotes
 $query->toSql(Dialect::fromDsn('pgsql://h/db'));
 ```
 
+## Contents
+
+- [Available dialects](#available-dialects)
+- [Selecting a dialect by DSN](#selecting-a-dialect-by-dsn)
+- [Vendor-specific feature gates](#vendor-specific-feature-gates)
+- [Null-safe comparison (MariaDB)](#null-safe-comparison-mariadb)
+- [UUID simulation](#uuid-simulation)
+- [Schema simulation (MariaDB)](#schema-simulation-mariadb)
+- [Writing a new dialect](#writing-a-new-dialect)
+- [Default dialect singleton](#default-dialect-singleton)
+
+[↑ Back to top](#)
+
 ## Available dialects
 
 | Dialect | Identifier quoting | Behaviour |

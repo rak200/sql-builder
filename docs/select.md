@@ -13,6 +13,24 @@ use Rak200\SqlBuilder\Dml\Set;
 
 `Select::create()` returns a fluent builder. Every method returns `static` so you can chain freely. The builder is a thin state container — it does no rendering until you call `__toString()` or `toSql($dialect)`.
 
+## Contents
+
+- [Projection](#projection)
+- [FROM](#from)
+- [JOIN family](#join-family)
+- [LATERAL joins](#lateral-joins)
+- [WHERE](#where)
+- [GROUP BY (with extensions)](#group-by-with-extensions)
+- [HAVING](#having)
+- [ORDER BY](#order-by)
+- [LIMIT and OFFSET](#limit-and-offset)
+- [Common Table Expressions (WITH)](#common-table-expressions-with)
+- [Window functions (OVER)](#window-functions-over)
+- [Subqueries](#subqueries)
+- [Rendering](#rendering)
+
+[↑ Back to top](#)
+
 ## Projection
 
 ```php

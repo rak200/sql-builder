@@ -12,6 +12,20 @@ use Rak200\SqlBuilder\Dml\Select;
 
 When user input flows into value positions, **always** use prepared statements rather than inlining values. The library produces SQL with placeholders and a parallel parameter array; you hand both to PDO (or any driver that accepts the same shape).
 
+## Contents
+
+- [API](#api)
+- [Inline values become anonymous placeholders](#inline-values-become-anonymous-placeholders)
+- [Explicit parameters with `Expr::param()`](#explicit-parameters-with-exprparam)
+- [Placeholder shapes by dialect](#placeholder-shapes-by-dialect)
+- [Reuse semantics](#reuse-semantics)
+- [Anonymous mode in detail](#anonymous-mode-in-detail)
+- [Wiring into PDO](#wiring-into-pdo)
+- [Edge cases](#edge-cases)
+- [Dialect singleton safety](#dialect-singleton-safety)
+
+[↑ Back to top](#)
+
 ## API
 
 Every DML builder and every expression has a `prepare(Dialect $dialect)` method that returns a `PreparedStatement`:

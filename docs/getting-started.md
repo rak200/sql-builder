@@ -2,6 +2,16 @@
 
 # Getting started
 
+## Contents
+
+- [Installation](#installation)
+- [Your first query](#your-first-query)
+- [Mental model](#mental-model)
+- [Inline values vs prepared statements](#inline-values-vs-prepared-statements)
+- [What's next](#whats-next)
+
+[↑ Back to top](#)
+
 ## Installation
 
 ```bash

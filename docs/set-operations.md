@@ -11,6 +11,19 @@ use Rak200\SqlBuilder\Dml\Set;
 
 `Set` wraps two or more `Select` queries with set operators. Start with `Set::create($first)` and chain `union()` / `except()` / `intersect()` for each additional operand.
 
+## Contents
+
+- [UNION](#union)
+- [EXCEPT](#except)
+- [INTERSECT](#intersect)
+- [Chaining](#chaining)
+- [ORDER BY / LIMIT / OFFSET on the combined result](#order-by--limit--offset-on-the-combined-result)
+- [Set as a CTE body](#set-as-a-cte-body)
+- [SQLite caveat](#sqlite-caveat)
+- [Prepared statements](#prepared-statements)
+
+[↑ Back to top](#)
+
 ## UNION
 
 ```php

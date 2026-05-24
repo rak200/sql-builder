@@ -8,6 +8,18 @@ use Rak200\SqlBuilder\Dml\Insert;
 use Rak200\SqlBuilder\Dml\Select;
 ```
 
+## Contents
+
+- [Basic INSERT … VALUES](#basic-insert--values)
+- [Multi-row](#multi-row)
+- [INSERT … SELECT](#insert--select)
+- [Portable upsert — `onConflict()`](#portable-upsert--onconflict)
+- [Legacy MariaDB upsert — `onDuplicateKeyUpdate()`](#legacy-mariadb-upsert--onduplicatekeyupdate)
+- [RETURNING](#returning)
+- [Prepared statements](#prepared-statements)
+
+[↑ Back to top](#)
+
 ## Basic INSERT … VALUES
 
 ```php

@@ -9,6 +9,18 @@ use Rak200\SqlBuilder\Common\Enum\Sort\Direction;
 use Rak200\SqlBuilder\Dml\Delete;
 ```
 
+## Contents
+
+- [Basic DELETE](#basic-delete)
+- [Table alias](#table-alias)
+- [WHERE composition](#where-composition)
+- [Multi-table DELETE (PostgreSQL USING)](#multi-table-delete-postgresql-using)
+- [ORDER BY and LIMIT (MySQL extension)](#order-by-and-limit-mysql-extension)
+- [RETURNING](#returning)
+- [Prepared statements](#prepared-statements)
+
+[↑ Back to top](#)
+
 ## Basic DELETE
 
 ```php

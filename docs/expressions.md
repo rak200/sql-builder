@@ -8,6 +8,24 @@
 use Rak200\SqlBuilder\Common\Expr;
 ```
 
+## Contents
+
+- [Column references](#column-references)
+- [Literals and raw SQL](#literals-and-raw-sql)
+- [Binary operators (predicates and arithmetic)](#binary-operators-predicates-and-arithmetic)
+- [Logical composition](#logical-composition)
+- [Arithmetic chains](#arithmetic-chains)
+- [Function calls and aggregates](#function-calls-and-aggregates)
+- [CASE WHEN](#case-when)
+- [Subqueries and EXISTS](#subqueries-and-exists)
+- [Window functions (OVER)](#window-functions-over)
+- [GROUP BY extensions](#group-by-extensions)
+- [UUID wrappers](#uuid-wrappers)
+- [Prepared-statement parameters](#prepared-statement-parameters)
+- [Aliasing](#aliasing)
+
+[↑ Back to top](#)
+
 ## Column references
 
 Two distinct factories — same name, different purpose:

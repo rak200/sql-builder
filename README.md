@@ -2,11 +2,26 @@
 
 Fluent SQL query and schema builder for PHP 8.4+. No ORM — generates SQL strings via a type-safe, chainable API.
 
+## Contents
+
+- [Installation](#installation)
+- [Overview](#overview)
+- [DML — Queries](#dml--queries)
+- [DDL — Schema](#ddl--schema)
+- [Expressions](#expressions)
+- [Status & Roadmap](#status--roadmap)
+- [Versioning](#versioning)
+- [License](#license)
+
+[↑ Back to top](#)
+
 ## Installation
 
 ```bash
 composer require rak200/sql-builder
 ```
+
+[↑ Back to top](#)
 
 ## Overview
 
@@ -18,6 +33,8 @@ composer require rak200/sql-builder
 | **Enums** | `Operator\Binary`, `Operator\Math`, `Sort\Direction`, … | Type-safe SQL keywords |
 
 📖 **Full documentation**: [`docs/`](docs/README.md) — getting started, expressions, every builder, dialects, and prepared statements with runnable examples.
+
+[↑ Back to top](#)
 
 ## DML — Queries
 
@@ -298,6 +315,8 @@ $merge = Merge::create()
 
 Branch helpers: `whenMatchedUpdate(assignments, predicate?)`, `whenMatchedDelete(predicate?)`, `whenNotMatchedInsert(columns, values, predicate?)`, `whenDoNothing(matched, predicate?)`. Branches are emitted in declaration order. `MERGE` is accepted on the default dialect and on `Postgres15Dialect`; older Postgres and MariaDB / MySQL throw `UnsupportedFeatureException` (use `Insert::onConflict()` or `Insert::onDuplicateKeyUpdate()` there).
 
+[↑ Back to top](#)
+
 ## DDL — Schema
 
 ### Table
@@ -415,6 +434,8 @@ echo Sequence::drop('order_id_seq')->ifExists()->cascade();
 
 MariaDB rejects PostgreSQL-only TRUNCATE modifiers (`RESTART IDENTITY`, `CONTINUE IDENTITY`, `CASCADE`, `RESTRICT`) with `UnsupportedFeatureException`. `DROP INDEX` on MariaDB requires the parent table — see {@see MariaDbDialect}.
 
+[↑ Back to top](#)
+
 ## Expressions
 
 ```php
@@ -433,6 +454,8 @@ Expr::raw('NOW()');                                          // NOW()
 
 Use `Expr::col()` for SELECT projections (supports an alias), `Expr::ref()` for column references inside conditions/`ORDER BY`/`GROUP BY`, and `Expr::identifier()` for bare names in `USING (...)`.
 
+[↑ Back to top](#)
+
 ## Status & Roadmap
 
 Current version: **0.13.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
@@ -448,6 +471,8 @@ Current version: **0.13.0** — early development, **unstable**. The API may sti
 - **Dialects:** abstract `Dialect` base with a permissive `DefaultDialect`, vendor dialects (`MariaDbDialect` / `MariaDb105Dialect`, `PostgresDialect` / `Postgres15Dialect`), one renderer class per component, runtime selection via `Dialect::fromDsn()`, opt-in per-call rendering via `toSql(Dialect)`. Vendor-specific feature gates (e.g. PostgreSQL rejects `ON DUPLICATE KEY UPDATE`, MariaDB <10.5 rejects `RETURNING`) raise `UnsupportedFeatureException`.
 - **Tests:** PHPUnit 13 unit suite under `tests/Unit/`; run with `composer test`.
 
+[↑ Back to top](#)
+
 ## Versioning
 
 Follows [Semantic Versioning](https://semver.org).
@@ -459,6 +484,10 @@ When releasing a new version:
 4. Commit and push
 5. Create and push a git tag matching the version: `git tag x.y.z && git push origin x.y.z`
 
+[↑ Back to top](#)
+
 ## License
 
 MIT
+
+[↑ Back to top](#)

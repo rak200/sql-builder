@@ -2,6 +2,8 @@
 
 Fluent SQL query and schema builder for PHP 8.4+. Generates SQL strings via a type-safe, chainable API. **No ORM** — the library produces SQL only; you execute it yourself with PDO or any other layer.
 
+For a package overview, see the [top-level README](../README.md).
+
 ## Table of contents
 
 1. [Getting started](getting-started.md) — installation, first query, mental model

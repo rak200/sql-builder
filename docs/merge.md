@@ -11,6 +11,18 @@ use Rak200\SqlBuilder\Dml\Select;
 
 SQL:2003 `MERGE` statement — combines INSERT / UPDATE / DELETE in one atomic write keyed on a join predicate. Accepted on the default dialect and on `Postgres15Dialect`; rejected on older Postgres and on every MariaDB dialect.
 
+## Contents
+
+- [Anatomy](#anatomy)
+- [Basic upsert pattern](#basic-upsert-pattern)
+- [Using a subquery as the source](#using-a-subquery-as-the-source)
+- [Branch helpers](#branch-helpers)
+- [RETURNING](#returning)
+- [Validation](#validation)
+- [Dialect support](#dialect-support)
+
+[↑ Back to top](#)
+
 ## Anatomy
 
 ```sql
