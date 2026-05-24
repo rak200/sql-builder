@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-05-24
+
+### Changed
+- **BREAKING (0.x): `ExpressionInterface` now extends the native PHP `\Stringable`** (PHP 8.0+) instead of `Rak200\Caster\Contracts\ToString`. The shape of the contract is identical — `public function __toString(): string;` — so existing code that uses `ExpressionInterface` keeps working unchanged. Only consumers that wrote `$expression instanceof \Rak200\Caster\Contracts\ToString` directly need to switch to `instanceof \Stringable` (or, better, `instanceof ExpressionInterface`).
+- `rak200/caster` removed from the direct `composer.json` requirements and from the documented dependency list. **Note**: `rak200/collections` still requires `rak200/caster` transitively, so it will still appear in `composer.lock` and `vendor/`; fully eliminating it requires updating `rak200/collections` to drop the dep. The VCS `repositories` entry for `rak200/caster` is kept so that transitive resolution still works.
+
 ## [0.11.2] - 2026-05-24
 
 ### Added
@@ -235,7 +241,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.11.2...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.12.0...HEAD
+[0.12.0]: https://github.com/rak200/sql-builder/compare/0.11.2...0.12.0
 [0.11.2]: https://github.com/rak200/sql-builder/compare/0.11.1...0.11.2
 [0.11.1]: https://github.com/rak200/sql-builder/compare/0.11.0...0.11.1
 [0.11.0]: https://github.com/rak200/sql-builder/compare/0.10.1...0.11.0

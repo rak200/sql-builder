@@ -7,9 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **rak200/sql-builder** is a standalone PHP 8.4+ library for building SQL strings via a fluent, type-safe API. It covers DML (SELECT, set operations) and DDL (tables, views, sequences, constraints, indexes). No ORM — it produces SQL strings only.
 
 Depends on:
-- `rak200/caster ^1.0.0` for the `ToString` contract used by `ExpressionInterface`
 - `rak200/collections 0.*` for the typed `Vector` container used internally
 - `rak200/utils ^0.1.0` for `Rak200\Utils\Str` (blank checks, `join` with `lastSeparator`, `wrap`) used by renderers
+
+`ExpressionInterface` extends PHP's native {@see \Stringable} (PHP 8.0+); the previous `rak200/caster` dependency was removed in 0.12.0 since the contract is just `__toString(): string`.
 
 Dev dependencies:
 - `phpunit/phpunit ^13.1` for the test suite
@@ -21,7 +22,7 @@ sql-builder/
 ├── src/
 │   ├── Common/
 │   │   ├── Expr.php                  # abstract factory base
-│   │   ├── ExpressionInterface.php   # extends Rak200\Caster\Contracts\ToString
+│   │   ├── ExpressionInterface.php   # extends native \Stringable
 │   │   ├── Expression/*.php          # Binary, Unary, Column, Value, Raw, Func, CaseWhen, Exists,
 │   │   │                             # Subquery, Param, UuidInput, UuidOutput, Window, Grouping
 │   │   ├── Reference/*.php           # Column, Table, Identifier
