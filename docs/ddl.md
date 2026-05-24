@@ -1,3 +1,5 @@
+[← Docs index](README.md)
+
 # DDL — Schema definition
 
 ```php

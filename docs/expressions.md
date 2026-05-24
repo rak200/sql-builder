@@ -1,3 +1,5 @@
+[← Docs index](README.md)
+
 # Expressions
 
 `Expr` is the abstract factory used everywhere — it produces the typed expression objects that builders accept as arguments. All expressions implement `ExpressionInterface` (which extends native `\Stringable`), so any expression can be rendered standalone or composed into a larger statement.

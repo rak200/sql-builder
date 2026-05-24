@@ -1,3 +1,5 @@
+[← Docs index](README.md)
+
 # Prepared statements
 
 ```php
