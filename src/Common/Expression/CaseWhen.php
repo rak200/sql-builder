@@ -36,6 +36,9 @@ final class CaseWhen extends Expr {
     /** @var ExpressionInterface|null Optional ELSE result. */
     public private(set) ?ExpressionInterface $else = null;
 
+    /**
+     * @param ExpressionInterface|null $subject Subject for simple-form CASE; null selects the searched form.
+     */
     public function __construct(?ExpressionInterface $subject = null) {
         $this->subject = $subject;
     }

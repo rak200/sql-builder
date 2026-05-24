@@ -20,6 +20,10 @@ use Rak200\SqlBuilder\Dialect\Dialect;
  */
 final class Column implements ExpressionInterface {
 
+    /**
+     * @param string $name Column name, optionally qualified (`table.column`,
+     *                     `schema.table.column`).
+     */
     public function __construct(public readonly string $name) {}
 
     /** {@inheritdoc} */
@@ -27,6 +31,7 @@ final class Column implements ExpressionInterface {
         return Dialect::default()->renderColumnReference($this);
     }
 
+    /** Render this reference with a specific dialect. */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderColumnReference($this);
     }

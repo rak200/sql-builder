@@ -34,26 +34,39 @@ class ForeignKey extends Constraint {
         parent::__construct($name);
     }
 
+    /** Create a foreign key with the given constraint name. */
     public static function create(string $name): static {
         return new static($name);
     }
 
+    /**
+     * Set the local column list.
+     *
+     * @param array<int, string> $columns
+     */
     public function columns(array $columns): static {
         $this->columns = $columns;
         return $this;
     }
 
+    /**
+     * Set the referenced table and its column list.
+     *
+     * @param array<int, string> $columns
+     */
     public function references(string $table, array $columns): static {
         $this->referenceTable = $table;
         $this->referenceColumns = $columns;
         return $this;
     }
 
+    /** Set the action triggered when a referenced row is deleted. */
     public function onDelete(ForeignKeyAction $action): static {
         $this->onDelete = $action;
         return $this;
     }
 
+    /** Set the action triggered when a referenced row is updated. */
     public function onUpdate(ForeignKeyAction $action): static {
         $this->onUpdate = $action;
         return $this;

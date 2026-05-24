@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-05-24
+
+### Added
+- **`docs/` directory** — 11 markdown guides covering every public API surface, with runnable examples:
+  - [`docs/README.md`](docs/README.md) — index
+  - [`docs/getting-started.md`](docs/getting-started.md) — install, first query, mental model
+  - [`docs/expressions.md`](docs/expressions.md) — the `Expr` factory in full
+  - [`docs/select.md`](docs/select.md), `insert.md`, `update.md`, `delete.md`, `merge.md`, `set-operations.md` — DML
+  - [`docs/ddl.md`](docs/ddl.md) — Table / Column / View / Sequence / Index / Schema and every constraint
+  - [`docs/dialects.md`](docs/dialects.md) — dialect architecture, vendor gates table, schema/UUID simulation, writing your own dialect
+  - [`docs/prepared-statements.md`](docs/prepared-statements.md) — `prepare(Dialect)`, `Expr::param()`, named vs positional placeholders, per-dialect binder semantics
+- README points at `docs/` from the Overview section.
+- PHPDoc one-liners added across `Common/`, `Dml/`, and `Ddl/` for public methods that previously had none. Aligns the codebase with the new "Documentation is mandatory" convention introduced in CLAUDE.md.
+
+### Changed
+- `CLAUDE.md` gained a `## Conventions` section codifying the project's documentation policy: class-level PHPDoc summary + `@author` tag on every class, PHPDoc on every public method (with `@param`/`@return`/`@throws` only when they add information beyond the type signature), `declare(strict_types=1)` at the top of every file.
+
 ## [0.12.0] - 2026-05-24
 
 ### Changed
@@ -241,7 +258,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.12.0...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.13.0...HEAD
+[0.13.0]: https://github.com/rak200/sql-builder/compare/0.12.0...0.13.0
 [0.12.0]: https://github.com/rak200/sql-builder/compare/0.11.2...0.12.0
 [0.11.2]: https://github.com/rak200/sql-builder/compare/0.11.1...0.11.2
 [0.11.1]: https://github.com/rak200/sql-builder/compare/0.11.0...0.11.1

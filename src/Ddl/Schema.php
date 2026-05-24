@@ -47,6 +47,7 @@ class Schema implements ExpressionInterface {
     public private(set) bool $restrict = false;
     public private(set) ?string $renameTo = null;
 
+    /** @param string $name Schema name. */
     public function __construct(public private(set) string $name) {}
 
     /**
@@ -74,6 +75,7 @@ class Schema implements ExpressionInterface {
         return $schema;
     }
 
+    /** Rename the schema (does not change the rendered statement type). */
     public function name(string $name): static {
         $this->name = $name;
         return $this;

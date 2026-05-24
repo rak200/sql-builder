@@ -36,6 +36,7 @@ final class Identifier implements ExpressionInterface {
         return Dialect::default()->renderSimpleIdentifier($this);
     }
 
+    /** Render this identifier with a specific dialect. */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderSimpleIdentifier($this);
     }

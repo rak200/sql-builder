@@ -39,31 +39,41 @@ class Index implements ExpressionInterface {
         public private(set) bool $unique = false
     ) {}
 
+    /** Start a `CREATE INDEX` statement. */
     public static function create(string $name): static {
         return new static($name);
     }
 
+    /** Start a `DROP INDEX` statement. */
     public static function drop(string $name): static {
         $index = new static($name);
         $index->mode = self::MODE_DROP;
         return $index;
     }
 
+    /** Rename the index. */
     public function name(string $name): static {
         $this->name = $name;
         return $this;
     }
 
+    /** Set the parent table (required by `CREATE INDEX` and by `DROP INDEX` on MariaDB). */
     public function table(string $table): static {
         $this->table = $table;
         return $this;
     }
 
+    /**
+     * Set the indexed columns.
+     *
+     * @param array<int, string> $columns
+     */
     public function columns(array $columns): static {
         $this->columns = $columns;
         return $this;
     }
 
+    /** Mark the index as `UNIQUE`. */
     public function unique(): static {
         $this->unique = true;
         return $this;
@@ -86,6 +96,7 @@ class Index implements ExpressionInterface {
         return Dialect::default()->renderIndex($this);
     }
 
+    /** Render this index with a specific dialect. */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderIndex($this);
     }

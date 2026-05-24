@@ -26,5 +26,9 @@ use Rak200\SqlBuilder\Common\ExpressionInterface;
  */
 final class UuidOutput extends Expr {
 
+    /**
+     * @param ExpressionInterface $inner Column expression whose UUID-typed value
+     *                                   should be decoded back to text on projection.
+     */
     public function __construct(public readonly ExpressionInterface $inner) {}
 }

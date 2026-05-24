@@ -63,20 +63,33 @@ final class Insert implements ExpressionInterface {
     /** @var ExpressionInterface[] RETURNING expressions. */
     public private(set) array $returning = [];
 
+    /** Create a new empty INSERT builder. */
     public static function create(): self {
         return new self();
     }
 
+    /** Set the target table name. */
     public function into(string $table): static {
         $this->table = $table;
         return $this;
     }
 
+    /** Declare the column list, fixing the row arity for subsequent `values()` calls. */
     public function columns(string ...$names): static {
         $this->columns = $names;
         return $this;
     }
 
+    /**
+     * Append one tuple to the `VALUES` clause.
+     *
+     * Scalars are wrapped in {@see Expression::val()}; pre-built
+     * `ExpressionInterface` instances pass through.
+     *
+     * @throws InvalidArgumentException When the statement already has a SELECT
+     *                                  source, or when the row arity disagrees
+     *                                  with the declared columns / earlier rows.
+     */
     public function values(mixed ...$row): static {
         if ($this->select !== null) {
             throw new InvalidArgumentException('INSERT cannot mix VALUES and SELECT.');
@@ -100,6 +113,11 @@ final class Insert implements ExpressionInterface {
         return $this;
     }
 
+    /**
+     * Set a SELECT statement as the row source (`INSERT INTO ... SELECT ...`).
+     *
+     * @throws InvalidArgumentException When the statement already has VALUES rows.
+     */
     public function select(Select $query): static {
         if ($this->rows !== []) {
             throw new InvalidArgumentException('INSERT cannot mix VALUES and SELECT.');
@@ -109,6 +127,12 @@ final class Insert implements ExpressionInterface {
         return $this;
     }
 
+    /**
+     * Add a `ON DUPLICATE KEY UPDATE column = value` clause (MySQL / MariaDB).
+     *
+     * For portable upsert behaviour use {@see onConflict()} instead — the
+     * MariaDB dialect translates that to this syntax automatically.
+     */
     public function onDuplicateKeyUpdate(string $column, mixed $value): static {
         $this->onDuplicateKey[$column] = $value instanceof ExpressionInterface
             ? $value
@@ -184,6 +208,11 @@ final class Insert implements ExpressionInterface {
         return $this;
     }
 
+    /**
+     * Append `RETURNING` expressions (PostgreSQL, MariaDB ≥ 10.5, SQLite ≥ 3.35).
+     *
+     * Strings become column expressions; pre-built expressions pass through.
+     */
     public function returning(ExpressionInterface|string ...$expressions): static {
         foreach ($expressions as $expression) {
             $this->returning[] = $expression instanceof ExpressionInterface

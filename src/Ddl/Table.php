@@ -75,33 +75,39 @@ class Table implements ExpressionInterface {
         $this->constraints = $constraints ?? new Vector(ExpressionInterface::class);
     }
 
+    /** Start a `CREATE TABLE` statement. */
     public static function create(string $name): static {
         return new static($name);
     }
 
+    /** Start an `ALTER TABLE` statement. */
     public static function alter(string $name): static {
         $table = new static($name);
         $table->mode = self::MODE_ALTER;
         return $table;
     }
 
+    /** Start a `DROP TABLE` statement. */
     public static function drop(string $name): static {
         $table = new static($name);
         $table->mode = self::MODE_DROP;
         return $table;
     }
 
+    /** Start a `TRUNCATE TABLE` statement. */
     public static function truncate(string $name): static {
         $table = new static($name);
         $table->mode = self::MODE_TRUNCATE;
         return $table;
     }
 
+    /** Rename the table (does not change the rendered statement type). */
     public function name(string $name): static {
         $this->name = $name;
         return $this;
     }
 
+    /** Add a column. In `CREATE` mode it is appended to the column list; in `ALTER` mode it queues an `ADD COLUMN`. */
     public function column(Column $column): static {
         if ($this->mode === self::MODE_ALTER) {
             $this->alterOperations[] = ['type' => 'ADD COLUMN', 'definition' => $column];
@@ -112,6 +118,7 @@ class Table implements ExpressionInterface {
         return $this;
     }
 
+    /** Add multiple columns at once (see {@see column()}). */
     public function columns(Column ...$columns): static {
         foreach ($columns as $column) {
             $this->column($column);
@@ -119,6 +126,7 @@ class Table implements ExpressionInterface {
         return $this;
     }
 
+    /** Add an inline index. In `ALTER` mode it queues `ADD INDEX`. */
     public function index(Index $index): static {
         if ($this->mode === self::MODE_ALTER) {
             $this->alterOperations[] = ['type' => 'ADD INDEX', 'definition' => $index];
@@ -129,6 +137,7 @@ class Table implements ExpressionInterface {
         return $this;
     }
 
+    /** Add multiple indexes at once. */
     public function indexes(Index ...$indexes): static {
         foreach ($indexes as $index) {
             $this->index($index);
@@ -136,36 +145,42 @@ class Table implements ExpressionInterface {
         return $this;
     }
 
+    /** Queue an `ADD COLUMN` (ALTER mode only). */
     public function addColumn(Column $column): static {
         $this->ensureMode(self::MODE_ALTER, 'alter');
         $this->alterOperations[] = ['type' => 'ADD COLUMN', 'definition' => $column];
         return $this;
     }
 
+    /** Queue a `DROP COLUMN` (ALTER mode only). */
     public function dropColumn(string $columnName): static {
         $this->ensureMode(self::MODE_ALTER, 'alter');
         $this->alterOperations[] = ['type' => 'DROP COLUMN', 'name' => $columnName];
         return $this;
     }
 
+    /** Queue a `MODIFY COLUMN` with a new column definition (ALTER mode only). */
     public function modifyColumn(Column $column): static {
         $this->ensureMode(self::MODE_ALTER, 'alter');
         $this->alterOperations[] = ['type' => 'MODIFY COLUMN', 'definition' => $column];
         return $this;
     }
 
+    /** Queue a `RENAME COLUMN old TO new` (ALTER mode only). */
     public function renameColumn(string $oldName, string $newName): static {
         $this->ensureMode(self::MODE_ALTER, 'alter');
         $this->alterOperations[] = ['type' => 'RENAME COLUMN', 'old' => $oldName, 'new' => $newName];
         return $this;
     }
 
+    /** Queue a `RENAME TO new_name` for the whole table (ALTER mode only). */
     public function renameTo(string $newName): static {
         $this->ensureMode(self::MODE_ALTER, 'alter');
         $this->alterOperations[] = ['type' => 'RENAME TO', 'name' => $newName];
         return $this;
     }
 
+    /** Add a constraint (PK/UK/FK/CHECK). In ALTER mode queues `ADD CONSTRAINT`. */
     public function constraint(ExpressionInterface $constraint): static {
         if ($this->mode === self::MODE_ALTER) {
             $this->alterOperations[] = ['type' => 'ADD CONSTRAINT', 'definition' => $constraint];
@@ -176,6 +191,7 @@ class Table implements ExpressionInterface {
         return $this;
     }
 
+    /** Add multiple constraints at once. */
     public function constraints(ExpressionInterface ...$constraints): static {
         foreach ($constraints as $constraint) {
             $this->constraint($constraint);
@@ -183,6 +199,7 @@ class Table implements ExpressionInterface {
         return $this;
     }
 
+    /** Queue a `DROP CONSTRAINT name` (ALTER mode only). */
     public function dropConstraint(string $constraintName): static {
         $this->ensureMode(self::MODE_ALTER, 'alter');
         $this->alterOperations[] = ['type' => 'DROP CONSTRAINT', 'name' => $constraintName];
@@ -240,6 +257,7 @@ class Table implements ExpressionInterface {
         return Dialect::default()->renderTable($this);
     }
 
+    /** Render this statement with a specific dialect. */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderTable($this);
     }

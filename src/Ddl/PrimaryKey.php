@@ -22,10 +22,16 @@ class PrimaryKey extends Constraint {
         parent::__construct($name);
     }
 
+    /** Create a primary key constraint with an optional name. */
     public static function create(?string $name = null): static {
         return new static($name ?? '');
     }
 
+    /**
+     * Set the columns that form the primary key (single column or composite).
+     *
+     * @param array<int, string> $columns
+     */
     public function columns(array $columns): static {
         $this->columns = $columns;
         return $this;

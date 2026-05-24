@@ -15,6 +15,10 @@ use Rak200\SqlBuilder\Dml\Select;
  */
 final class Subquery extends Expr {
 
+    /**
+     * @param Select $query SELECT statement to wrap.
+     * @param string|null $alias Optional alias rendered as `(...) AS alias`.
+     */
     public function __construct(public readonly Select $query, ?string $alias = null) {
         $this->as($alias);
     }

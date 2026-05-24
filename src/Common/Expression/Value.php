@@ -14,5 +14,9 @@ use Rak200\SqlBuilder\Common\Expr;
  */
 final class Value extends Expr {
 
+    /**
+     * @param mixed $value Literal value (string, int, float, bool, or null);
+     *                     the dialect's `quoteValue()` decides how it is rendered.
+     */
     public function __construct(public readonly mixed $value) {}
 }

@@ -14,6 +14,9 @@ use Rak200\SqlBuilder\Common\Enum\Operator\Unary as UnaryOp;
  */
 final class Exists extends Unary {
 
+    /**
+     * @param Subquery $operand Subquery to test for the presence of rows.
+     */
     public function __construct(Subquery $operand) {
         parent::__construct(UnaryOp::Exists, $operand);
     }

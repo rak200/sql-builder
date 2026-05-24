@@ -36,6 +36,7 @@ final class Table implements ExpressionInterface {
         return Dialect::default()->renderTableReference($this);
     }
 
+    /** Render this reference with a specific dialect. */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderTableReference($this);
     }

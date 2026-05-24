@@ -24,6 +24,11 @@ final class Func extends Expr {
     /** @var ExpressionInterface[] Normalised argument expressions. */
     public readonly array $arguments;
 
+    /**
+     * @param string $name Function name (will be uppercased).
+     * @param mixed ...$arguments Arguments — `ExpressionInterface` instances pass through,
+     *                            strings become column references, other scalars become literal values.
+     */
     public function __construct(string $name, mixed ...$arguments) {
         $this->name = strtoupper($name);
         $this->arguments = array_map(

@@ -46,34 +46,41 @@ final class Delete implements ExpressionInterface {
     /** @var ExpressionInterface[] RETURNING expressions. */
     public private(set) array $returning = [];
 
+    /** Create a new empty DELETE builder. */
     public static function create(): self {
         return new self();
     }
 
+    /** Set the target table with an optional alias. */
     public function from(string $table, ?string $alias = null): static {
         $this->table = new TableReference($table, $alias);
         return $this;
     }
 
+    /** Append a table to the multi-table `USING` clause (PostgreSQL). */
     public function using(string $table, ?string $alias = null): static {
         $this->using[] = new TableReference($table, $alias);
         return $this;
     }
 
+    /** Add a `WHERE` predicate, AND-composing with prior calls. */
     public function where(ExpressionInterface $condition): static {
         $this->where = $this->where === null ? $condition : Expression::and($this->where, $condition);
         return $this;
     }
 
+    /** Alias of {@see where()}. */
     public function andWhere(ExpressionInterface $condition): static {
         return $this->where($condition);
     }
 
+    /** Add a `WHERE` predicate, OR-composing with prior calls. */
     public function orWhere(ExpressionInterface $condition): static {
         $this->where = $this->where === null ? $condition : Expression::or($this->where, $condition);
         return $this;
     }
 
+    /** Append an `ORDER BY` entry (MySQL / MariaDB extension on DELETE). */
     public function orderBy(
         ExpressionInterface|string $expression,
         SortDirection $direction = SortDirection::ASC,
@@ -83,6 +90,11 @@ final class Delete implements ExpressionInterface {
         return $this;
     }
 
+    /**
+     * Set `LIMIT n` (MySQL / MariaDB extension on DELETE).
+     *
+     * @throws InvalidArgumentException When `$limit` is negative.
+     */
     public function limit(int $limit): static {
         if ($limit < 0) {
             throw new InvalidArgumentException('LIMIT must be zero or greater.');
@@ -91,6 +103,7 @@ final class Delete implements ExpressionInterface {
         return $this;
     }
 
+    /** Append `RETURNING` expressions (Postgres, MariaDB ≥ 10.5, SQLite ≥ 3.35). */
     public function returning(ExpressionInterface|string ...$expressions): static {
         foreach ($expressions as $expression) {
             $this->returning[] = $expression instanceof ExpressionInterface

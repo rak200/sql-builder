@@ -15,6 +15,12 @@ Depends on:
 Dev dependencies:
 - `phpunit/phpunit ^13.1` for the test suite
 
+## Conventions
+
+- `declare(strict_types=1)` at the top of every file.
+- **Documentation is mandatory.** Every class carries a PHPDoc class summary (one short paragraph) plus the `@author rak200 <rak.ricardo@windowslive.com>` tag. Every `public` method carries a PHPDoc that states what it does — `@param`/`@return`/`@throws` tags are added only when they convey information beyond the type signature (units, semantics, edge-case behaviour, exception condition). Private helpers are documented only when the implementation is non-obvious.
+
+
 ## Structure
 
 ```

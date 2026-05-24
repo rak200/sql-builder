@@ -25,10 +25,16 @@ class UniqueKey extends Constraint {
         parent::__construct($name);
     }
 
+    /** Create a unique constraint with an optional name. */
     public static function create(?string $name = null): static {
         return new static($name ?? '');
     }
 
+    /**
+     * Set the columns that must hold a distinct combined value.
+     *
+     * @param array<int, string> $columns
+     */
     public function columns(array $columns): static {
         $this->columns = $columns;
         return $this;

@@ -18,6 +18,10 @@ use Rak200\SqlBuilder\Common\ExpressionInterface;
  */
 class Unary extends Expr {
 
+    /**
+     * @param UnaryOp $operator Unary operator (`NOT`, `IS NULL`, `IS NOT NULL`, …).
+     * @param ExpressionInterface $operand Expression the operator applies to.
+     */
     public function __construct(
         public readonly UnaryOp $operator,
         public readonly ExpressionInterface $operand

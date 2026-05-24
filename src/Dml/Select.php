@@ -74,6 +74,7 @@ final class Select implements ExpressionInterface {
         $this->orderBy = new Vector(Order::class);
     }
 
+    /** Create a new empty SELECT builder. */
     public static function create(): self {
         return new self();
     }
@@ -109,11 +110,19 @@ final class Select implements ExpressionInterface {
         return $this;
     }
 
+    /** Add the `DISTINCT` modifier to the SELECT clause. */
     public function distinct(): static {
         $this->distinct = true;
         return $this;
     }
 
+    /**
+     * Append projections to the SELECT clause.
+     *
+     * Strings become {@see Expression::col()} expressions; pre-built
+     * `ExpressionInterface` instances (column expressions with aliases,
+     * aggregates, raw SQL, …) pass through unchanged.
+     */
     public function select(mixed ...$expressions): static {
         foreach ($expressions as $expression) {
             $this->columns[] = $expression instanceof ExpressionInterface
@@ -123,71 +132,89 @@ final class Select implements ExpressionInterface {
         return $this;
     }
 
+    /**
+     * Set the FROM source — either a table name or a subquery.
+     *
+     * Subqueries must carry an alias (`from($sub, 'alias')`).
+     */
     public function from(string|Select $table, ?string $alias = null): static {
         $this->from = new TableReference($table, $alias);
         return $this;
     }
 
+    /** Append an `INNER JOIN`. */
     public function join(string|Select $table, ?string $alias = null, ?ExpressionInterface $on = null): static {
         $this->joins[] = new Join(JoinType::INNER, $table, $alias, $on);
         return $this;
     }
 
+    /** Append a `LEFT JOIN`. */
     public function leftJoin(string|Select $table, ?string $alias = null, ?ExpressionInterface $on = null): static {
         $this->joins[] = new Join(JoinType::LEFT, $table, $alias, $on);
         return $this;
     }
 
+    /** Append a `RIGHT JOIN`. */
     public function rightJoin(string|Select $table, ?string $alias = null, ?ExpressionInterface $on = null): static {
         $this->joins[] = new Join(JoinType::RIGHT, $table, $alias, $on);
         return $this;
     }
 
+    /** Append a `FULL JOIN`. */
     public function fullJoin(string|Select $table, ?string $alias = null, ?ExpressionInterface $on = null): static {
         $this->joins[] = new Join(JoinType::FULL, $table, $alias, $on);
         return $this;
     }
 
+    /** Append a `CROSS JOIN` (Cartesian product; no `ON` allowed). */
     public function crossJoin(string|Select $table, ?string $alias = null): static {
         $this->joins[] = new Join(JoinType::CROSS, $table, $alias);
         return $this;
     }
 
+    /** Append a `NATURAL INNER JOIN` (auto-pairs columns of the same name). */
     public function naturalJoin(string|Select $table, ?string $alias = null): static {
         $this->joins[] = (new Join(JoinType::INNER, $table, $alias))->natural();
         return $this;
     }
 
+    /** Append a `NATURAL LEFT JOIN`. */
     public function naturalLeftJoin(string|Select $table, ?string $alias = null): static {
         $this->joins[] = (new Join(JoinType::LEFT, $table, $alias))->natural();
         return $this;
     }
 
+    /** Append a `NATURAL RIGHT JOIN`. */
     public function naturalRightJoin(string|Select $table, ?string $alias = null): static {
         $this->joins[] = (new Join(JoinType::RIGHT, $table, $alias))->natural();
         return $this;
     }
 
+    /** Append a `NATURAL FULL JOIN`. */
     public function naturalFullJoin(string|Select $table, ?string $alias = null): static {
         $this->joins[] = (new Join(JoinType::FULL, $table, $alias))->natural();
         return $this;
     }
 
+    /** Append an `INNER JOIN ... USING (cols)`. */
     public function joinUsing(string|Select $table, array $columns, ?string $alias = null): static {
         $this->joins[] = (new Join(JoinType::INNER, $table, $alias))->using(...$columns);
         return $this;
     }
 
+    /** Append a `LEFT JOIN ... USING (cols)`. */
     public function leftJoinUsing(string|Select $table, array $columns, ?string $alias = null): static {
         $this->joins[] = (new Join(JoinType::LEFT, $table, $alias))->using(...$columns);
         return $this;
     }
 
+    /** Append a `RIGHT JOIN ... USING (cols)`. */
     public function rightJoinUsing(string|Select $table, array $columns, ?string $alias = null): static {
         $this->joins[] = (new Join(JoinType::RIGHT, $table, $alias))->using(...$columns);
         return $this;
     }
 
+    /** Append a `FULL JOIN ... USING (cols)`. */
     public function fullJoinUsing(string|Select $table, array $columns, ?string $alias = null): static {
         $this->joins[] = (new Join(JoinType::FULL, $table, $alias))->using(...$columns);
         return $this;
@@ -217,20 +244,30 @@ final class Select implements ExpressionInterface {
         return $this;
     }
 
+    /**
+     * Add a `WHERE` predicate. Successive calls AND-compose with the existing
+     * condition; use {@see orWhere()} to OR-compose instead.
+     */
     public function where(ExpressionInterface $condition): static {
         $this->where = $this->where === null ? $condition : Expression::and($this->where, $condition);
         return $this;
     }
 
+    /** Alias of {@see where()} for readability when AND-composing multiple predicates. */
     public function andWhere(ExpressionInterface $condition): static {
         return $this->where($condition);
     }
 
+    /** Add a `WHERE` predicate, OR-composing with the existing condition. */
     public function orWhere(ExpressionInterface $condition): static {
         $this->where = $this->where === null ? $condition : Expression::or($this->where, $condition);
         return $this;
     }
 
+    /**
+     * Append `GROUP BY` expressions. Strings become column references;
+     * `Grouping` expressions (`Expr::rollup/cube/groupingSets`) pass through.
+     */
     public function groupBy(mixed ...$expressions): static {
         foreach ($expressions as $expression) {
             $this->groupBy[] = $expression instanceof ExpressionInterface
@@ -240,16 +277,23 @@ final class Select implements ExpressionInterface {
         return $this;
     }
 
+    /** Add a `HAVING` predicate. Successive calls AND-compose. */
     public function having(ExpressionInterface $condition): static {
         $this->having = $this->having === null ? $condition : Expression::and($this->having, $condition);
         return $this;
     }
 
+    /** Append an `ORDER BY` entry with optional direction and NULL placement. */
     public function orderBy(mixed $expression, SortDirection $direction = SortDirection::ASC, ?NullsPlacement $nulls = null): static {
         $this->orderBy[] = new Order($expression, $direction, $nulls);
         return $this;
     }
 
+    /**
+     * Set `LIMIT n` on the result.
+     *
+     * @throws InvalidArgumentException When `$limit` is negative.
+     */
     public function limit(int $limit): static {
         if ($limit < 0) {
             throw new InvalidArgumentException('LIMIT must be zero or greater.');
@@ -258,6 +302,11 @@ final class Select implements ExpressionInterface {
         return $this;
     }
 
+    /**
+     * Set `OFFSET n` on the result.
+     *
+     * @throws InvalidArgumentException When `$offset` is negative.
+     */
     public function offset(int $offset): static {
         if ($offset < 0) {
             throw new InvalidArgumentException('OFFSET must be zero or greater.');

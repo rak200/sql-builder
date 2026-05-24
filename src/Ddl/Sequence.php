@@ -44,39 +44,51 @@ class Sequence implements ExpressionInterface {
     public private(set) bool $cascade = false;
     public private(set) bool $restrict = false;
 
+    /** @param string $name Sequence name. */
     public function __construct(public private(set) string $name) {}
 
+    /** Start a `CREATE SEQUENCE` statement. */
     public static function create(string $name): static {
         return new static($name);
     }
 
+    /** Start an `ALTER SEQUENCE` statement (enables {@see restart()}). */
     public static function alter(string $name): static {
         $sequence = new static($name);
         $sequence->mode = self::MODE_ALTER;
         return $sequence;
     }
 
+    /** Start a `DROP SEQUENCE` statement. */
     public static function drop(string $name): static {
         $sequence = new static($name);
         $sequence->mode = self::MODE_DROP;
         return $sequence;
     }
 
+    /** Rename the sequence. */
     public function name(string $name): static {
         $this->name = $name;
         return $this;
     }
 
+    /** Emit `CREATE SEQUENCE IF NOT EXISTS`. */
     public function ifNotExists(bool $ifNotExists = true): static {
         $this->ifNotExists = $ifNotExists;
         return $this;
     }
 
+    /** Set the initial value (`START WITH n`). */
     public function startWith(int $start): static {
         $this->start = $start;
         return $this;
     }
 
+    /**
+     * Set the increment between successive values (`INCREMENT BY n`).
+     *
+     * @throws InvalidArgumentException When `$increment` is zero.
+     */
     public function incrementBy(int $increment): static {
         if ($increment === 0) {
             throw new InvalidArgumentException('Sequence increment cannot be zero.');
@@ -85,30 +97,39 @@ class Sequence implements ExpressionInterface {
         return $this;
     }
 
+    /** Set `MINVALUE n`; clears any prior `NO MINVALUE`. */
     public function minValue(int $minValue): static {
         $this->minValue = $minValue;
         $this->noMinValue = false;
         return $this;
     }
 
+    /** Emit `NO MINVALUE`; clears any prior `MINVALUE`. */
     public function noMinValue(): static {
         $this->noMinValue = true;
         $this->minValue = null;
         return $this;
     }
 
+    /** Set `MAXVALUE n`; clears any prior `NO MAXVALUE`. */
     public function maxValue(int $maxValue): static {
         $this->maxValue = $maxValue;
         $this->noMaxValue = false;
         return $this;
     }
 
+    /** Emit `NO MAXVALUE`; clears any prior `MAXVALUE`. */
     public function noMaxValue(): static {
         $this->noMaxValue = true;
         $this->maxValue = null;
         return $this;
     }
 
+    /**
+     * Set the cache size (`CACHE n`).
+     *
+     * @throws InvalidArgumentException When `$cache` is less than 1.
+     */
     public function cache(int $cache): static {
         if ($cache < 1) {
             throw new InvalidArgumentException('Sequence cache must be at least 1.');
@@ -118,22 +139,32 @@ class Sequence implements ExpressionInterface {
         return $this;
     }
 
+    /** Emit `NO CACHE`; clears any prior `CACHE`. */
     public function noCache(): static {
         $this->noCache = true;
         $this->cache = null;
         return $this;
     }
 
+    /** Emit `CYCLE` — wrap around to `MINVALUE` after reaching `MAXVALUE`. */
     public function cycle(): static {
         $this->cycle = true;
         return $this;
     }
 
+    /** Emit `NO CYCLE` — stop generating values after reaching `MAXVALUE`. */
     public function noCycle(): static {
         $this->cycle = false;
         return $this;
     }
 
+    /**
+     * Queue a `RESTART [WITH n]` clause (ALTER mode only).
+     *
+     * Pass `null` to restart with the original `START WITH`.
+     *
+     * @throws InvalidArgumentException When called outside ALTER mode.
+     */
     public function restart(?int $value = null): static {
         if ($this->mode !== self::MODE_ALTER) {
             throw new InvalidArgumentException('restart() is only available in ALTER mode. Use Sequence::alter().');
@@ -185,6 +216,7 @@ class Sequence implements ExpressionInterface {
         return Dialect::default()->renderSequence($this);
     }
 
+    /** Render this sequence with a specific dialect. */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderSequence($this);
     }

@@ -20,6 +20,10 @@ use Rak200\SqlBuilder\Common\Window as WindowSpec;
  */
 final class Window extends Expr {
 
+    /**
+     * @param ExpressionInterface $function Inner function call (typically a {@see Func}).
+     * @param WindowSpec $window Window specification (PARTITION BY, ORDER BY, frame).
+     */
     public function __construct(
         public readonly ExpressionInterface $function,
         public readonly WindowSpec $window

@@ -24,6 +24,11 @@ use Rak200\SqlBuilder\Common\Expr;
  */
 final class Param extends Expr {
 
+    /**
+     * @param int|string $key Positional index (int) or named key (string).
+     * @param mixed $value Initial bound value; can be overridden later via
+     *                     {@see \Rak200\SqlBuilder\Prepared\PreparedStatement::$parameters}.
+     */
     public function __construct(
         public readonly int|string $key,
         public readonly mixed $value = null

@@ -22,6 +22,7 @@ abstract class Constraint implements ExpressionInterface {
      */
     public function __construct(public private(set) string $name = '') {}
 
+    /** Set or change the constraint name. */
     public function name(string $name): static {
         $this->name = $name;
         return $this;

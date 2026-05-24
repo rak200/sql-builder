@@ -39,30 +39,41 @@ class Column implements ExpressionInterface {
         public private(set) bool $primaryKey = false
     ) {}
 
+    /** Create a column definition with the given name and data type. */
     public static function create(string $name, DataType $type): static {
         return new static($name, $type);
     }
 
+    /** Rename the column. */
     public function name(string $name): static {
         $this->name = $name;
         return $this;
     }
 
+    /** Change the column data type. */
     public function type(DataType $type): static {
         $this->type = $type;
         return $this;
     }
 
+    /** Set the explicit length for variable-width types (e.g. `VARCHAR(255)`). */
     public function length(?int $length): static {
         $this->length = $length;
         return $this;
     }
 
+    /** Mark the column nullable (default true). Pass false to emit `NOT NULL`. */
     public function nullable(bool $nullable = true): static {
         $this->nullable = $nullable;
         return $this;
     }
 
+    /**
+     * Set the column DEFAULT value.
+     *
+     * Scalars are wrapped in {@see Expression::val()}; expressions (e.g.
+     * `Expr::raw('NOW()')`, sequence references) pass through verbatim.
+     */
     public function default(mixed $default): static {
         $this->default = $default instanceof ExpressionInterface
             ? $default
@@ -70,6 +81,7 @@ class Column implements ExpressionInterface {
         return $this;
     }
 
+    /** Mark the column `AUTO_INCREMENT` (MySQL / MariaDB) / `SERIAL` (Postgres). */
     public function autoIncrement(bool $autoIncrement = true): static {
         $this->autoIncrement = $autoIncrement;
         return $this;
@@ -83,6 +95,7 @@ class Column implements ExpressionInterface {
         return $this;
     }
 
+    /** Mark the column as the inline `PRIMARY KEY`. */
     public function primaryKey(bool $primaryKey = true): static {
         $this->primaryKey = $primaryKey;
         return $this;

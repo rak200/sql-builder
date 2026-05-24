@@ -28,10 +28,12 @@ class Check extends Constraint {
         parent::__construct($name);
     }
 
+    /** Create a CHECK constraint with an optional name. */
     public static function create(?string $name = null): static {
         return new static($name ?? '');
     }
 
+    /** Set the boolean condition the constraint enforces. */
     public function condition(ExpressionInterface|string $condition): static {
         $this->condition = $condition;
         return $this;

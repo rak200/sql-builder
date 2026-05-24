@@ -45,6 +45,7 @@ final class Window {
     /** @var string|null Raw frame clause (e.g. `ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`). */
     public private(set) ?string $frame = null;
 
+    /** Create an empty window specification. */
     public static function create(): self {
         return new self();
     }
@@ -105,10 +106,12 @@ final class Window {
         return $this;
     }
 
+    /** {@inheritdoc} */
     public function __toString(): string {
         return Dialect::default()->renderWindow($this);
     }
 
+    /** Render this window with a specific dialect. */
     public function toSql(Dialect $dialect): string {
         return $dialect->renderWindow($this);
     }

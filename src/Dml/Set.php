@@ -45,12 +45,14 @@ final class Set implements ExpressionInterface {
         $this->orderBy = new Vector(Order::class);
     }
 
+    /** Start a new set with the given query as the first operand. */
     public static function create(Select $query): self {
         $set = new self();
         $set->operations[] = ['type' => null, 'query' => $query];
         return $set;
     }
 
+    /** Append `UNION` (or `UNION ALL` when `$all` is true). */
     public function union(Select $query, bool $all = false): static {
         $this->operations[] = [
             'type' => $all ? self::UNION_ALL : self::UNION,
@@ -59,21 +61,29 @@ final class Set implements ExpressionInterface {
         return $this;
     }
 
+    /** Append `EXCEPT` — rows in the running result that are not in `$query`. */
     public function except(Select $query): static {
         $this->operations[] = ['type' => self::EXCEPT, 'query' => $query];
         return $this;
     }
 
+    /** Append `INTERSECT` — rows that are in both the running result and `$query`. */
     public function intersect(Select $query): static {
         $this->operations[] = ['type' => self::INTERSECT, 'query' => $query];
         return $this;
     }
 
+    /** Append an `ORDER BY` entry applied to the combined result. */
     public function orderBy(mixed $expression, SortDirection $direction = SortDirection::ASC, ?NullsPlacement $nulls = null): static {
         $this->orderBy[] = new Order($expression, $direction, $nulls);
         return $this;
     }
 
+    /**
+     * Set `LIMIT n` on the combined result.
+     *
+     * @throws InvalidArgumentException When `$limit` is negative.
+     */
     public function limit(int $limit): static {
         if ($limit < 0) {
             throw new InvalidArgumentException('LIMIT must be zero or greater.');
@@ -82,6 +92,11 @@ final class Set implements ExpressionInterface {
         return $this;
     }
 
+    /**
+     * Set `OFFSET n` on the combined result.
+     *
+     * @throws InvalidArgumentException When `$offset` is negative.
+     */
     public function offset(int $offset): static {
         if ($offset < 0) {
             throw new InvalidArgumentException('OFFSET must be zero or greater.');

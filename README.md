@@ -17,6 +17,8 @@ composer require rak200/sql-builder
 | **Common** | `Expr` (factory), `Expression\*`, `Reference\*`, `Join`, `Order`, `Window` | Shared building blocks |
 | **Enums** | `Operator\Binary`, `Operator\Math`, `Sort\Direction`, … | Type-safe SQL keywords |
 
+📖 **Full documentation**: [`docs/`](docs/README.md) — getting started, expressions, every builder, dialects, and prepared statements with runnable examples.
+
 ## DML — Queries
 
 ### SELECT
@@ -433,7 +435,7 @@ Use `Expr::col()` for SELECT projections (supports an alias), `Expr::ref()` for 
 
 ## Status & Roadmap
 
-Current version: **0.12.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
+Current version: **0.13.0** — early development, **unstable**. The API may still break between `0.x` releases and the library is not yet recommended for production use.
 
 ### What works today
 

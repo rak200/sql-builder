@@ -206,22 +206,27 @@ abstract class Expr implements ExpressionInterface {
         return new Unary(UnaryOp::Not, self::normalize($expression));
     }
 
+    /** `SUM(expr) AS alias` — aliased to `SUM` by default. */
     public static function sum(mixed $expression, ?string $alias = null): Func {
         return self::func('SUM', $expression)->as($alias ?? 'SUM');
     }
 
+    /** `AVG(expr) AS alias` — aliased to `AVG` by default. */
     public static function avg(mixed $expression, ?string $alias = null): Func {
         return self::func('AVG', $expression)->as($alias ?? 'AVG');
     }
 
+    /** `COUNT(expr) AS alias` — `COUNT(*)` by default; aliased to `COUNT`. */
     public static function count(mixed $expression = '*', ?string $alias = null): Func {
         return self::func('COUNT', $expression)->as($alias ?? 'COUNT');
     }
 
+    /** `MAX(expr) AS alias` — aliased to `MAX` by default. */
     public static function max(mixed $expression, ?string $alias = null): Func {
         return self::func('MAX', $expression)->as($alias ?? 'MAX');
     }
 
+    /** `MIN(expr) AS alias` — aliased to `MIN` by default. */
     public static function min(mixed $expression, ?string $alias = null): Func {
         return self::func('MIN', $expression)->as($alias ?? 'MIN');
     }

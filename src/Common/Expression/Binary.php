@@ -18,6 +18,11 @@ use Rak200\SqlBuilder\Common\ExpressionInterface;
  */
 final class Binary extends Expr {
 
+    /**
+     * @param ExpressionInterface $left Left-hand operand.
+     * @param BinaryOp|Math $operator Predicate (`=`, `<`, `AND`, …) or arithmetic (`+`, `*`, …) operator.
+     * @param ExpressionInterface $right Right-hand operand.
+     */
     public function __construct(
         public readonly ExpressionInterface $left,
         public readonly BinaryOp|Math $operator,

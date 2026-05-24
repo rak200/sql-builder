@@ -25,5 +25,8 @@ use Rak200\SqlBuilder\Common\ExpressionInterface;
  */
 final class UuidInput extends Expr {
 
+    /**
+     * @param ExpressionInterface $inner Value-side expression to wrap (literal, parameter, column ref).
+     */
     public function __construct(public readonly ExpressionInterface $inner) {}
 }
