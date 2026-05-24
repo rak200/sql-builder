@@ -38,6 +38,8 @@ Select::create()->distinct()->select('email')->from('users');
 
 If you omit `select()` entirely you get `SELECT *`.
 
+[↑ Back to top](#)
+
 ## FROM
 
 ```php
@@ -49,6 +51,8 @@ $sub = Select::create()->select('id')->from('orders');
 Select::create()->from($sub, 'recent_orders');
 // FROM (SELECT `id` FROM `orders`) AS `recent_orders`
 ```
+
+[↑ Back to top](#)
 
 ## JOIN family
 
@@ -82,6 +86,8 @@ Select::create()->from('users', 'u')->joinUsing('accounts', ['account_id'], 'a')
 
 Variants: `leftJoinUsing`, `rightJoinUsing`, `fullJoinUsing`.
 
+[↑ Back to top](#)
+
 ## LATERAL joins
 
 `LATERAL` lets the right-hand subquery reference columns from earlier FROM items — common with set-returning functions and correlated subqueries.
@@ -102,6 +108,8 @@ Select::create()
 
 Variants: `leftLateralJoin()`, `crossLateralJoin()` (no `ON` needed). Supported on PostgreSQL and MariaDB 10.2+.
 
+[↑ Back to top](#)
+
 ## WHERE
 
 ```php
@@ -120,6 +128,8 @@ Select::create()
 ```
 
 `andWhere()` is an alias for `where()`; both AND-compose. `orWhere()` OR-composes. For more control over grouping, build the predicate explicitly with `Expr::and()` / `Expr::or()` and pass it to `where()` once.
+
+[↑ Back to top](#)
 
 ## GROUP BY (with extensions)
 
@@ -146,6 +156,8 @@ Select::create()
 
 You can mix plain columns and grouping extensions in one call: `->groupBy('region', Expr::rollup('product'))`.
 
+[↑ Back to top](#)
+
 ## HAVING
 
 ```php
@@ -159,6 +171,8 @@ Select::create()
 
 Successive `having()` calls AND-compose.
 
+[↑ Back to top](#)
+
 ## ORDER BY
 
 ```php
@@ -171,6 +185,8 @@ Select::create()
 
 `Direction` cases: `ASC`, `DESC`. `Nulls` cases: `FIRST`, `LAST` (optional).
 
+[↑ Back to top](#)
+
 ## LIMIT and OFFSET
 
 ```php
@@ -179,6 +195,8 @@ Select::create()->from('users')->limit(20)->offset(40);
 ```
 
 Both reject negative values with `InvalidArgumentException`.
+
+[↑ Back to top](#)
 
 ## Common Table Expressions (WITH)
 
@@ -216,6 +234,8 @@ Select::create()
 
 A single recursive CTE in the list promotes the whole `WITH` clause to `WITH RECURSIVE`.
 
+[↑ Back to top](#)
+
 ## Window functions (OVER)
 
 ```php
@@ -234,6 +254,8 @@ Select::create()->select('user_id', $running)->from('payments');
 
 See [Expressions — Window functions](expressions.md#window-functions-over) for the full `Window` API.
 
+[↑ Back to top](#)
+
 ## Subqueries
 
 Anywhere `string|Select` is accepted (`from()`, joins) you can pass a `Select`. For scalar subqueries in projections or predicates use `Expr::subquery()` or `Expr::exists()`.
@@ -248,6 +270,8 @@ Select::create()
     ->where(Expr::binary('user_id', Binary::In, Expr::subquery($activeIds)));
 ```
 
+[↑ Back to top](#)
+
 ## Rendering
 
 ```php
@@ -257,3 +281,5 @@ $query = Select::create()->select('id')->from('users');
 $query->toSql(new PostgresDialect());               // double quotes, etc.
 $query->prepare(new DefaultDialect());              // PreparedStatement
 ```
+
+[↑ Back to top](#)

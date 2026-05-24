@@ -25,6 +25,8 @@ final class PreparedStatement {
 
 `$sql` carries placeholders matching the dialect's binder; `$parameters` is mutable so you can rebind values between runs.
 
+[↑ Back to top](#)
+
 ## Inline values become anonymous placeholders
 
 In bind mode, every `Expr::val()` value is automatically converted to a placeholder. You don't have to rewrite existing builders:
@@ -41,6 +43,8 @@ $prepared->parameters; // [1]
 
 The same builder rendered with `(string) $query` would inline `1` directly; under `prepare()` it becomes `?` plus the value in `$parameters`.
 
+[↑ Back to top](#)
+
 ## Explicit parameters with `Expr::param()`
 
 For control over reuse, defaults, or named placeholders, declare parameters explicitly:
@@ -54,12 +58,16 @@ Expr::param('user_id', 1);       // named placeholder :user_id with default 1
 
 The placeholder key drives reuse semantics in the binder (see below).
 
+[↑ Back to top](#)
+
 ## Placeholder shapes by dialect
 
 | Dialect | Anonymous values | `Expr::param(int $i)` | `Expr::param(string $name)` |
 |---------|------------------|----------------------|----------------------------|
 | `DefaultDialect`, `MariaDbDialect`, `MariaDb105Dialect` | `?` | `?` (fresh per occurrence; value duplicated) | `:name` (reused; single entry) |
 | `PostgresDialect`, `Postgres15Dialect` | `$1`, `$2`, … | `$N` (reused across occurrences of the same key) | `:name` (reused; single entry) |
+
+[↑ Back to top](#)
 
 ## Reuse semantics
 
@@ -99,6 +107,8 @@ $prepared->parameters; // ['id' => 1]
 
 The default value (`1` in the example) is stored when the key is first emitted; later occurrences with no default leave the value untouched. Callers can override per run by mutating `$prepared->parameters` directly.
 
+[↑ Back to top](#)
+
 ## Anonymous mode in detail
 
 When you don't use `Expr::param()`, inline values still become placeholders — but they get no key, so they always get a fresh slot:
@@ -115,6 +125,8 @@ $prepared->parameters; // [1, 1]
 ```
 
 To reuse a placeholder on Postgres, declare the parameter explicitly with a stable key (`Expr::param(0, 1)`).
+
+[↑ Back to top](#)
 
 ## Wiring into PDO
 
@@ -138,12 +150,18 @@ $prepared->parameters['user_id'] = 42;
 $stmt->execute($prepared->parameters);   // PDO matches `:user_id` to 'user_id'
 ```
 
+[↑ Back to top](#)
+
 ## Edge cases
 
 - **Outside `prepare()`**: rendering a builder containing `Expr::param()` via `__toString()` or `toSql()` (no binder attached) throws `LogicException`. The placeholder cannot be rendered without a binder.
 - **`Expr::raw()`** never becomes a placeholder — it's the explicit "I know what I'm doing, pass this through" escape hatch. Don't put user input there.
 - **`LIMIT` / `OFFSET`**: these are inlined integers even in bind mode (most drivers can't bind LIMIT placeholders portably). Pass `Expr::param()` to `limit()` is not supported — the builder requires `int`.
 
+[↑ Back to top](#)
+
 ## Dialect singleton safety
 
 `prepare(Dialect)` clones the dialect before attaching a binder, so the process-wide `Dialect::default()` singleton is never mutated. The clone resets its renderer cache so its renderers point at the clone — there's no leakage even when nested expressions reach back through their renderers.
+
+[↑ Back to top](#)

@@ -18,6 +18,8 @@ Delete::create()
 
 A `Delete` without `where()` deletes every row in the target table — the library does not refuse to render that. Be deliberate.
 
+[↑ Back to top](#)
+
 ## Table alias
 
 ```php
@@ -26,6 +28,8 @@ Delete::create()
     ->where(Expr::binary('u.id', Binary::Eq, 1));
 // DELETE FROM `users` AS `u` WHERE (`u`.`id` = 1)
 ```
+
+[↑ Back to top](#)
 
 ## WHERE composition
 
@@ -37,6 +41,8 @@ Delete::create()
 ```
 
 `andWhere()` is an alias for `where()`; both AND-compose. `orWhere()` OR-composes.
+
+[↑ Back to top](#)
 
 ## Multi-table DELETE (PostgreSQL USING)
 
@@ -51,6 +57,8 @@ Delete::create()
 
 `using()` may be called multiple times for additional reference tables. On `MariaDbDialect` (base) the USING clause is rejected with `UnsupportedFeatureException`.
 
+[↑ Back to top](#)
+
 ## ORDER BY and LIMIT (MySQL extension)
 
 ```php
@@ -64,6 +72,8 @@ Delete::create()
 
 Supported on MySQL / MariaDB; rejected on PostgreSQL.
 
+[↑ Back to top](#)
+
 ## RETURNING
 
 ```php
@@ -76,6 +86,8 @@ Delete::create()
 
 Supported on PostgreSQL, MariaDB ≥ 10.5, SQLite ≥ 3.35. On base `MariaDbDialect` it throws.
 
+[↑ Back to top](#)
+
 ## Prepared statements
 
 ```php
@@ -86,3 +98,5 @@ Delete::create()
 // sql:        DELETE FROM `users` WHERE (`id` = ?)
 // parameters: [null]
 ```
+
+[↑ Back to top](#)

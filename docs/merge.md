@@ -23,6 +23,8 @@ WHEN NOT MATCHED [AND pred] THEN INSERT (cols) VALUES (vals)
 
 Branches are emitted in the order you add them.
 
+[↑ Back to top](#)
+
 ## Basic upsert pattern
 
 ```php
@@ -38,6 +40,8 @@ Merge::create()
 //   WHEN MATCHED THEN UPDATE SET `name` = `s`.`name`
 //   WHEN NOT MATCHED THEN INSERT (`id`, `name`) VALUES (`s`.`id`, `s`.`name`)
 ```
+
+[↑ Back to top](#)
 
 ## Using a subquery as the source
 
@@ -57,6 +61,8 @@ Merge::create()
         [Expr::ref('s.id'), Expr::ref('s.name'), Expr::ref('s.amount')]
     );
 ```
+
+[↑ Back to top](#)
 
 ## Branch helpers
 
@@ -83,6 +89,8 @@ Merge::create()
 ->whenDoNothing(matched: false, predicate: $expr)    // WHEN NOT MATCHED AND ... THEN DO NOTHING
 ```
 
+[↑ Back to top](#)
+
 ## RETURNING
 
 ```php
@@ -97,6 +105,8 @@ Merge::create()
 
 PostgreSQL 17+ supports `RETURNING` on MERGE; on earlier engines the clause is emitted unconditionally and the database itself rejects it at parse time.
 
+[↑ Back to top](#)
+
 ## Validation
 
 Render-time checks fire from the renderer; calling `__toString()` / `toSql()` without one of these raises `InvalidArgumentException`:
@@ -108,6 +118,8 @@ Render-time checks fire from the renderer; calling `__toString()` / `toSql()` wi
 
 `whenNotMatchedInsert()` also throws if the columns and values arrays have different lengths.
 
+[↑ Back to top](#)
+
 ## Dialect support
 
 | Dialect | Behaviour |
@@ -118,3 +130,5 @@ Render-time checks fire from the renderer; calling `__toString()` / `toSql()` wi
 | `MariaDbDialect`, `MariaDb105Dialect` | `UnsupportedFeatureException` — neither engine implements MERGE |
 
 For MariaDB / MySQL / Postgres < 15, use [`Insert::onConflict()`](insert.md#portable-upsert--onconflict) for upsert behaviour.
+
+[↑ Back to top](#)

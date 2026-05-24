@@ -18,6 +18,8 @@ Insert::create()
 
 `columns()` declares the column list (and fixes the row arity for subsequent `values()` calls). Scalar values are quoted automatically; `ExpressionInterface` arguments (raw SQL, function calls, sequences) pass through unchanged.
 
+[↑ Back to top](#)
+
 ## Multi-row
 
 Call `values()` multiple times:
@@ -33,6 +35,8 @@ Insert::create()
 ```
 
 Each row must have the same arity as the declared columns (or as the first row when `columns()` is omitted).
+
+[↑ Back to top](#)
 
 ## INSERT … SELECT
 
@@ -50,6 +54,8 @@ Insert::create()
 ```
 
 `values()` and `select()` are mutually exclusive — mixing them throws.
+
+[↑ Back to top](#)
 
 ## Portable upsert — `onConflict()`
 
@@ -97,6 +103,8 @@ Insert::create()
 // MariaDB:  UnsupportedFeatureException
 ```
 
+[↑ Back to top](#)
+
 ## Legacy MariaDB upsert — `onDuplicateKeyUpdate()`
 
 For raw MariaDB-flavoured statements when you want to bypass the portable layer:
@@ -112,6 +120,8 @@ Insert::create()
 
 Mixing `onConflict()` and `onDuplicateKeyUpdate()` on the same statement throws — pick one.
 
+[↑ Back to top](#)
+
 ## RETURNING
 
 Supported on PostgreSQL, MariaDB ≥ 10.5, and SQLite ≥ 3.35.
@@ -126,6 +136,8 @@ Insert::create()
 ```
 
 On `MariaDbDialect` (base, < 10.5) it throws `UnsupportedFeatureException`. Use `MariaDb105Dialect` (or `Dialect::fromDsn('mariadb://h/db?version=10.5')`) to enable it on MariaDB.
+
+[↑ Back to top](#)
 
 ## Prepared statements
 
@@ -152,3 +164,5 @@ Insert::create()
 ```
 
 See [Prepared statements](prepared-statements.md).
+
+[↑ Back to top](#)

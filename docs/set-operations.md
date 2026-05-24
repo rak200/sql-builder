@@ -23,6 +23,8 @@ Set::create($active)->union($inactive, all: true);
 // ... UNION ALL ...
 ```
 
+[↑ Back to top](#)
+
 ## EXCEPT
 
 Rows in the running result that are *not* in the operand:
@@ -32,6 +34,8 @@ Set::create($allUsers)->except($bannedUsers);
 // (SELECT ...) EXCEPT (SELECT ...)
 ```
 
+[↑ Back to top](#)
+
 ## INTERSECT
 
 Rows present in both:
@@ -40,6 +44,8 @@ Rows present in both:
 Set::create($premiumUsers)->intersect($activeUsers);
 // (SELECT ...) INTERSECT (SELECT ...)
 ```
+
+[↑ Back to top](#)
 
 ## Chaining
 
@@ -54,6 +60,8 @@ Set::create($a)
 // (SELECT ...) UNION (SELECT ...) UNION ALL (SELECT ...) EXCEPT (SELECT ...) INTERSECT (SELECT ...)
 ```
 
+[↑ Back to top](#)
+
 ## ORDER BY / LIMIT / OFFSET on the combined result
 
 ```php
@@ -66,6 +74,8 @@ Set::create($selectA)
 ```
 
 These clauses apply to the **combined** result, not to any individual operand. To order an operand internally, do it inside that `Select` itself.
+
+[↑ Back to top](#)
 
 ## Set as a CTE body
 
@@ -85,9 +95,13 @@ Select::create()
 // WITH RECURSIVE `numbers` (`n`) AS ((SELECT ...) UNION ALL (SELECT ...)) SELECT `n` FROM `numbers`
 ```
 
+[↑ Back to top](#)
+
 ## SQLite caveat
 
 SQLite's parser rejects the parenthesised form `(SELECT...) UNION (SELECT...)` that the library emits — every other major engine (PostgreSQL, MariaDB, MySQL) accepts it. This is a SQLite quirk, not a library bug. The integration smoke tests under `tests/Integration/` document and work around it.
+
+[↑ Back to top](#)
 
 ## Prepared statements
 
@@ -97,3 +111,5 @@ $prepared = $set->prepare(new DefaultDialect());
 ```
 
 The binder threads through both operands; parameter values from each `Select` end up in `$prepared->parameters` in declaration order.
+
+[↑ Back to top](#)

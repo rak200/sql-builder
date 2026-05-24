@@ -8,6 +8,8 @@ composer require rak200/sql-builder
 
 Requires **PHP 8.4+**. The library has two runtime dependencies (`rak200/collections`, `rak200/utils`) that composer resolves automatically.
 
+[↑ Back to top](#)
+
 ## Your first query
 
 ```php
@@ -30,6 +32,8 @@ echo $query;
 
 That's it — `echo $query` calls `__toString()`, which renders the SQL through the default dialect. You then pass the string to PDO (or any driver) yourself.
 
+[↑ Back to top](#)
+
 ## Mental model
 
 The library has three layers:
@@ -47,6 +51,8 @@ $query->toSql(Dialect::fromDsn('pgsql://localhost/app')); // from a DSN
 ```
 
 There is **no execution layer**. The library produces SQL strings and (via `prepare()`) parameter arrays — you wire those into PDO, your ORM, your migration runner, anything that takes raw SQL.
+
+[↑ Back to top](#)
 
 ## Inline values vs prepared statements
 
@@ -80,8 +86,12 @@ $pdoStmt->execute([1]);
 
 Use prepared statements whenever user input flows into a value position. The library handles per-dialect placeholder shapes (`?` on MariaDB / SQLite, `$N` on Postgres, `:name` for named) — see [Prepared statements](prepared-statements.md) for details.
 
+[↑ Back to top](#)
+
 ## What's next
 
 - [Expressions](expressions.md) — the building blocks behind every clause
 - [DML — SELECT](select.md) — the most-used builder, with all the join / where / group / order options
 - [Dialects](dialects.md) — switching dialects, vendor-specific gates, writing your own
+
+[↑ Back to top](#)

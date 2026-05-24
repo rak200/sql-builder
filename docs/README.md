@@ -16,6 +16,8 @@ Fluent SQL query and schema builder for PHP 8.4+. Generates SQL strings via a ty
 10. [Dialects](dialects.md) — `Dialect` abstraction, `DefaultDialect`, MariaDB / PostgreSQL variants, `Dialect::fromDsn()`, vendor-specific feature gates, writing your own dialect
 11. [Prepared statements](prepared-statements.md) — `prepare(Dialect)`, `Expr::param()`, named vs positional placeholders, binder semantics per dialect
 
+[↑ Back to top](#)
+
 ## Quick example
 
 ```php
@@ -35,12 +37,16 @@ echo $query;
 // SELECT `id`, `name`, `email` FROM `users` AS `u` WHERE (`u`.`active` = 1) ORDER BY `u`.`name` ASC LIMIT 20
 ```
 
+[↑ Back to top](#)
+
 ## Conventions used in these guides
 
 - Code examples use the default dialect output (backticks) unless a vendor-specific section says otherwise.
 - `Expr::binary($column, Binary::Eq, $value)` wraps its result in parentheses (`(a = b)`) — this is intentional to keep nested predicates unambiguous and is reflected in the example output.
 - Where a feature is dialect-gated, the gate is noted inline (e.g. "Postgres 15+", "MariaDB ≥ 10.5 only").
 - Imports are abbreviated to `use Rak200\SqlBuilder\...;` once per file; subsequent examples elide them.
+
+[↑ Back to top](#)
 
 ## See also
 

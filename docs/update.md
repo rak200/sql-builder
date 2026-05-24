@@ -20,6 +20,8 @@ Update::create()
 
 `set()` adds (or replaces) an assignment. Scalars are wrapped in `Expr::val()`; pre-built expressions pass through.
 
+[↑ Back to top](#)
+
 ## Table alias
 
 ```php
@@ -29,6 +31,8 @@ Update::create()
     ->where(Expr::binary('u.id', Binary::Eq, 1));
 // UPDATE `users` AS `u` SET `email` = 'new@example.com' WHERE (`u`.`id` = 1)
 ```
+
+[↑ Back to top](#)
 
 ## WHERE composition
 
@@ -43,6 +47,8 @@ Update::create()
 
 `andWhere()` is an alias for `where()`; both AND-compose. `orWhere()` OR-composes.
 
+[↑ Back to top](#)
+
 ## Multi-table UPDATE (PostgreSQL FROM)
 
 ```php
@@ -55,6 +61,8 @@ Update::create()
 ```
 
 `from()` may be called multiple times for additional reference tables. On `MariaDbDialect` (base) the FROM clause is rejected with `UnsupportedFeatureException`.
+
+[↑ Back to top](#)
 
 ## ORDER BY and LIMIT (MySQL extension)
 
@@ -70,6 +78,8 @@ Update::create()
 
 Supported on MySQL / MariaDB; rejected on PostgreSQL.
 
+[↑ Back to top](#)
+
 ## RETURNING
 
 ```php
@@ -82,6 +92,8 @@ Update::create()
 ```
 
 Supported on PostgreSQL, MariaDB ≥ 10.5, SQLite ≥ 3.35. On base `MariaDbDialect` it throws.
+
+[↑ Back to top](#)
 
 ## Prepared statements
 
@@ -96,3 +108,5 @@ Update::create()
 ```
 
 See [Prepared statements](prepared-statements.md) for the binder semantics.
+
+[↑ Back to top](#)

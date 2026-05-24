@@ -29,6 +29,8 @@ $query->toSql(Dialect::fromDsn('pgsql://h/db'));
 | `MariaDbDialect` | backticks (`` ` ``) | MariaDB / MySQL base; rejects `UPDATE ... FROM`, `DELETE ... USING`, `RETURNING`, `NULLS [NOT] DISTINCT`, `MERGE`; translates `Insert::onConflict()` → `ON DUPLICATE KEY UPDATE`; rewrites null-safe operators to `<=>`; simulates schemas via name-prefix flattening |
 | `MariaDb105Dialect` | backticks (`` ` ``) | MariaDB 10.5+; re-enables `RETURNING` on INSERT/UPDATE/DELETE, otherwise inherits MariaDB behaviour |
 
+[↑ Back to top](#)
+
 ## Selecting a dialect by DSN
 
 `Dialect::fromDsn()` mirrors how PDO DSNs identify drivers:
@@ -48,6 +50,8 @@ Recognised version hints:
 - `postgres`/`pgsql`/`postgresql` `?version=15` (or ≥ 15) → `Postgres15Dialect`
 
 Older versions or unknown schemes fall back to the closest base dialect rather than throwing.
+
+[↑ Back to top](#)
 
 ## Vendor-specific feature gates
 
@@ -70,6 +74,8 @@ Selected gates:
 | `LATERAL` joins | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `GROUPING SETS` / `ROLLUP` / `CUBE` | ✅ | ✅ | ✅ | ✅ | ✅ |
 
+[↑ Back to top](#)
+
 ## Null-safe comparison (MariaDB)
 
 `Binary::NullSafeEq` and `Binary::NullSafeNe` render as `IS NOT DISTINCT FROM` / `IS DISTINCT FROM` on the default and Postgres dialects (SQL standard). The MariaDB dialect rewrites them to the native spaceship operator:
@@ -84,6 +90,8 @@ Expr::binary('a', Binary::NullSafeNe, 1);
 // Default / Postgres: (`a` IS DISTINCT FROM 1)
 // MariaDB:            NOT (`a` <=> 1)
 ```
+
+[↑ Back to top](#)
 
 ## UUID simulation
 
@@ -103,6 +111,8 @@ Insert::create()->into('users')->columns('id')->values(Expr::uuid('aaaa-bbbb'));
 // Postgres: INSERT INTO "users" ("id") VALUES ('aaaa-bbbb'::uuid)
 // MariaDB:  INSERT INTO `users` (`id`) VALUES (UUID_TO_BIN('aaaa-bbbb'))
 ```
+
+[↑ Back to top](#)
 
 ## Schema simulation (MariaDB)
 
@@ -125,6 +135,8 @@ $dialect->resolveTableName('reporting.events');         // → 'reporting_events
 $dialect->resolveColumnReference('reporting.events.id'); // → 'reporting_events.id' on MariaDB, unchanged on Postgres
 ```
 
+[↑ Back to top](#)
+
 ## Writing a new dialect
 
 Adding support for a new vendor is additive — no need to touch any builder.
@@ -137,6 +149,10 @@ Adding support for a new vendor is additive — no need to touch any builder.
 
 The internal `CLAUDE.md` (project root) has more detail on the renderer composition model.
 
+[↑ Back to top](#)
+
 ## Default dialect singleton
 
 `Dialect::default()` returns a process-wide singleton — the same instance every time. `__toString()` on every builder uses it. To avoid mutating the singleton when running prepared statements, call `withBinder()` (which clones the dialect and resets renderer caches on the clone). End users typically don't call this directly — `prepare()` does.
+
+[↑ Back to top](#)

@@ -24,6 +24,8 @@ Expr::identifier('account_id');        // `account_id`                   (USING)
 
 The split is intentional: SELECT projections may have aliases (`AS`), but a column reference inside `WHERE a = b` cannot — using `col()` everywhere would emit alias syntax in places where the SQL parser would reject it.
 
+[↑ Back to top](#)
+
 ## Literals and raw SQL
 
 ```php
@@ -38,6 +40,8 @@ Expr::raw('CURRENT_TIMESTAMP - INTERVAL 1 DAY');
 `val()` runs the value through the dialect's `quoteValue()` — string escaping differs between MariaDB (backslash-escapes) and Postgres (standard-conforming). `raw()` is the escape hatch when no factory exists for what you need.
 
 > ⚠️ **Never interpolate user input into `raw()`** — that's a SQL injection vulnerability. Use [parameters](#prepared-statement-parameters) instead.
+
+[↑ Back to top](#)
 
 ## Binary operators (predicates and arithmetic)
 
@@ -61,6 +65,8 @@ Available `Binary` cases: `Eq`, `Ne`, `Gt`, `Lt`, `Ge`, `Le`, `Like`, `NotLike`,
 
 Available `Math` cases: `Add`, `Sub`, `Mul`, `Div`, `Mod`.
 
+[↑ Back to top](#)
+
 ## Logical composition
 
 ```php
@@ -70,6 +76,8 @@ Expr::not($a);           // NOT (a)
 ```
 
 `and()` / `or()` are left-associative and accept any number of operands. Anything implementing `ExpressionInterface` works.
+
+[↑ Back to top](#)
 
 ## Arithmetic chains
 
@@ -82,6 +90,8 @@ Expr::mul('qty', 'price');    // (`qty` * `price`)
 Expr::div('total', 'qty');    // (`total` / `qty`)
 Expr::mod('id', 16);          // (`id` % 16)
 ```
+
+[↑ Back to top](#)
 
 ## Function calls and aggregates
 
@@ -102,6 +112,8 @@ Expr::min('price');                        // MIN(`price`) AS `MIN`
 ```
 
 Function arguments follow the standard normalisation: `ExpressionInterface` passes through, strings become column references, other scalars become literal values.
+
+[↑ Back to top](#)
 
 ## CASE WHEN
 
@@ -128,6 +140,8 @@ Expr::case('status')
 // CASE `status` WHEN 'active' THEN 1 WHEN 'inactive' THEN 0 ELSE -1 END
 ```
 
+[↑ Back to top](#)
+
 ## Subqueries and EXISTS
 
 ```php
@@ -142,6 +156,8 @@ Expr::subquery($subquery, 'orders_sq');
 ```
 
 `exists()` is shorthand for wrapping the subquery in `EXISTS (...)`; `subquery()` is for using a SELECT as a scalar or table reference.
+
+[↑ Back to top](#)
 
 ## Window functions (OVER)
 
@@ -160,6 +176,8 @@ Select::create()->select('user_id', $running)->from('payments');
 ```
 
 `Window` exposes `partitionBy()`, `orderBy()`, plus `rows()` / `range()` / `groups()` shorthands. `frame()` lets you set any standards-compliant frame clause verbatim.
+
+[↑ Back to top](#)
 
 ## GROUP BY extensions
 
@@ -188,6 +206,8 @@ Select::create()
     ->groupBy(Expr::rollup('region', 'product'));
 ```
 
+[↑ Back to top](#)
+
 ## UUID wrappers
 
 UUIDs need transformation on engines that store them differently (PostgreSQL has native `UUID`, MariaDB simulates with `BINARY(16)`). Two wrappers handle the round trip transparently:
@@ -207,6 +227,8 @@ Expr::uuidColumn('id', 'user_id');
 
 See [Dialects](dialects.md) for the exact per-vendor transformation.
 
+[↑ Back to top](#)
+
 ## Prepared-statement parameters
 
 ```php
@@ -217,6 +239,8 @@ Expr::param('user_id', 1);       // named placeholder with default value 1
 ```
 
 Used inside a builder, these become real placeholders only when you call `prepare(Dialect)` — outside that context they throw. See [Prepared statements](prepared-statements.md).
+
+[↑ Back to top](#)
 
 ## Aliasing
 
@@ -229,3 +253,5 @@ Expr::case('status')->when('active', 1)->else(0)->as('is_active');
 ```
 
 `Reference\Column` and `Reference\Identifier` deliberately don't accept aliases — they exist for contexts where aliases aren't valid SQL.
+
+[↑ Back to top](#)

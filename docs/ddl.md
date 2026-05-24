@@ -44,6 +44,8 @@ Json, Uuid, Binary, VarBinary, Blob
 
 `VarChar`, `Char`, `Binary`, `VarBinary` honour `->length(n)`. `Uuid` is rendered as native `UUID` on Postgres / default and as `BINARY(16)` on MariaDB — see [Dialects — UUID](dialects.md#uuid-simulation).
 
+[↑ Back to top](#)
+
 ## CREATE TABLE
 
 ```php
@@ -82,6 +84,8 @@ Column::create('id', DataType::BigInt)->sequence($seq);      // DEFAULT = NEXTVA
 
 `default()` accepts scalars (wrapped in `Expr::val()`), expressions (`Expr::raw('NOW()')`), or sequence-bound expressions via `->sequence(Sequence)`.
 
+[↑ Back to top](#)
+
 ## ALTER TABLE
 
 ```php
@@ -103,6 +107,8 @@ Table::alter('users')
 
 In ALTER mode, `column()` and `constraint()` are aliases for the `addColumn()` / `addConstraint()` variants. Calling ALTER-only methods (`dropColumn`, `renameColumn`, `renameTo`, `modifyColumn`, `dropConstraint`) on a `Table::create()` builder throws.
 
+[↑ Back to top](#)
+
 ## DROP / TRUNCATE TABLE
 
 ```php
@@ -116,6 +122,8 @@ Table::truncate('users')->restartIdentity()->cascade();
 Modifiers: `ifExists()`, `cascade()` / `restrict()` (mutually exclusive), `restartIdentity()` / `continueIdentity()` (mutually exclusive, TRUNCATE only).
 
 MariaDB rejects PostgreSQL-only TRUNCATE modifiers (`RESTART IDENTITY`, `CONTINUE IDENTITY`, `CASCADE`, `RESTRICT`) with `UnsupportedFeatureException`.
+
+[↑ Back to top](#)
 
 ## Constraints
 
@@ -171,6 +179,8 @@ Check::create()->condition('LENGTH(email) > 5');
 
 Accepts a string (passed through verbatim, inside the `CHECK (...)`) or any `ExpressionInterface`.
 
+[↑ Back to top](#)
+
 ## VIEW
 
 ```php
@@ -196,6 +206,8 @@ View::drop('active_users')->ifExists();
 ```
 
 `orReplace()` and `ifNotExists()` are mutually exclusive.
+
+[↑ Back to top](#)
 
 ## SEQUENCE
 
@@ -225,6 +237,8 @@ Sequence::drop('order_id_seq')->ifExists()->cascade();
 
 `nextVal()` returns a `Raw` expression suitable as a DEFAULT or in any other expression context: `$seq->nextVal()` → `NEXTVAL('order_id_seq')`.
 
+[↑ Back to top](#)
+
 ## INDEX
 
 ```php
@@ -252,6 +266,8 @@ Index::drop('idx_users_email')->table('users');
 
 Without `->table()`, MariaDB's renderer throws. MariaDB also rejects `cascade()` on `DROP INDEX`.
 
+[↑ Back to top](#)
+
 ## SCHEMA
 
 ```php
@@ -266,3 +282,5 @@ Schema::alter('old_name')->renameTo('new_name');
 ```
 
 MariaDB has no schema namespace independent of the database, so the `MariaDbDialect` rejects `CREATE/DROP/ALTER SCHEMA` with `UnsupportedFeatureException`. **Table references** through a `schema.table` identifier are silently flattened to `schema_table` on MariaDB — see [Dialects — Schema simulation](dialects.md#schema-simulation-mariadb).
+
+[↑ Back to top](#)
