@@ -13,8 +13,10 @@ use Rak200\SqlBuilder\Ddl\Table;
 use Rak200\SqlBuilder\Dialect\DefaultDialect;
 use Rak200\SqlBuilder\Dialect\Dialect;
 use Rak200\SqlBuilder\Dialect\MariaDb\MariaDbDialect;
+use Rak200\SqlBuilder\Dialect\Postgres\Postgres15Dialect;
 use Rak200\SqlBuilder\Dialect\Postgres\PostgresDialect;
 use Rak200\SqlBuilder\Dml\Insert;
+use Rak200\SqlBuilder\Dml\Merge;
 use Rak200\SqlBuilder\Dml\Select;
 use Rak200\SqlBuilder\Dml\Set;
 use Rak200\SqlBuilder\Dml\Update;
@@ -194,6 +196,72 @@ final class DialectPropagationTest extends TestCase {
         $sql = $outer->toSql(new MariaDbDialect());
 
         $this->assertSame('SELECT `id` FROM (SELECT `id` FROM `users`) AS `t`', $sql);
+        $this->assertStringNotContainsString('"', $sql);
+    }
+
+    public function testMergePropagatesDialectToTargetSourceAndBranches(): void {
+        $source = Select::create()->select('id', 'name')->from('staging');
+
+        $sql = Merge::create()
+            ->into('users', 't')
+            ->using($source, 's')
+            ->on(Expression::binary('t.id', BinaryOperator::Eq, Expression::ref('s.id')))
+            ->whenMatchedUpdate(['name' => Expression::ref('s.name')])
+            ->whenNotMatchedInsert(['id', 'name'], [Expression::ref('s.id'), Expression::ref('s.name')])
+            ->toSql(new Postgres15Dialect());
+
+        $this->assertStringContainsString('MERGE INTO "users" AS "t"', $sql);
+        $this->assertStringContainsString('USING (SELECT "id", "name" FROM "staging") AS "s"', $sql);
+        $this->assertStringContainsString('ON ("t"."id" = "s"."id")', $sql);
+        $this->assertStringContainsString('UPDATE SET "name" = "s"."name"', $sql);
+        $this->assertStringContainsString('INSERT ("id", "name") VALUES ("s"."id", "s"."name")', $sql);
+        $this->assertStringNotContainsString('`', $sql);
+    }
+
+    public function testGroupingExtensionsPropagateDialect(): void {
+        $sql = Select::create()
+            ->select('region', Expression::sum('amount'))
+            ->from('sales')
+            ->groupBy(Expression::groupingSets(['region', 'product'], ['region'], []))
+            ->toSql(new PostgresDialect());
+
+        $this->assertStringContainsString(
+            'GROUP BY GROUPING SETS (("region", "product"), ("region"), ())',
+            $sql
+        );
+        $this->assertStringNotContainsString('`', $sql);
+    }
+
+    public function testLateralJoinPropagatesDialect(): void {
+        $sub = Select::create()
+            ->select('id')
+            ->from('orders')
+            ->where(Expression::binary('orders.user_id', BinaryOperator::Eq, Expression::ref('u.id')));
+
+        $sql = Select::create()
+            ->select('u.id', 'r.id')
+            ->from('users', 'u')
+            ->leftLateralJoin($sub, 'r', Expression::raw('TRUE'))
+            ->toSql(new PostgresDialect());
+
+        $this->assertStringContainsString('LEFT JOIN LATERAL (SELECT "id" FROM "orders"', $sql);
+        $this->assertStringContainsString('"orders"."user_id" = "u"."id"', $sql);
+        $this->assertStringContainsString('AS "r" ON TRUE', $sql);
+        $this->assertStringNotContainsString('`', $sql);
+    }
+
+    public function testOnConflictTranslationOnMariaDb(): void {
+        $sql = Insert::create()
+            ->into('users')
+            ->columns('id', 'email')
+            ->values(1, "user's email")
+            ->onConflict('id')
+            ->doUpdate(['email' => Expression::raw('VALUES(email)')])
+            ->toSql(new MariaDbDialect());
+
+        $this->assertStringContainsString('ON DUPLICATE KEY UPDATE `email` = VALUES(email)', $sql);
+        $this->assertStringContainsString("'user''s email'", $sql);
+        $this->assertStringNotContainsString('ON CONFLICT', $sql);
         $this->assertStringNotContainsString('"', $sql);
     }
 

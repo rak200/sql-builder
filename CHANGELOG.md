@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-05-23
+
+### Added
+- Four new propagation cases in `tests/Unit/Dialect/DialectPropagationTest.php` covering the 0.11.0 features that previously only had vendor-specific dialect tests: `Merge` on `Postgres15Dialect` (target, USING-subquery, ON, MATCHED/NOT MATCHED branches all double-quoted), `Expr::groupingSets()` inside `GROUP BY` on `PostgresDialect`, `Select::leftLateralJoin()` with a correlated subquery on `PostgresDialect`, and `Insert::onConflict()->doUpdate()` translation to `ON DUPLICATE KEY UPDATE` on `MariaDbDialect`. Suite: 491 → 495.
+
+### Changed
+- `CLAUDE.md` doc sweep: the dependency line and the "Key Abstractions" entry both still referenced the pre-0.0.3 `Collection` class and the original `^0.0.1` version constraint. Updated to `rak200/collections 0.*` (matching `composer.json`) and to the `Vector` class that all DML/DDL builders actually use today.
+
 ## [0.11.0] - 2026-05-23
 
 ### Added
@@ -219,7 +227,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DDL:** `Table` (CREATE and ALTER), `Column`, `View`, `Sequence`, `Index`, and constraints (`PrimaryKey`, `UniqueKey`, `ForeignKey`, `Check`).
 - **Expressions:** binary/unary operators, AND/OR groups, EXISTS, subqueries, function calls, aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`), raw SQL escape hatch, identifier and value quoting via `Expression::quoteIdentifier()` / `Expression::quoteValue()`.
 
-[Unreleased]: https://github.com/rak200/sql-builder/compare/0.11.0...HEAD
+[Unreleased]: https://github.com/rak200/sql-builder/compare/0.11.1...HEAD
+[0.11.1]: https://github.com/rak200/sql-builder/compare/0.11.0...0.11.1
 [0.11.0]: https://github.com/rak200/sql-builder/compare/0.10.1...0.11.0
 [0.10.1]: https://github.com/rak200/sql-builder/compare/0.10.0...0.10.1
 [0.10.0]: https://github.com/rak200/sql-builder/compare/0.9.0...0.10.0

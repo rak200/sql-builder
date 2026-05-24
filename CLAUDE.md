@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Depends on:
 - `rak200/caster ^1.0.0` for the `ToString` contract used by `ExpressionInterface`
-- `rak200/collections ^0.0.1` for the typed `Collection` container used internally
+- `rak200/collections 0.*` for the typed `Vector` container used internally
 - `rak200/utils ^0.1.0` for `Rak200\Utils\Str` (blank checks, `join` with `lastSeparator`, `wrap`) used by renderers
 
 Dev dependencies:
@@ -72,7 +72,7 @@ Production classes live under `Rak200\SqlBuilder\` (PSR-4 from `src/`); test cla
 
 **`Merge`** — SQL:2003 `MERGE INTO target USING source ON cond WHEN [NOT] MATCHED [AND pred] THEN ...`. Branch helpers: `whenMatchedUpdate(assignments, predicate?)`, `whenMatchedDelete(predicate?)`, `whenNotMatchedInsert(columns, values, predicate?)`, `whenDoNothing(matched, predicate?)`. Accepted on the default dialect and on `Postgres15Dialect`; rejected on older Postgres and on every MariaDB dialect.
 
-**`Collection`** (from `rak200/collections`) — typed generic container used internally by `Select`, `Set`, `Table`.
+**`Vector`** (from `rak200/collections`) — typed generic container used internally by `Select`, `Set`, `Table` for elements like CTEs, columns, joins, GROUP BY items, ORDER BY entries, and table elements (renamed from `Collection` in 0.0.3).
 
 ## Identifier & Value Quoting
 
