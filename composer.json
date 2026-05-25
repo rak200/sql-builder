@@ -13,7 +13,7 @@
   "require": {
     "php": "^8.4",
     "rak200/collections": "0.*",
-    "rak200/utils": "^0.1.0"
+    "rak200/utils": "^1.0.0"
   },
   "repositories": [
     {

@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Depends on:
 - `rak200/collections 0.*` for the typed `Vector` container used internally
-- `rak200/utils ^0.1.0` for `Rak200\Utils\Str` (blank checks, `join` with `lastSeparator`, `wrap`) used by renderers
+- `rak200/utils ^1.0.0` for `Rak200\Utils\Str` (blank checks, `join` with `lastSeparator`, `wrap`) used by renderers
 
 `ExpressionInterface` extends PHP's native {@see \Stringable} (PHP 8.0+); the previous `rak200/caster` dependency was removed in 0.12.0 since the contract is just `__toString(): string`.
 
